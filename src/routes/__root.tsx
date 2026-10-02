@@ -1,0 +1,6 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Outlet, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import appCss from "../styles.css?url";
+function ErrorPage(){return <div style={{padding:40,fontFamily:"system-ui"}}><h1>Não foi possível carregar.</h1></div>}
+export const Route=createRootRouteWithContext<{queryClient:QueryClient}>()({head:()=>({meta:[{charSet:"utf-8"},{name:"viewport",content:"width=device-width, initial-scale=1"},{title:"Achadinhos Brasil — Lavadoras"},{name:"description",content:"Compare ofertas de lavadoras, preços e descontos."}],links:[{rel:"stylesheet",href:appCss},{rel:"icon",href:"/favicon.ico"}]}),shellComponent:({children}:{children:ReactNode})=><html lang="pt-BR"><head><HeadContent/></head><body>{children}<Scripts/></body></html>,component:()=>{const {queryClient}=Route.useRouteContext();return <QueryClientProvider client={queryClient}><Outlet/></QueryClientProvider>},errorComponent:ErrorPage});
