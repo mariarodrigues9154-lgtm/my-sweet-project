@@ -1,0 +1,51 @@
+import { Link } from "@tanstack/react-router";
+import { MessageCircle, ShoppingCart, Store } from "lucide-react";
+import type { Product } from "@/lib/product-types";
+import { brl } from "@/lib/format";
+
+export function BuyBar({
+  product,
+  onAddToCart,
+  onBuyNow,
+  onChat,
+}: {
+  product: Product;
+  onAddToCart: () => void;
+  onBuyNow: () => void;
+  onChat: () => void;
+}) {
+  const s = product.shipping ?? {};
+  const shippingText = s.free || !s.fee ? "Frete grátis" : `Frete ${brl(s.fee)}`;
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card">
+      <div className="mx-auto flex max-w-[520px] items-center gap-2 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <Link to="/" className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
+          <Store size={20} strokeWidth={1.6} />
+          Loja
+        </Link>
+        <button type="button" onClick={onChat} className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
+          <MessageCircle size={20} strokeWidth={1.6} />
+          Chat
+        </button>
+        <button
+          type="button"
+          onClick={onAddToCart}
+          aria-label="Carrinho"
+          className="ml-1 grid h-11 w-[60px] shrink-0 place-items-center rounded-full bg-primary-soft text-primary active:scale-[0.98]"
+        >
+          <ShoppingCart size={22} strokeWidth={1.8} />
+        </button>
+        <button
+          type="button"
+          onClick={onBuyNow}
+          className="flex h-11 min-w-0 flex-1 flex-col items-center justify-center rounded-full bg-primary px-3 leading-tight text-primary-foreground active:scale-[0.99]"
+        >
+          <span className="text-[15px] font-medium">Comprar agora</span>
+          <span className="truncate text-[11px] font-normal opacity-95">
+            {brl(product.price)} | {shippingText}
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
