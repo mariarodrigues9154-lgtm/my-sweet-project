@@ -10,43 +10,316 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LavadorasRouteImport } from './routes/lavadoras'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PagamentoRouteImport } from './routes/pagamento'
+import { Route as Pagamento2RouteImport } from './routes/pagamento-2'
+import { Route as Pagamento2EnderecoRouteImport } from './routes/pagamento-2-endereco'
+import { Route as PedidoConfirmadoRouteImport } from './routes/pedido-confirmado'
+import { Route as PoliticaDeEntregaRouteImport } from './routes/politica-de-entrega'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
+import { Route as PoliticaDeReembolsoRouteImport } from './routes/politica-de-reembolso'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as LojaIndexRouteImport } from './routes/loja.index'
+import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
+import { Route as AuthenticatedAdminLojasIdRouteImport } from './routes/_authenticated/admin.lojas.$id'
+import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
+import { Route as ApiPublicPagamentosWebhookRouteImport } from './routes/api/public/pagamentos.webhook'
+import { Route as ApiPublicWebhooksWappiRouteImport } from './routes/api/public/webhooks.wappi'
+import { Route as ApiPublicPedidosOrderNumberStatusRouteImport } from './routes/api/public/pedidos.$orderNumber.status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LavadorasRoute = LavadorasRouteImport.update({
-  id: '/lavadoras',
-  path: '/lavadoras',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PagamentoRoute = PagamentoRouteImport.update({
+  id: '/pagamento',
+  path: '/pagamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Pagamento2Route = Pagamento2RouteImport.update({
+  id: '/pagamento-2',
+  path: '/pagamento-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Pagamento2EnderecoRoute = Pagamento2EnderecoRouteImport.update({
+  id: '/pagamento-2-endereco',
+  path: '/pagamento-2-endereco',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PedidoConfirmadoRoute = PedidoConfirmadoRouteImport.update({
+  id: '/pedido-confirmado',
+  path: '/pedido-confirmado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDeEntregaRoute = PoliticaDeEntregaRouteImport.update({
+  id: '/politica-de-entrega',
+  path: '/politica-de-entrega',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDeReembolsoRoute = PoliticaDeReembolsoRouteImport.update({
+  id: '/politica-de-reembolso',
+  path: '/politica-de-reembolso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosDeUsoRoute = TermosDeUsoRouteImport.update({
+  id: '/termos-de-uso',
+  path: '/termos-de-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const LojaIndexRoute = LojaIndexRouteImport.update({
+  id: '/loja/',
+  path: '/loja/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LojaSlugRoute = LojaSlugRouteImport.update({
+  id: '/loja/$slug',
+  path: '/loja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
+  id: '/produto/$slug',
+  path: '/produto/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminPedidosRoute =
+  AuthenticatedAdminPedidosRouteImport.update({
+    id: '/pedidos',
+    path: '/pedidos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLojasIdRoute =
+  AuthenticatedAdminLojasIdRouteImport.update({
+    id: '/lojas/$id',
+    path: '/lojas/$id',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
+  id: '/api/public/media/$',
+  path: '/api/public/media/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPagamentosWebhookRoute =
+  ApiPublicPagamentosWebhookRouteImport.update({
+    id: '/api/public/pagamentos/webhook',
+    path: '/api/public/pagamentos/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksWappiRoute = ApiPublicWebhooksWappiRouteImport.update({
+  id: '/api/public/webhooks/wappi',
+  path: '/api/public/webhooks/wappi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPedidosOrderNumberStatusRoute =
+  ApiPublicPedidosOrderNumberStatusRouteImport.update({
+    id: '/api/public/pedidos/$orderNumber/status',
+    path: '/api/public/pedidos/$orderNumber/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/lavadoras': typeof LavadorasRoute
+  '/auth': typeof AuthRoute
+  '/pagamento': typeof PagamentoRoute
+  '/pagamento-2': typeof Pagamento2Route
+  '/pagamento-2-endereco': typeof Pagamento2EnderecoRoute
+  '/pedido-confirmado': typeof PedidoConfirmadoRoute
+  '/politica-de-entrega': typeof PoliticaDeEntregaRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/politica-de-reembolso': typeof PoliticaDeReembolsoRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/loja/$slug': typeof LojaSlugRoute
+  '/produto/$slug': typeof ProdutoSlugRoute
+  '/loja/': typeof LojaIndexRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
+  '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
+  '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
+  '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/lavadoras': typeof LavadorasRoute
+  '/auth': typeof AuthRoute
+  '/pagamento': typeof PagamentoRoute
+  '/pagamento-2': typeof Pagamento2Route
+  '/pagamento-2-endereco': typeof Pagamento2EnderecoRoute
+  '/pedido-confirmado': typeof PedidoConfirmadoRoute
+  '/politica-de-entrega': typeof PoliticaDeEntregaRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/politica-de-reembolso': typeof PoliticaDeReembolsoRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
+  '/loja/$slug': typeof LojaSlugRoute
+  '/produto/$slug': typeof ProdutoSlugRoute
+  '/loja': typeof LojaIndexRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
+  '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
+  '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
+  '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/lavadoras': typeof LavadorasRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/pagamento': typeof PagamentoRoute
+  '/pagamento-2': typeof Pagamento2Route
+  '/pagamento-2-endereco': typeof Pagamento2EnderecoRoute
+  '/pedido-confirmado': typeof PedidoConfirmadoRoute
+  '/politica-de-entrega': typeof PoliticaDeEntregaRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/politica-de-reembolso': typeof PoliticaDeReembolsoRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/loja/$slug': typeof LojaSlugRoute
+  '/produto/$slug': typeof ProdutoSlugRoute
+  '/loja/': typeof LojaIndexRoute
+  '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
+  '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
+  '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
+  '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lavadoras'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/pagamento'
+    | '/pagamento-2'
+    | '/pagamento-2-endereco'
+    | '/pedido-confirmado'
+    | '/politica-de-entrega'
+    | '/politica-de-privacidade'
+    | '/politica-de-reembolso'
+    | '/reset-password'
+    | '/termos-de-uso'
+    | '/admin'
+    | '/loja/$slug'
+    | '/produto/$slug'
+    | '/loja/'
+    | '/admin/pedidos'
+    | '/admin/'
+    | '/admin/lojas/$id'
+    | '/api/public/media/$'
+    | '/api/public/pagamentos/webhook'
+    | '/api/public/webhooks/wappi'
+    | '/api/public/pedidos/$orderNumber/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/lavadoras'
-  id: '__root__' | '/' | '/lavadoras'
+  to:
+    | '/'
+    | '/auth'
+    | '/pagamento'
+    | '/pagamento-2'
+    | '/pagamento-2-endereco'
+    | '/pedido-confirmado'
+    | '/politica-de-entrega'
+    | '/politica-de-privacidade'
+    | '/politica-de-reembolso'
+    | '/reset-password'
+    | '/termos-de-uso'
+    | '/loja/$slug'
+    | '/produto/$slug'
+    | '/loja'
+    | '/admin/pedidos'
+    | '/admin'
+    | '/admin/lojas/$id'
+    | '/api/public/media/$'
+    | '/api/public/pagamentos/webhook'
+    | '/api/public/webhooks/wappi'
+    | '/api/public/pedidos/$orderNumber/status'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/pagamento'
+    | '/pagamento-2'
+    | '/pagamento-2-endereco'
+    | '/pedido-confirmado'
+    | '/politica-de-entrega'
+    | '/politica-de-privacidade'
+    | '/politica-de-reembolso'
+    | '/reset-password'
+    | '/termos-de-uso'
+    | '/_authenticated/admin'
+    | '/loja/$slug'
+    | '/produto/$slug'
+    | '/loja/'
+    | '/_authenticated/admin/pedidos'
+    | '/_authenticated/admin/'
+    | '/_authenticated/admin/lojas/$id'
+    | '/api/public/media/$'
+    | '/api/public/pagamentos/webhook'
+    | '/api/public/webhooks/wappi'
+    | '/api/public/pedidos/$orderNumber/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LavadorasRoute: typeof LavadorasRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  PagamentoRoute: typeof PagamentoRoute
+  Pagamento2Route: typeof Pagamento2Route
+  Pagamento2EnderecoRoute: typeof Pagamento2EnderecoRoute
+  PedidoConfirmadoRoute: typeof PedidoConfirmadoRoute
+  PoliticaDeEntregaRoute: typeof PoliticaDeEntregaRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  PoliticaDeReembolsoRoute: typeof PoliticaDeReembolsoRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  TermosDeUsoRoute: typeof TermosDeUsoRoute
+  LojaSlugRoute: typeof LojaSlugRoute
+  ProdutoSlugRoute: typeof ProdutoSlugRoute
+  LojaIndexRoute: typeof LojaIndexRoute
+  ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
+  ApiPublicPagamentosWebhookRoute: typeof ApiPublicPagamentosWebhookRoute
+  ApiPublicWebhooksWappiRoute: typeof ApiPublicWebhooksWappiRoute
+  ApiPublicPedidosOrderNumberStatusRoute: typeof ApiPublicPedidosOrderNumberStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,19 +331,210 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lavadoras': {
-      id: '/lavadoras'
-      path: '/lavadoras'
-      fullPath: '/lavadoras'
-      preLoaderRoute: typeof LavadorasRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pagamento': {
+      id: '/pagamento'
+      path: '/pagamento'
+      fullPath: '/pagamento'
+      preLoaderRoute: typeof PagamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pagamento-2': {
+      id: '/pagamento-2'
+      path: '/pagamento-2'
+      fullPath: '/pagamento-2'
+      preLoaderRoute: typeof Pagamento2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pagamento-2-endereco': {
+      id: '/pagamento-2-endereco'
+      path: '/pagamento-2-endereco'
+      fullPath: '/pagamento-2-endereco'
+      preLoaderRoute: typeof Pagamento2EnderecoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pedido-confirmado': {
+      id: '/pedido-confirmado'
+      path: '/pedido-confirmado'
+      fullPath: '/pedido-confirmado'
+      preLoaderRoute: typeof PedidoConfirmadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-entrega': {
+      id: '/politica-de-entrega'
+      path: '/politica-de-entrega'
+      fullPath: '/politica-de-entrega'
+      preLoaderRoute: typeof PoliticaDeEntregaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-reembolso': {
+      id: '/politica-de-reembolso'
+      path: '/politica-de-reembolso'
+      fullPath: '/politica-de-reembolso'
+      preLoaderRoute: typeof PoliticaDeReembolsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos-de-uso': {
+      id: '/termos-de-uso'
+      path: '/termos-de-uso'
+      fullPath: '/termos-de-uso'
+      preLoaderRoute: typeof TermosDeUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/loja/': {
+      id: '/loja/'
+      path: '/loja'
+      fullPath: '/loja/'
+      preLoaderRoute: typeof LojaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loja/$slug': {
+      id: '/loja/$slug'
+      path: '/loja/$slug'
+      fullPath: '/loja/$slug'
+      preLoaderRoute: typeof LojaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produto/$slug': {
+      id: '/produto/$slug'
+      path: '/produto/$slug'
+      fullPath: '/produto/$slug'
+      preLoaderRoute: typeof ProdutoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pedidos': {
+      id: '/_authenticated/admin/pedidos'
+      path: '/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AuthenticatedAdminPedidosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/lojas/$id': {
+      id: '/_authenticated/admin/lojas/$id'
+      path: '/lojas/$id'
+      fullPath: '/admin/lojas/$id'
+      preLoaderRoute: typeof AuthenticatedAdminLojasIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/public/media/$': {
+      id: '/api/public/media/$'
+      path: '/api/public/media/$'
+      fullPath: '/api/public/media/$'
+      preLoaderRoute: typeof ApiPublicMediaSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/pagamentos/webhook': {
+      id: '/api/public/pagamentos/webhook'
+      path: '/api/public/pagamentos/webhook'
+      fullPath: '/api/public/pagamentos/webhook'
+      preLoaderRoute: typeof ApiPublicPagamentosWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/wappi': {
+      id: '/api/public/webhooks/wappi'
+      path: '/api/public/webhooks/wappi'
+      fullPath: '/api/public/webhooks/wappi'
+      preLoaderRoute: typeof ApiPublicWebhooksWappiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/pedidos/$orderNumber/status': {
+      id: '/api/public/pedidos/$orderNumber/status'
+      path: '/api/public/pedidos/$orderNumber/status'
+      fullPath: '/api/public/pedidos/$orderNumber/status'
+      preLoaderRoute: typeof ApiPublicPedidosOrderNumberStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminPedidosRoute: typeof AuthenticatedAdminPedidosRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminLojasIdRoute: typeof AuthenticatedAdminLojasIdRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminPedidosRoute: AuthenticatedAdminPedidosRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminLojasIdRoute: AuthenticatedAdminLojasIdRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LavadorasRoute: LavadorasRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  PagamentoRoute: PagamentoRoute,
+  Pagamento2Route: Pagamento2Route,
+  Pagamento2EnderecoRoute: Pagamento2EnderecoRoute,
+  PedidoConfirmadoRoute: PedidoConfirmadoRoute,
+  PoliticaDeEntregaRoute: PoliticaDeEntregaRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  PoliticaDeReembolsoRoute: PoliticaDeReembolsoRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  TermosDeUsoRoute: TermosDeUsoRoute,
+  LojaSlugRoute: LojaSlugRoute,
+  ProdutoSlugRoute: ProdutoSlugRoute,
+  LojaIndexRoute: LojaIndexRoute,
+  ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
+  ApiPublicPagamentosWebhookRoute: ApiPublicPagamentosWebhookRoute,
+  ApiPublicWebhooksWappiRoute: ApiPublicWebhooksWappiRoute,
+  ApiPublicPedidosOrderNumberStatusRoute:
+    ApiPublicPedidosOrderNumberStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

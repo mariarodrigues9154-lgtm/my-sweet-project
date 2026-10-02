@@ -1,0 +1,470 @@
+/** Modelo de dados do produto — o layout nunca guarda conteúdo, só lê daqui. */
+
+export type Media = {
+  type: "image" | "video";
+  url: string;
+  poster?: string | null;
+  alt?: string | null;
+};
+
+export type VariantOption = {
+  label: string;
+  value: string;
+  /** Imagem própria da opção (ex.: a foto daquela cor). */
+  image?: string | null;
+};
+
+export type VariantGroup = {
+  name: string;
+  label: string;
+  /** Quando verdadeiro, as opções aparecem como cards com imagem. */
+  use_image?: boolean;
+  options: VariantOption[];
+};
+
+/** Combinação de variações (ex.: Preto + 40/41) com preço e estoque próprios. */
+export type VariantCombo = {
+  /** Chave da combinação: valores na ordem dos grupos, unidos por "|". */
+  key: string;
+  price?: number | null;
+  previous_price?: number | null;
+  stock?: number | null;
+  sku?: string | null;
+  active?: boolean;
+};
+
+
+export type ShippingOption = {
+  id: string;
+  label: string;
+  eta: string;
+  price: number;
+};
+
+export type Shipping = {
+  free?: boolean;
+  fee?: number;
+  min_days?: number;
+  max_days?: number;
+  options?: ShippingOption[];
+};
+
+export type Offer = {
+  badge?: string;
+  highlight?: string;
+  flash_label?: string;
+  countdown_seconds?: number;
+};
+
+export type Protection = {
+  title?: string;
+  subtitle?: string;
+  items?: string[];
+};
+
+export type Spec = { label: string; value: string };
+
+export type DescriptionBlock =
+  | { type: "heading"; text: string }
+  | { type: "subheading"; text: string }
+  | { type: "paragraph"; text: string }
+  | { type: "spacer"; size?: "sm" | "md" | "lg" }
+  | { type: "list"; items: string[] }
+  | { type: "image"; url: string; alt?: string; caption?: string }
+  | { type: "video"; url: string; poster?: string };
+
+export type CreatorVideo = {
+  handle: string;
+  thumb: string;
+  video?: string | null;
+  name?: string;
+  title?: string;
+  description?: string;
+  rating?: number | null;
+  show_name?: boolean;
+  show_handle?: boolean;
+  show_title?: boolean;
+  show_stars?: boolean;
+  avatar?: string | null;
+  show_avatar?: boolean;
+  verified?: boolean;
+  show_rating_number?: boolean;
+  show_description?: boolean;
+};
+
+export type ProductSections = {
+  videos_subtitle?: string;
+  videos_title?: string;
+  videos_count?: string;
+  videos_show_count?: boolean;
+  videos_show_more?: boolean;
+  videos_more_text?: string;
+  videos_show_icon?: boolean;
+  videos_show_hint?: boolean;
+  videos_hint_text?: string;
+  videos_card_style?: "overlay" | "below";
+  about_title?: string;
+  description_title?: string;
+};
+
+/** Textos e métricas exibidas — configuráveis no painel, sem mexer nos dados reais. */
+export type MetricSource = "auto" | "manual";
+
+export type ProductDisplay = {
+  rating_source?: MetricSource;
+  rating?: number | null;
+  reviews_source?: MetricSource;
+  reviews_count?: number | null;
+  reviews_label?: string | null;
+  sold_source?: MetricSource;
+  sold_count?: number | null;
+  sold_label?: string | null;
+  badge1_show?: boolean;
+  badge1_text?: string | null;
+  badge2_show?: boolean;
+  badge2_text?: string | null;
+  /** Seção "Avaliações dos clientes" — só exibição, nunca altera as avaliações. */
+  rs_title?: string | null;
+  rs_source?: MetricSource;
+  rs_count?: number | null;
+  rs_rating?: number | null;
+  rs_max?: string | null;
+};
+
+/** Cabeçalho da seção de avaliações: título, quantidade, nota e máximo. */
+export function reviewsSectionHeader(product: Product): { title: string; count: number; rating: number; max: string } {
+  const d = product.display ?? {};
+  const visible = (product.reviews ?? []).filter((r) => !r.hidden);
+  const manual = d.rs_source === "manual";
+  const count = manual && d.rs_count != null ? Math.max(0, Math.round(Number(d.rs_count))) : product.reviews_count || visible.length;
+  const rating = manual && d.rs_rating != null ? Math.min(5, Math.max(0, Number(d.rs_rating))) : Number(product.rating) || 0;
+  return {
+    title: d.rs_title?.trim() || "Avaliações dos clientes",
+    count,
+    rating,
+    max: d.rs_max?.trim() || "5",
+  };
+}
+
+
+export type Review = {
+  name: string;
+  rating: number;
+  date: string;
+  text: string;
+  confirmed?: boolean;
+  hidden?: boolean;
+  photos?: string[];
+  avatar?: string | null;
+};
+
+export type Product = {
+  id: string;
+  slug: string;
+  active: boolean;
+  name: string;
+  title: string;
+  subtitle: string | null;
+  price: number;
+  previous_price: number;
+  stock: number;
+  rating: number;
+  reviews_count: number;
+  sold_count: number;
+  offer: Offer;
+  media: Media[];
+  variants: VariantGroup[];
+  variant_combos: VariantCombo[];
+
+  shipping: Shipping;
+  warranty: string | null;
+  protection: Protection;
+  specs: Spec[];
+  description: DescriptionBlock[];
+  creator_videos: CreatorVideo[];
+  reviews: Review[];
+  terms: string | null;
+  sort_order: number;
+  sections: ProductSections;
+  display: ProductDisplay;
+};
+
+export type CheckoutSettings = {
+  checkout_model?: "v1" | "v2";
+  logo_url?: string | null;
+  primary_color?: string | null;
+  title?: string | null;
+  note?: string | null;
+  verified_home?: boolean;
+  verified_product?: boolean;
+  verified_checkout?: boolean;
+  verified_footer?: boolean;
+  display_name?: string | null;
+  show_name?: boolean;
+  discount_title?: string | null;
+  show_discount?: boolean;
+  legal_text?: string | null;
+  show_legal?: boolean;
+  show_rating?: boolean;
+  rating_from_product?: boolean;
+  rating_text?: string | null;
+  rating_value?: number | null;
+  rating_max?: string | null;
+};
+
+
+export type StoreSettings = {
+  id: string;
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  footer_logo_url: string | null;
+  tagline: string | null;
+  support_email: string | null;
+  whatsapp: string | null;
+  visit_url: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+  banner_url: string | null;
+  banner_link: string | null;
+  verified: boolean;
+  sold_count: number;
+  show_follow: boolean;
+  show_message: boolean;
+  show_visit?: boolean;
+  visit_clickable?: boolean;
+  indicators: Array<{ value: string; label: string }>;
+  featured_product_ids: string[];
+  footer_text: string | null;
+  policies: {
+    privacy: string;
+    refund: string;
+    terms: string;
+    shipping: string;
+  };
+  checkout: CheckoutSettings;
+};
+
+export type OrderSummary = {
+  order_number: string;
+  status: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  shipping_label: string | null;
+  shipping_price: number;
+  total: number;
+  product_snapshot: { title?: string; image?: string; slug?: string };
+  variant: Record<string, string>;
+  customer: { name?: string; email?: string; phone?: string; document?: string };
+  address: Record<string, string>;
+  payment: { provider?: string; status?: string; qr_code?: string; copy_paste?: string };
+  created_at: string;
+};
+
+/** Desconto e economia são sempre calculados, nunca gravados. */
+export function discountPercent(price: number, previous: number): number {
+  if (!previous || previous <= price) return 0;
+  return Math.round(((previous - price) / previous) * 100);
+}
+
+export function savings(price: number, previous: number): number {
+  return Math.max(0, previous - price);
+}
+
+/* ---------------------------------------------------------------------------
+ * Variações: preço, estoque e disponibilidade por combinação.
+ * O layout e o painel leem sempre daqui, nunca duplicam regra.
+ * ------------------------------------------------------------------------- */
+
+export const COMBO_SEP = "|";
+
+/** Chave da combinação na ordem dos grupos. Retorna null se faltar alguma escolha. */
+export function comboKeyFor(
+  groups: VariantGroup[],
+  selection: Record<string, string>,
+): string | null {
+  if (!groups.length) return null;
+  const parts: string[] = [];
+  for (const group of groups) {
+    const value = selection[group.name];
+    if (!value) return null;
+    parts.push(value);
+  }
+  return parts.join(COMBO_SEP);
+}
+
+export function comboLabel(groups: VariantGroup[], key: string): string {
+  const values = key.split(COMBO_SEP);
+  return groups
+    .map((group, index) => {
+      const value = values[index] ?? "";
+      const option = group.options.find((o) => o.value === value);
+      return `${group.label}: ${option?.label ?? value}`;
+    })
+    .join(" · ");
+}
+
+export function findCombo(
+  product: Pick<Product, "variants" | "variant_combos">,
+  selection: Record<string, string>,
+): VariantCombo | null {
+  const key = comboKeyFor(product.variants ?? [], selection);
+  if (!key) return null;
+  return (product.variant_combos ?? []).find((c) => c.key === key) ?? null;
+}
+
+export function comboActive(combo: VariantCombo | null | undefined): boolean {
+  return !combo || combo.active !== false;
+}
+
+/** Preço, preço antigo, estoque e código internos válidos para a escolha atual. */
+export function variantPricing(
+  product: Pick<Product, "price" | "previous_price" | "stock" | "variants" | "variant_combos">,
+  selection: Record<string, string>,
+): { price: number; previous_price: number; stock: number; sku: string | null; available: boolean } {
+  const combo = findCombo(product as Product, selection);
+  const price = combo?.price != null && combo.price > 0 ? Number(combo.price) : Number(product.price);
+  const previous =
+    combo?.previous_price != null && combo.previous_price > 0
+      ? Number(combo.previous_price)
+      : Number(product.previous_price);
+  const stock = combo?.stock != null ? Number(combo.stock) : Number(product.stock ?? 0);
+  return {
+    price,
+    previous_price: Math.max(previous, price),
+    stock: Math.max(0, stock),
+    sku: combo?.sku ?? null,
+    available: comboActive(combo) && Math.max(0, stock) > 0,
+  };
+}
+
+/** Menor e maior preço entre as combinações vendáveis — base do "A partir de". */
+export function variantPriceRange(
+  product: Pick<Product, "price" | "variant_combos">,
+): { min: number; max: number; multiple: boolean } {
+  const prices = (product.variant_combos ?? [])
+    .filter((c) => c.active !== false && (c.stock == null || Number(c.stock) > 0))
+    .map((c) => (c.price != null && c.price > 0 ? Number(c.price) : Number(product.price)));
+  if (!prices.length) return { min: Number(product.price), max: Number(product.price), multiple: false };
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  return { min, max, multiple: max > min };
+}
+
+/**
+ * Uma opção é escolhível quando existe alguma combinação vendável que a use,
+ * respeitando o que já foi escolhido nos outros grupos.
+ */
+export function optionSelectable(
+  product: Pick<Product, "stock" | "variants" | "variant_combos">,
+  selection: Record<string, string>,
+  groupName: string,
+  value: string,
+): boolean {
+  const groups = product.variants ?? [];
+  const combos = product.variant_combos ?? [];
+  if (!combos.length) return Number(product.stock ?? 0) > 0;
+  return combos.some((combo) => {
+    if (combo.active === false) return false;
+    if (combo.stock != null && Number(combo.stock) <= 0) return false;
+    const values = combo.key.split(COMBO_SEP);
+    return groups.every((group, index) => {
+      const comboValue = values[index] ?? "";
+      if (group.name === groupName) return comboValue === value;
+      const chosen = selection[group.name];
+      return !chosen || chosen === comboValue;
+    });
+  });
+}
+
+/** Todas as combinações possíveis a partir dos grupos cadastrados. */
+export function allComboKeys(groups: VariantGroup[]): string[] {
+  const usable = groups.filter((g) => g.options.length);
+  if (!usable.length) return [];
+  return usable.reduce<string[]>(
+    (acc, group) => acc.flatMap((prefix) => group.options.map((o) => (prefix ? `${prefix}${COMBO_SEP}${o.value}` : o.value))),
+    [""],
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Textos e métricas exibidas: o painel controla, o layout apenas lê.
+ * ------------------------------------------------------------------------- */
+
+/** Aceita "4,8" ou "4.8" e devolve um número entre 0 e 5. */
+export function parseRatingInput(value: string): number {
+  const n = Number(String(value).replace(",", ".").trim());
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(5, Math.max(0, n));
+}
+
+/** Nota bonita na tela: "5,0", "4,8". */
+export function ratingText(value: number): string {
+  return (Math.round((Number.isFinite(value) ? value : 0) * 10) / 10).toFixed(1).replace(".", ",");
+}
+
+type MetricsProduct = Pick<Product, "rating" | "reviews_count" | "sold_count" | "display" | "offer"> & { reviews?: Review[] };
+
+/** Nota na página do produto: "5.0", "4.8". */
+export function ratingDot(value: number): string {
+  return (Math.round((Number.isFinite(value) ? value : 0) * 10) / 10).toFixed(1);
+}
+
+export function shownRating(product: MetricsProduct): number {
+  const d = product.display ?? {};
+  if (d.rating_source === "manual" && d.rating != null) return Math.min(5, Math.max(0, Number(d.rating)));
+  // Automático: média real das avaliações cadastradas (visíveis); sem avaliações, usa a nota do cadastro.
+  const real = (product.reviews ?? []).filter((r) => !r.hidden && Number(r.rating) > 0);
+  if (real.length) return Math.min(5, real.reduce((a, r) => a + Number(r.rating), 0) / real.length);
+  return Number(product.rating) || 0;
+}
+
+export function shownReviews(product: MetricsProduct): { count: number; label: string } {
+  const d = product.display ?? {};
+  const count =
+    d.reviews_source === "manual" && d.reviews_count != null
+      ? Math.max(0, Math.round(Number(d.reviews_count)))
+      : Math.max(0, Math.round(Number(product.reviews_count) || 0));
+  return { count, label: d.reviews_label?.trim() || "avaliações" };
+}
+
+export function shownSold(product: MetricsProduct): { count: number; label: string } {
+  const d = product.display ?? {};
+  const count =
+    d.sold_source === "manual" && d.sold_count != null
+      ? Math.max(0, Math.round(Number(d.sold_count)))
+      : Math.max(0, Math.round(Number(product.sold_count) || 0));
+  return { count, label: d.sold_label?.trim() || "vendidos" };
+}
+
+/** Selos promocionais 1 e 2 — texto do painel, com o valor antigo como padrão. */
+export function promoBadges(product: MetricsProduct): { badge1: string | null; badge2: string | null } {
+  const d = product.display ?? {};
+  const text1 = (d.badge1_text ?? product.offer?.badge ?? "").trim();
+  const text2 = (d.badge2_text ?? product.offer?.highlight ?? "").trim();
+  return {
+    badge1: d.badge1_show === false || !text1 ? null : text1,
+    badge2: d.badge2_show === false || !text2 ? null : text2,
+  };
+}
+
+/** Avaliação do topo do Checkout 2. */
+export function checkoutRating(
+  store: Pick<StoreSettings, "checkout">,
+  product: MetricsProduct | null,
+): { text: string; value: string; max: string } | null {
+  const c = store.checkout ?? {};
+  if (c.show_rating === false) return null;
+  const value =
+    c.rating_from_product === false && c.rating_value != null
+      ? Number(c.rating_value)
+      : product
+        ? shownRating(product)
+        : Number(c.rating_value ?? 0);
+  return {
+    text: c.rating_text?.trim() || "Ótima avaliação!",
+    value: ratingText(value),
+    max: c.rating_max?.trim() || "5,0",
+  };
+}
