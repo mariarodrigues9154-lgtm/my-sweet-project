@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      _import_staging: {
+        Row: {
+          kind: string
+          payload: Json
+        }
+        Insert: {
+          kind: string
+          payload: Json
+        }
+        Update: {
+          kind?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       meta_event_logs: {
         Row: {
           created_at: string
