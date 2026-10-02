@@ -9,7 +9,7 @@ const productImages = [
   "https://aiwa.vtexassets.com/arquivos/ids/156814/AWS-T2W-02---Foto-03.jpg?v=638936259812300000",
 ];
 
-const reviews = [
+const reviews: [string, string, string, string][] = [
   ["Roberto Almeida","São Paulo SP","Caixa de som fantástica! O som é muito potente e o grave enche a sala inteira. Liguei na tomada e pareou no Bluetooth de primeira.","287"],
   ["Patricia Santos","Rio de Janeiro RJ","Comprei pra usar na sala e foi a melhor decisão! O bivolt automático facilitou, liguei direto sem transformador. Grave muito bom, recomendo demais!","221"],
   ["André Costa","Goiânia GO","Comprei pra colocar na área da churrasqueira. Todo mundo que vem aqui elogia o som. Vale cada centavo!","134"],
