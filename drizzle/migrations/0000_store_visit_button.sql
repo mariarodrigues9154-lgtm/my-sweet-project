@@ -1,0 +1,1 @@
+ALTER TABLE public.store_settings ADD COLUMN IF NOT EXISTS show_visit boolean NOT NULL DEFAULT true, ADD COLUMN IF NOT EXISTS visit_clickable boolean NOT NULL DEFAULT true;

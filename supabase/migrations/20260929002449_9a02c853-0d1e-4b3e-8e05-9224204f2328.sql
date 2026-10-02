@@ -1,0 +1,3 @@
+ALTER TABLE public.store_payment_settings DROP CONSTRAINT store_payment_provider_valid;
+ALTER TABLE public.store_payment_settings ADD CONSTRAINT store_payment_provider_valid CHECK (provider = ANY (ARRAY['none','wappi','mercadopago','asaas']));
+UPDATE public.store_payment_settings SET provider='wappi', environment='production', enabled=false, public_data=jsonb_build_object('public_key','wappi_live_TS6DhD4BBSfdD3nIseJ8YkcXDXpRt4oa'), secret_data='{}'::jsonb WHERE store_id='eaf64245-4bef-45dd-abd0-faa6e82da4ea';
