@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 
 import { IMAGE_ACCEPT } from "@/lib/media-upload";
-import { brl } from "@/lib/format";
+import { brl, moneyInput, parseMoney } from "@/lib/format";
 import { allComboKeys, comboLabel, type VariantCombo, type VariantGroup } from "@/lib/product-types";
 
 const inputCls =
@@ -278,20 +278,26 @@ function NumField({
   onChange: (v: number | null) => void;
   integer?: boolean;
 }) {
+  const fmt = (v: number | null | undefined) => (v == null ? "" : integer ? String(v) : moneyInput(v));
+  const [text, setText] = useState(fmt(value));
+  useEffect(() => {
+    if ((integer ? Number(text) : parseMoney(text)) !== value) setText(fmt(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
   return (
     <label className="block">
       <span className="text-[11px] text-muted-foreground">{label}</span>
       <input
-        inputMode="decimal"
-        value={value == null ? "" : String(value)}
+        inputMode={integer ? "numeric" : "decimal"}
+        value={text}
         placeholder="—"
         onChange={(e) => {
-          const raw = e.target.value.replace(",", ".").trim();
-          if (!raw) return onChange(null);
-          const n = Number(raw);
-          if (Number.isNaN(n) || n < 0) return;
-          onChange(integer ? Math.round(n) : n);
+          const raw = e.target.value.replace(integer ? /[^\d]/g : /[^\d.,]/g, "");
+          setText(raw);
+          if (!raw.trim()) return onChange(null);
+          onChange(integer ? Math.round(Number(raw)) : parseMoney(raw));
         }}
+        onBlur={() => setText(fmt(value))}
         className={inputCls}
       />
     </label>

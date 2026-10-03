@@ -42,7 +42,7 @@ function normalize(row: Record<string, unknown>): Product {
 
 
 export const STORE_COLUMNS =
-  "id, slug, name, logo_url, footer_logo_url, tagline, support_email, whatsapp, visit_url, avatar_url, cover_url, banner_url, banner_link, verified, sold_count, show_follow, show_message, show_visit, visit_clickable, indicators, featured_product_ids, footer_text, policies, checkout";
+  "id, slug, name, logo_url, footer_logo_url, tagline, support_email, whatsapp, visit_url, avatar_url, cover_url, banner_url, banner_link, verified, sold_count, show_follow, show_message, show_visit, visit_clickable, favicon_url, show_footer, indicators, featured_product_ids, footer_text, policies, checkout";
 
 export const EMPTY_STORE: StoreSettings = {
   id: "",
@@ -64,6 +64,8 @@ export const EMPTY_STORE: StoreSettings = {
   show_message: true,
   show_visit: true,
   visit_clickable: true,
+  favicon_url: null,
+  show_footer: true,
   indicators: [],
   featured_product_ids: [],
   footer_text: null,
@@ -223,14 +225,16 @@ export const createOrder = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Estoque insuficiente para essa quantidade." };
     }
 
-    const shipping = (product.shipping ?? {}) as { options?: Array<{ id: string; label: string; price: number }> };
-    const option = (shipping.options ?? []).find((o) => o.id === data.shipping_id);
-    if (!option) return { ok: false as const, error: "Selecione uma forma de entrega válida." };
+    // Modalidade única e grátis (regra central em lib/shipping): nada de frete cobrado.
+    const { shippingOptions } = await import("./shipping");
+    const option = shippingOptions()[0]!;
 
     const unitPrice = pricing.price;
-    const subtotal = Number((unitPrice * data.quantity).toFixed(2));
-    const shippingPrice = Number(Number(option.price ?? 0).toFixed(2));
-    const total = Number((subtotal + shippingPrice).toFixed(2));
+    const unitCents = Math.round(Number(unitPrice) * 100);
+    const shippingCents = Math.round(Number(option.price ?? 0) * 100);
+    const subtotal = (unitCents * data.quantity) / 100;
+    const shippingPrice = shippingCents / 100;
+    const total = (unitCents * data.quantity + shippingCents) / 100;
     const media = (product.media ?? []) as Array<{ type: string; url: string }>;
 
     let attribution: Record<string, string> = {};
@@ -269,14 +273,14 @@ export const createOrder = createServerFn({ method: "POST" })
         payment: { provider: null, status: "pendente" },
         meta_attribution: attribution,
       } as never)
-      .select("order_number, total")
+      .select("order_number, total, access_token")
       .single();
 
     if (insertError || !created) {
       return { ok: false as const, error: "Não foi possível registrar o pedido. Tente novamente." };
     }
 
-    return { ok: true as const, order_number: created.order_number, total: Number(created.total) };
+    return { ok: true as const, order_number: created.order_number, total: Number(created.total), access_token: created.access_token as string };
   });
 
 export const getOrder = createServerFn({ method: "GET" })
@@ -443,6 +447,16 @@ export const createPixCharge = createServerFn({ method: "POST" })
       await release();
       return { ...notConfigured, configured: true as const, error: charge.error };
     }
+
+    // Prazo de pagamento da loja: 15 minutos a partir da criação. A Wappi só aceita validade em
+    // dias inteiros (pix.expires_in_days), então a cobrança no banco do cliente pode durar mais;
+    // após 15 min o site trata o PIX como expirado (esconde o código e oferece "Gerar novo PIX").
+    // Se o cliente pagar mesmo assim, o webhook/consulta continua confirmando o pedido normalmente.
+    const PIX_WINDOW_MS = 15 * 60 * 1000;
+    const gatewayExpMs = charge.expiration_date ? Date.parse(charge.expiration_date) : NaN;
+    const expMs = Math.min(Date.now() + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
+    const expIso = new Date(expMs).toISOString();
+    charge = { ...charge, expiration_date: expIso, expires_in: Math.max(0, Math.floor((expMs - Date.now()) / 1000)) };
 
     await supabaseAdmin
       .from("orders")

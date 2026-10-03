@@ -3,10 +3,10 @@ import { Check, ChevronRight, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { intBR } from "@/lib/format";
-import { ratingDot, reviewsSectionHeader, type Product } from "@/lib/product-types";
+import { ratingDot, reviewsPageSize, reviewsSectionHeader, type Product } from "@/lib/product-types";
 
 export function ReviewsSection({ product }: { product: Product }) {
-  const PAGE = 20;
+  const PAGE = reviewsPageSize(product);
   const [count, setCount] = useState(PAGE);
   const [photo, setPhoto] = useState<string | null>(null);
   const reviews = (product.reviews ?? []).filter((r) => !r.hidden);

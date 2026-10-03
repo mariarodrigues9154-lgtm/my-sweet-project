@@ -17,10 +17,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
   const upload = useServerFn(uploadProductImage);
   const set = <K extends keyof StoreDraft>(key: K, value: StoreDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
 
-  async function uploadImage(key: "logo_url" | "footer_logo_url" | "avatar_url" | "cover_url" | "banner_url" | "checkout_logo", file?: File) {
+  async function uploadImage(key: "logo_url" | "footer_logo_url" | "favicon_url" | "avatar_url" | "cover_url" | "banner_url" | "checkout_logo", file?: File) {
     if (!file) return;
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
-    if (!allowed.includes(file.type as (typeof allowed)[number])) { toast.error("Use JPG, PNG, WEBP ou GIF."); return; }
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon", "image/vnd.microsoft.icon"] as const;
+    if (!allowed.includes(file.type as (typeof allowed)[number])) { toast.error("Use JPG, PNG, WEBP, GIF ou ICO."); return; }
     const base64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.onerror = reject; reader.readAsDataURL(file); });
     const result = await upload({ data: { filename: file.name, contentType: file.type as (typeof allowed)[number], base64 } });
     if (!result.ok) { toast.error(result.error); return; }
@@ -78,6 +78,23 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
       <p className="mb-2 text-[11.5px] text-muted-foreground">Tamanho recomendado: 300 x 80 px (PNG transparente ou WebP). A logo do cabeçalho também aparece no checkout; a do rodapé aparece só no rodapé.</p>
       <div className="grid gap-3 sm:grid-cols-2">
         {([ ["logo_url", "Logo do Cabeçalho"], ["footer_logo_url", "Logo do Rodapé"] ] as const).map(([key, label]) => <ImageField key={key} label={label} url={draft[key]} dark={key === "footer_logo_url"} onUpload={(file) => void uploadImage(key, file)} onRemove={() => set(key, null)} />)}
+      </div>
+    </Group>
+
+    <Group title="Favicon da Loja">
+      <p className="mb-2 text-[11.5px] text-muted-foreground">Ícone que aparece na aba do navegador nas páginas desta loja (loja, produto e checkout). Use uma imagem quadrada, de preferência 64 x 64 px (PNG, JPG, WEBP ou ICO). Sem favicon, aparece o ícone padrão do site.</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg border border-border p-3">
+          <p className="text-[11px] font-semibold text-muted-foreground">Favicon</p>
+          <div className="mt-2 flex items-center gap-3 rounded-lg bg-surface p-3">
+            {draft.favicon_url ? <img src={draft.favicon_url} alt="Favicon" className="size-8 rounded object-contain" /> : <img src="/favicon.png" alt="Favicon padrão" className="size-8 rounded object-contain opacity-60" />}
+            <span className="text-[11px] text-muted-foreground">{draft.favicon_url ? "Favicon próprio" : "Usando o favicon padrão"}</span>
+          </div>
+          <div className="mt-2 flex gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-input px-3 py-2 text-[11px] font-bold"><ImagePlus size={14} />{draft.favicon_url ? "Substituir favicon" : "Enviar favicon"}<input type="file" accept="image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico" className="hidden" onChange={(event) => { const f = event.target.files?.[0]; event.target.value = ""; if (f && !f.type && f.name.toLowerCase().endsWith(".ico")) { void uploadImage("favicon_url", new File([f], f.name, { type: "image/x-icon" })); } else void uploadImage("favicon_url", f); }} /></label>
+            {draft.favicon_url && <Button type="button" size="sm" variant="ghost" onClick={() => set("favicon_url", null)}><Trash2 />Remover favicon</Button>}
+          </div>
+        </div>
       </div>
     </Group>
 
@@ -140,10 +157,33 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
 
 
     <Group title="Rodapé e políticas">
+      <div className="mb-3"><Toggle label={draft.show_footer !== false ? "Exibir rodapé: Ativado" : "Exibir rodapé: Desativado"} checked={draft.show_footer !== false} onChange={(value) => set("show_footer", value)} /></div>
+      {draft.show_footer === false && <p className="mb-2 text-[11px] text-muted-foreground">O rodapé não aparece nas páginas desta loja. Os textos, logo e políticas continuam salvos.</p>}
       <TextArea label="Texto do rodapé" value={draft.footer_text ?? ""} onChange={(value) => set("footer_text", value || null)} />
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {([ ["privacy", "Política de Privacidade"], ["refund", "Política de Reembolso"], ["terms", "Termos de Uso"], ["shipping", "Política de Entrega"] ] as const).map(([key, label]) => <TextArea key={key} label={label} value={draft.policies[key]} onChange={(value) => set("policies", { ...draft.policies, [key]: value })} />)}
       </div>
+    </Group>
+
+    <Group title="Atendimento por IA e suporte">
+      {(() => { const ai = draft.ai_support ?? {}; const up = (patch: Partial<NonNullable<StoreSettings["ai_support"]>>) => set("ai_support", { ...ai, ...patch }); return <>
+        <p className="mb-2 text-[11px] text-muted-foreground">A IA das perguntas usa só estas informações e as do produto. Escreva apenas fatos verdadeiros.</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Toggle label="Entregamos para todo o Brasil" checked={!!ai.ships_brazil} onChange={(v) => up({ ships_brazil: v })} />
+          <Toggle label="Encaminhar para suporte humano" checked={!!ai.forward_enabled} onChange={(v) => up({ forward_enabled: v })} />
+          <Toggle label="WhatsApp" checked={!!ai.whatsapp_enabled} onChange={(v) => up({ whatsapp_enabled: v })} />
+          <Toggle label="Ligações" checked={!!ai.phone_enabled} onChange={(v) => up({ phone_enabled: v })} />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Número do suporte (+55 DDD número)" value={ai.support_phone ?? ""} onChange={(v) => up({ support_phone: v })} />
+          <Field label="Mensagem padrão do WhatsApp ({produto} = nome)" value={ai.whatsapp_message ?? ""} onChange={(v) => up({ whatsapp_message: v })} />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <TextArea label="Texto de garantia" value={ai.warranty_text ?? ""} onChange={(v) => up({ warranty_text: v })} />
+          <TextArea label="Informações da loja" value={ai.store_info ?? ""} onChange={(v) => up({ store_info: v })} />
+          <TextArea label="Informações adicionais para a IA" value={ai.extra_info ?? ""} onChange={(v) => up({ extra_info: v })} />
+        </div>
+      </>; })()}
     </Group>
 
     <Button className="mt-4 rounded-full px-6 font-extrabold" disabled={saving} onClick={async () => { setSaving(true); const ok = await onSave(draft); setSaving(false); if (ok) toast.success("Loja salva."); }}>{saving ? "Salvando..." : "Salvar loja"}</Button>

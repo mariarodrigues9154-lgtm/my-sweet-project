@@ -41,3 +41,9 @@
 - [x] Performance: foto principal prioritária, pré-carregamento do checkout, cronômetros isolados, checkout 2 reaproveita dados do produto
 - [x] Nota de avaliação editável (Automática = média das avaliações / Manual), exibida como 4.8
 - [ ] Comparar velocidade antes/depois no site publicado (depende de publicar)
+
+## Recuperação de PIX
+- [x] Incluir PIX antigos (antes do token) no aviso e chat
+- [x] Gerar novo PIX a partir de pedido expirado
+- [x] Frete único grátis (Frete Expresso, R$ 24,90 riscado, entrega +2 a +4 dias) em produto e checkouts
+- [x] Comprar agora não reabre PIX antigo; PIX novo vale 15 min

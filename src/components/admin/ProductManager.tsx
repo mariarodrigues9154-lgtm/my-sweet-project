@@ -1,3 +1,4 @@
+import { parseMoney, moneyInput } from "@/lib/format";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { brl } from "@/lib/format";
 import { allComboKeys, discountPercent, parseRatingInput, type CreatorVideo, type DescriptionBlock, type Media, type Review, type VariantCombo, type VariantGroup } from "@/lib/product-types";
 import { VariantsEditor } from "@/components/admin/VariantsEditor";
+import { ReviewsCsvImport } from "@/components/admin/ReviewsCsvImport";
 import {
   bulkUpdateProducts,
   createBlankProduct,
@@ -49,7 +51,7 @@ export type StoreChoice = { id: string; name: string };
 
 const inputCls =
   "w-full rounded-lg border border-input bg-card px-3 py-2 text-[13px] outline-none focus:border-primary";
-const num = (s: string) => Number(s.replace(/\./g, "").replace(",", ".")) || Number(s) || 0;
+const num = (s: string) => parseMoney(s);
 
 export function ProductManager({
   products,
@@ -311,12 +313,12 @@ function QuickRow({
   onDuplicate: () => Promise<unknown>;
   onDelete: () => void;
 }) {
-  const [price, setPrice] = useState(String(product.price));
-  const [previous, setPrevious] = useState(String(product.previous_price));
+  const [price, setPrice] = useState(moneyInput(product.price));
+  const [previous, setPrevious] = useState(moneyInput(product.previous_price));
   const [stock, setStock] = useState(String(product.stock));
   useEffect(() => {
-    setPrice(String(product.price));
-    setPrevious(String(product.previous_price));
+    setPrice(moneyInput(product.price));
+    setPrevious(moneyInput(product.previous_price));
     setStock(String(product.stock));
   }, [product.price, product.previous_price, product.stock]);
   const off = discountPercent(num(price), num(previous));
@@ -440,8 +442,8 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
       .then((p) => {
         if (!alive) return;
         setD({ ...p, sections: p.sections ?? {}, creator_videos: p.creator_videos ?? [], reviews: p.reviews ?? [], description: p.description ?? [], specs: p.specs ?? [], media: p.media ?? [], protection: p.protection ?? {}, variants: p.variants ?? [], variant_combos: p.variant_combos ?? [] } as Detail);
-        setPrice(String(p.price));
-        setPrevious(String(p.previous_price));
+        setPrice(moneyInput(p.price));
+        setPrevious(moneyInput(p.previous_price));
         setStock(String(p.stock));
       })
       .catch((e) => toast.error(e instanceof Error ? e.message : "Erro ao carregar."));
@@ -826,6 +828,18 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
         </div>
       </Group>
 
+      <Group title="Perguntas sobre o produto / IA">
+        <label className="flex items-center gap-2 text-[12.5px] font-semibold">
+          <input type="checkbox" checked={d.sections.qa_enabled !== false} onChange={(e) => set("sections", { ...d.sections, qa_enabled: e.target.checked })} />
+          {d.sections.qa_enabled !== false ? "Atendimento por IA: Ativado" : "Atendimento por IA: Desativado (a seção não aparece)"}
+        </label>
+        <Field numeric={false} label="Título da seção" value={d.sections.qa_title ?? ""} onChange={(v) => set("sections", { ...d.sections, qa_title: v })} />
+        <Field numeric={false} label="Subtítulo" value={d.sections.qa_subtitle ?? ""} onChange={(v) => set("sections", { ...d.sections, qa_subtitle: v })} />
+        <Field numeric={false} label="Texto de exemplo do campo" value={d.sections.qa_placeholder ?? ""} onChange={(v) => set("sections", { ...d.sections, qa_placeholder: v })} />
+        <span className="text-[11px] font-semibold text-muted-foreground">Informações adicionais para a IA (só fatos verdadeiros)</span>
+        <textarea rows={4} value={d.sections.qa_ai_info ?? ""} placeholder="Ex.: Pode ser usado em piso frio, madeira e carpete baixo." onChange={(e) => set("sections", { ...d.sections, qa_ai_info: e.target.value })} className={inputCls} />
+      </Group>
+
       <Group title="Sobre o produto">
         <Field numeric={false} label="Título da seção" value={d.sections.about_title ?? ""} onChange={(v) => set("sections", { ...d.sections, about_title: v })} />
         {d.specs.map((s, i) => (
@@ -939,7 +953,13 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           <Field label="Quantidade exibida" value={String(d.reviews_count)} onChange={(v) => set("reviews_count", Math.max(0, Math.round(num(v))))} />
           <Field label="Vendidos" value={String(d.sold_count)} onChange={(v) => set("sold_count", Math.max(0, Math.round(num(v))))} />
         </div>
-        <p className="text-[11.5px] text-muted-foreground">A página mostra 20 avaliações de início e mais 20 a cada "Ver mais". Adicione apenas avaliações reais.</p>
+        {(() => { const size = Math.min(20, Math.max(1, Math.round(Number(d.sections.reviews_page_size)) || 20)); return (<>
+          <label className="block text-[11px] font-semibold text-muted-foreground">Avaliações por carregamento (1 a 20)
+            <input type="number" min={1} max={20} step={1} value={d.sections.reviews_page_size ?? 20} onChange={(e) => { const n = Math.round(Number(e.target.value)); set("sections", { ...d.sections, reviews_page_size: Number.isFinite(n) && n >= 1 ? Math.min(20, n) : undefined }); }} className={`${inputCls} mt-1 max-w-[120px]`} />
+          </label>
+          <p className="text-[11.5px] text-muted-foreground">A página mostra {size} avaliações de início e mais {size} a cada "Ver mais". Adicione apenas avaliações reais.</p>
+        </>); })()}
+        <ReviewsCsvImport existing={d.reviews} onImport={(add) => setD((cur) => { if (!cur) return cur; const list = [...cur.reviews]; for (const { review, order } of add) { if (order != null && order >= 1 && order <= list.length) list.splice(order - 1, 0, review); else list.push(review); } return { ...cur, reviews: list }; })} />
         {d.reviews.map((review, i) => {
           const upd = (patch: Partial<Review>) => set("reviews", d.reviews.map((x, k) => (k === i ? { ...x, ...patch } : x)));
           return (
@@ -951,7 +971,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                 </label>
                 <input value={review.name} placeholder="Nome" onChange={(e) => upd({ name: e.target.value })} className={inputCls} />
                 <select value={String(review.rating)} onChange={(e) => upd({ rating: Number(e.target.value) })} className={inputCls}>
-                  {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}★</option>)}
+                  {[...new Set([5, 4.9, 4.8, 4.7, 4.5, 4, 3, 2, 1, Number(review.rating) || 5])].sort((a, b) => b - a).map((n) => <option key={n} value={n}>{String(n).replace(".", ",")}★</option>)}
                 </select>
                 <Order onUp={() => set("reviews", move(d.reviews, i, -1))} onDown={() => set("reviews", move(d.reviews, i, 1))} onRemove={() => set("reviews", d.reviews.filter((_, k) => k !== i))} />
               </div>

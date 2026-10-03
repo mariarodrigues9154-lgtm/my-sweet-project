@@ -3,6 +3,7 @@ import type { StoreSettings } from "@/lib/product-types";
 import { DEFAULT_STORE_LOGO } from "./StoreHeader";
 
 export function StoreFooter({ store }: { store: StoreSettings }) {
+  if (store.show_footer === false) return null;
   const loja = store.slug && store.slug !== "principal" ? store.slug : undefined;
   return (
     <footer className="mt-2 bg-footer px-5 pb-24 pt-7 text-footer-foreground">
