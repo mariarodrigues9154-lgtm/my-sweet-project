@@ -8,11 +8,13 @@ export function BuyBar({
   onAddToCart,
   onBuyNow,
   onChat,
+  chatBadge = 0,
 }: {
   product: Product;
   onAddToCart: () => void;
   onBuyNow: () => void;
   onChat: () => void;
+  chatBadge?: number;
 }) {
   const s = product.shipping ?? {};
   const shippingText = s.free || !s.fee ? "Frete grátis" : `Frete ${brl(s.fee)}`;
@@ -23,8 +25,9 @@ export function BuyBar({
           <Store size={20} strokeWidth={1.6} />
           Loja
         </Link>
-        <button type="button" onClick={onChat} className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
+        <button type="button" onClick={onChat} className="relative flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
           <MessageCircle size={20} strokeWidth={1.6} />
+          {chatBadge > 0 && <span className="absolute -top-1 right-0 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">{chatBadge}</span>}
           Chat
         </button>
         <button

@@ -157,6 +157,8 @@ const storeInput = z.object({
   show_message: z.boolean(),
   show_visit: z.boolean().default(true),
   visit_clickable: z.boolean().default(true),
+  favicon_url: z.string().trim().max(2000).nullish().transform((v) => v || null),
+  show_footer: z.boolean().default(true),
   indicators: z.array(z.object({ value: z.string().trim().max(30), label: z.string().trim().max(40) })).max(3),
   featured_product_ids: z.array(z.string().uuid()).max(100),
   footer_text: z.string().trim().max(1000).nullable(),
@@ -183,10 +185,24 @@ const storeInput = z.object({
     rating_value: z.number().min(0).max(5).nullish(),
     rating_max: z.string().trim().max(10).nullish(),
   }),
+  ai_support: z
+    .object({
+      ships_brazil: z.boolean().optional(),
+      warranty_text: z.string().trim().max(1000).optional(),
+      store_info: z.string().trim().max(4000).optional(),
+      extra_info: z.string().trim().max(4000).optional(),
+      support_phone: z.string().trim().max(30).optional(),
+      whatsapp_enabled: z.boolean().optional(),
+      phone_enabled: z.boolean().optional(),
+      forward_enabled: z.boolean().optional(),
+      whatsapp_message: z.string().trim().max(300).optional(),
+    })
+    .optional()
+    .default({}),
 });
 
 const ADMIN_STORE_COLUMNS =
-  "id, slug, active, is_default, name, logo_url, footer_logo_url, tagline, support_email, whatsapp, visit_url, avatar_url, cover_url, banner_url, banner_link, verified, sold_count, show_follow, show_message, show_visit, visit_clickable, indicators, featured_product_ids, footer_text, policies, checkout";
+  "id, slug, active, is_default, name, logo_url, footer_logo_url, tagline, support_email, whatsapp, visit_url, avatar_url, cover_url, banner_url, banner_link, verified, sold_count, show_follow, show_message, show_visit, visit_clickable, favicon_url, show_footer, indicators, featured_product_ids, footer_text, policies, checkout, ai_support";
 
 export const getAdminStore = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -205,6 +221,7 @@ export const getAdminStore = createServerFn({ method: "GET" })
         indicators: (store.indicators ?? []) as Array<{ value: string; label: string }>,
         policies: (store.policies ?? { privacy: "", refund: "", terms: "", shipping: "" }) as { privacy: string; refund: string; terms: string; shipping: string },
         checkout: (store.checkout ?? {}) as import("@/lib/product-types").CheckoutSettings,
+        ai_support: (store.ai_support ?? {}) as import("@/lib/product-types").StoreAiSupport,
       },
       products: products ?? [],
     };
@@ -378,7 +395,13 @@ const sectionsSchema = z
     videos_hint_text: optStr(40),
     videos_card_style: z.enum(["overlay", "below"]).nullish().transform((v) => v ?? undefined),
     about_title: optStr(120),
+    reviews_page_size: z.number().int().min(1).max(20).nullish().transform((v) => v ?? undefined),
     description_title: optStr(120),
+    qa_enabled: optBool,
+    qa_title: optStr(120),
+    qa_subtitle: optStr(200),
+    qa_placeholder: optStr(120),
+    qa_ai_info: optStr(4000),
   })
   .nullish()
   .transform((v) => v ?? {});
@@ -691,7 +714,7 @@ export const uploadProductImage = createServerFn({ method: "POST" })
     z
       .object({
         filename: z.string().min(1).max(200),
-        contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]),
+        contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon", "image/vnd.microsoft.icon"]),
         base64: z.string().min(10).max(11_000_000),
       })
       .parse(data),
@@ -700,7 +723,7 @@ export const uploadProductImage = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
-    const ext = data.contentType.split("/")[1];
+    const ext = data.contentType.includes("icon") ? "ico" : data.contentType.split("/")[1];
     const path = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabaseAdmin.storage
       .from("product-images")
@@ -776,4 +799,38 @@ export const listAdminOrders = createServerFn({ method: "GET" })
       customer_email: String((o.customer ?? {}).email ?? ""),
       product_title: String((o.product_snapshot ?? {}).title ?? ""),
     }));
+  });
+
+/** Importação de avaliações: baixa imagens de URLs externas para o armazenamento próprio. */
+export const importReviewImages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ urls: z.array(z.string().trim().url().max(2000)).min(1).max(30) }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const types: Record<string, string> = { "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+    const results: Record<string, { ok: true; url: string } | { ok: false; error: string }> = {};
+    await Promise.all(
+      [...new Set(data.urls)].map(async (src) => {
+        try {
+          if (!/^https?:\/\//i.test(src)) throw new Error("URL inválida");
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 15000);
+          const res = await fetch(src, { signal: ctrl.signal, redirect: "follow" }).finally(() => clearTimeout(timer));
+          if (!res.ok) throw new Error(`Imagem não encontrada (HTTP ${res.status})`);
+          const ct = (res.headers.get("content-type") || "").split(";")[0]!.trim().toLowerCase();
+          const ext = types[ct];
+          if (!ext) throw new Error("O link não é uma imagem JPG, PNG, WEBP ou GIF");
+          const buf = new Uint8Array(await res.arrayBuffer());
+          if (buf.byteLength > 10 * 1024 * 1024) throw new Error("Imagem maior que 10 MB");
+          const path = `uploads/${crypto.randomUUID()}.${ext}`;
+          const { error } = await supabaseAdmin.storage.from("product-images").upload(path, buf, { contentType: ct === "image/jpg" ? "image/jpeg" : ct, upsert: false });
+          if (error) throw new Error("Falha ao salvar a imagem");
+          results[src] = { ok: true, url: `/api/public/media/${path}` };
+        } catch (err) {
+          results[src] = { ok: false, error: err instanceof Error && err.name !== "AbortError" ? err.message : "Tempo esgotado ao baixar a imagem" };
+        }
+      }),
+    );
+    return { results };
   });

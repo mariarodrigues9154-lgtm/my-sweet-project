@@ -4,6 +4,7 @@ import { trackViewContent, useMetaPageView } from "@/lib/meta-pixel";
 
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { StoreChat } from "@/components/store/StoreChat";
+import { useOrderChatBadge } from "@/components/store/PendingPixLayer";
 import { StoreFooter } from "@/components/store/StoreFooter";
 import { BuyBar } from "./BuyBar";
 import { BuySheet } from "./BuySheet";
@@ -24,6 +25,8 @@ export function ProductPage({ product, store }: { product: Product; store: Store
     mode: "buy",
   });
   const [chatOpen, setChatOpen] = useState(false);
+  const orderChat = useOrderChatBadge(store.id);
+  const openChat = () => (orderChat.hasOrders ? orderChat.open() : setChatOpen(true));
   useMetaPageView(store.id || null, () => void trackViewContent(store.id, product));
 
   return (
@@ -38,9 +41,9 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         <div className="h-3 bg-card" />
         <CreatorVideos videos={product.creator_videos} sections={product.sections ?? {}} />
         <ReviewsSection product={product} />
-        <StoreProfile store={store} product={product} onMessage={() => setChatOpen(true)} />
+        <StoreProfile store={store} product={product} onMessage={openChat} />
         <SpecsSection product={product} />
-        <ProductQA slug={product.slug} />
+        {product.sections?.qa_enabled !== false && <ProductQA key={product.id} product={product} storeId={store.id} />}
         <TermsSection terms={product.terms} />
         <StoreFooter store={store} />
       </main>
@@ -49,7 +52,8 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         product={product}
         onAddToCart={() => setSheet({ open: true, mode: "cart" })}
         onBuyNow={() => setSheet({ open: true, mode: "buy" })}
-        onChat={() => setChatOpen(true)}
+        onChat={openChat}
+        chatBadge={orderChat.unread}
       />
       <StoreChat store={store} open={chatOpen} onClose={() => setChatOpen(false)} />
 

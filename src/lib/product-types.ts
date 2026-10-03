@@ -104,7 +104,29 @@ export type ProductSections = {
   videos_hint_text?: string;
   videos_card_style?: "overlay" | "below";
   about_title?: string;
+  /** Avaliações exibidas de início e a cada "Ver mais" (1 a 20, padrão 20). */
+  reviews_page_size?: number | undefined;
   description_title?: string;
+  /** Perguntas sobre o produto (IA). Padrão: ativado. */
+  qa_enabled?: boolean;
+  qa_title?: string;
+  qa_subtitle?: string;
+  qa_placeholder?: string;
+  /** Informações extras verdadeiras que a IA pode usar sobre este produto. */
+  qa_ai_info?: string;
+};
+
+/** Atendimento por IA e suporte humano — por loja, lido só no servidor. */
+export type StoreAiSupport = {
+  ships_brazil?: boolean;
+  warranty_text?: string;
+  store_info?: string;
+  extra_info?: string;
+  support_phone?: string;
+  whatsapp_enabled?: boolean;
+  phone_enabled?: boolean;
+  forward_enabled?: boolean;
+  whatsapp_message?: string;
 };
 
 /** Textos e métricas exibidas — configuráveis no painel, sem mexer nos dados reais. */
@@ -146,6 +168,12 @@ export function reviewsSectionHeader(product: Product): { title: string; count: 
   };
 }
 
+
+/** Avaliações por carregamento do produto (1–20, padrão 20). */
+export function reviewsPageSize(product: Pick<Product, "sections">): number {
+  const n = Math.round(Number(product.sections?.reviews_page_size));
+  return Number.isFinite(n) && n >= 1 ? Math.min(20, n) : 20;
+}
 
 export type Review = {
   name: string;
@@ -233,6 +261,8 @@ export type StoreSettings = {
   show_message: boolean;
   show_visit?: boolean;
   visit_clickable?: boolean;
+  favicon_url?: string | null;
+  show_footer?: boolean;
   indicators: Array<{ value: string; label: string }>;
   featured_product_ids: string[];
   footer_text: string | null;
@@ -243,6 +273,8 @@ export type StoreSettings = {
     shipping: string;
   };
   checkout: CheckoutSettings;
+  /** Só presente no painel administrativo. */
+  ai_support?: StoreAiSupport;
 };
 
 export type OrderSummary = {
@@ -265,11 +297,12 @@ export type OrderSummary = {
 /** Desconto e economia são sempre calculados, nunca gravados. */
 export function discountPercent(price: number, previous: number): number {
   if (!previous || previous <= price) return 0;
-  return Math.round(((previous - price) / previous) * 100);
+  const p = Math.round(price * 100), o = Math.round(previous * 100);
+  return Math.round(((o - p) / o) * 100);
 }
 
 export function savings(price: number, previous: number): number {
-  return Math.max(0, previous - price);
+  return Math.max(0, Math.round(previous * 100) - Math.round(price * 100)) / 100;
 }
 
 /* ---------------------------------------------------------------------------

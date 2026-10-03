@@ -4,6 +4,8 @@ import { MoreHorizontal, ShoppingCart } from "lucide-react";
 import { VerifiedBadge, isStoreVerified } from "@/components/store/VerifiedBadge";
 import { useCartCount } from "@/lib/checkout-store";
 import type { StoreSettings } from "@/lib/product-types";
+import { useStoreFavicon } from "@/lib/store-favicon";
+import { useMarkActiveStore } from "@/lib/pix-orders";
 import storeLogoAsset from "@/assets/logo-loja-trim.png.asset.json";
 
 export const DEFAULT_STORE_LOGO = storeLogoAsset.url;
@@ -15,6 +17,7 @@ export function StoreHomeLink({ store, className, children }: { store: StoreSett
 }
 
 export function StoreLogo({ store, className = "" }: { store: StoreSettings; className?: string }) {
+  useStoreFavicon(store.favicon_url);
   return (
     <img
       src={store.logo_url || DEFAULT_STORE_LOGO}
@@ -26,6 +29,8 @@ export function StoreLogo({ store, className = "" }: { store: StoreSettings; cla
 }
 
 export function StoreHeader({ store, placement = "product" }: { store: StoreSettings; placement?: "home" | "product" }) {
+  useStoreFavicon(store.favicon_url);
+  useMarkActiveStore(store.id || null);
   const cart = useCartCount();
   const showVerified = isStoreVerified(store);
   void placement;

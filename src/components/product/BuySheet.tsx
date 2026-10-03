@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, X, Zap } from "lucide-react";
@@ -41,7 +42,7 @@ export function BuySheet({
 
   const groups = product.variants ?? [];
   const firstImage = product.media.find((m) => m.type === "image")?.url;
-  const shippingOptions = product.shipping.options ?? [];
+  const shippingOptions = sharedShippingOptions();
 
   const [quantity, setQuantity] = useState(1);
   const [selection, setSelection] = useState<Record<string, string>>({});

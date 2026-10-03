@@ -1,3 +1,5 @@
+import { rememberPixOrder } from "@/lib/pix-orders";
+import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,11 +14,12 @@ import { PixIcon } from "@/components/store/VerifiedBadge";
 import { checkoutTheme } from "@/lib/checkout-theme";
 import { trackAddPaymentInfo, trackPaymentPending, useMetaPageView } from "@/lib/meta-pixel";
 import { clearDraft, emptyDraft, useCheckoutDraft, type CheckoutDraft } from "@/lib/checkout-store";
-import { brl, deliveryWindow, digits } from "@/lib/format";
+import { brl, digits } from "@/lib/format";
 import { checkoutRating, discountPercent, variantPricing } from "@/lib/product-types";
 import { createOrder, createPixCharge, getFeaturedProduct, getPaymentStatus, getProductBySlug, getStoreSettings } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento-2")({
+  validateSearch: (s: Record<string, unknown>): { pedido?: string } => (typeof s["pedido"] === "string" && s["pedido"] ? { pedido: s["pedido"] } : {}),
   loader: async () => ({ store: (await getStoreSettings())! }),
   staleTime: 60_000,
   preloadStaleTime: 60_000,
@@ -39,6 +42,7 @@ const PIX_KEY = "loja:pix-order";
 function CheckoutTwo() {
   const { store: fallbackStore } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { pedido: pedidoParam } = Route.useSearch();
   const { draft, ready, update } = useCheckoutDraft();
   const fetchProduct = useServerFn(getProductBySlug);
   const fetchFeatured = useServerFn(getFeaturedProduct);
@@ -59,7 +63,7 @@ function CheckoutTwo() {
   const [pixLeft, setPixLeft] = useState(0);
 
   useEffect(() => { if (ready && draft) setForm({ ...emptyDraft, ...draft }); }, [ready, draft]);
-  const shippingOptions = useMemo(() => product?.shipping.options ?? [], [product]);
+  const shippingOptions = useMemo(() => (product ? sharedShippingOptions() : []), [product]);
   const shipping = shippingOptions.find((item) => item.id === form.shipping_id) ?? shippingOptions[0];
   const quantity = Math.max(1, form.quantity || 1);
   const pricing = product ? variantPricing(product, form.variant) : null;
@@ -69,7 +73,7 @@ function CheckoutTwo() {
   const subtotal = Number((unit * quantity).toFixed(2));
   const originalSubtotal = Number((originalUnit * quantity).toFixed(2));
   const shippingPrice = Number((shipping?.price ?? 0).toFixed(2));
-  const shippingOriginal = product?.shipping.fee && product.shipping.fee > shippingPrice ? product.shipping.fee : shippingPrice;
+  const shippingOriginal = SHIPPING.originalPrice > shippingPrice ? SHIPPING.originalPrice : shippingPrice;
   const productDiscount = Number(Math.max(0, originalSubtotal - subtotal).toFixed(2));
   const shippingDiscount = Number(Math.max(0, shippingOriginal - shippingPrice).toFixed(2));
   const savings = Number((productDiscount + shippingDiscount).toFixed(2));
@@ -87,8 +91,10 @@ function CheckoutTwo() {
     setPix({ configured: true, ...(charge.qr_code ? { qr_code: charge.qr_code } : {}), ...(charge.copy_paste ? { copy_paste: charge.copy_paste } : {}), ...(charge.expires_in ? { expires_in: charge.expires_in } : {}), expires_at: charge.expires_at ?? (charge.expires_in ? new Date(Date.now() + charge.expires_in * 1000).toISOString() : null) });
   }
   useEffect(() => {
-    const saved = window.localStorage.getItem(PIX_KEY);
-    if (!saved) return;
+    // Só reabre o PIX do pedido indicado no endereço (refresh da própria tela PIX).
+    // "Comprar agora" chega sem ?pedido e sempre começa uma compra nova.
+    const saved = pedidoParam;
+    if (!saved || window.localStorage.getItem(PIX_KEY) !== saved) return;
     void openPix({ data: { order_number: saved } }).then((charge: unknown) => {
       if (isPixCharge(charge)) { setOrder({ number: saved, total: Number((charge as { total?: number }).total ?? 0) }); applyCharge(charge); }
       else window.localStorage.removeItem(PIX_KEY);
@@ -115,13 +121,13 @@ function CheckoutTwo() {
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
-      if (isPixCharge(charge)) { applyCharge(charge); window.localStorage.setItem(PIX_KEY, result.order_number); void trackPaymentPending(store.id, result.order_number, result.total, product.id); }
+      if (isPixCharge(charge)) { applyCharge(charge); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento-2", search: { pedido: result.order_number }, replace: true }); rememberPixOrder(result.access_token, store.id); void trackPaymentPending(store.id, result.order_number, result.total, product.id); }
       else { const failure = charge as { configured?: boolean; error?: string } | null; setPix({ configured: Boolean(failure?.configured) } as PixState); toast.error(failure?.error ?? "O PIX ainda não está disponível."); }
     } finally { setPlacing(false); }
   }
 
   if (!ready || productQuery.isLoading) return <div className="min-h-screen animate-pulse bg-surface" />;
-  if (order && pix?.configured && (pix.copy_paste || pix.qr_code)) return <div style={checkoutTheme(store)}><PixScreen total={order.total} orderNumber={order.number} productTitle={product?.title ?? ""} qr={pix.qr_code} code={pix.copy_paste} left={expiresAt ? pixLeft : null} expiresAt={expiresAt} onBack={() => product ? void navigate({ to: "/produto/$slug", params: { slug: product.slug } }) : void navigate({ to: "/" })} onNew={() => { window.localStorage.removeItem(PIX_KEY); setOrder(null); setPix(null); }} /></div>;
+  if (order && pix?.configured && (pix.copy_paste || pix.qr_code)) return <div style={checkoutTheme(store)}><PixScreen total={order.total} orderNumber={order.number} productTitle={product?.title ?? ""} qr={pix.qr_code} code={pix.copy_paste} left={expiresAt ? pixLeft : null} expiresAt={expiresAt} onBack={() => product ? void navigate({ to: "/produto/$slug", params: { slug: product.slug } }) : void navigate({ to: "/" })} onNew={() => { window.localStorage.removeItem(PIX_KEY); void navigate({ to: "/pagamento-2", search: {}, replace: true }); setOrder(null); setPix(null); }} /></div>;
   if (!product) return <div className="grid min-h-screen place-items-center bg-surface px-6 text-center"><div><h1 className="text-[18px] font-extrabold">Seu carrinho está vazio</h1><Link to="/" className="mt-3 inline-block text-[13px] font-bold text-primary">Voltar para a loja</Link></div></div>;
 
   return <div className="min-h-[100dvh] overflow-x-hidden bg-surface pb-36 text-foreground" style={checkoutTheme(store)}>
@@ -151,7 +157,7 @@ function CheckoutTwo() {
               </div>
             </div>
           </div>
-          {shipping && <div className="mt-3 flex items-center justify-between rounded-md bg-success-soft px-3 py-2 text-[11px] font-normal"><span>Receba até {shipping.eta || deliveryWindow(product.shipping.min_days, product.shipping.max_days)}</span><span>{shippingDiscount > 0 && <span className="mr-2 text-muted-foreground line-through">{brl(shippingOriginal)}</span>}<strong className={`font-semibold ${shippingPrice === 0 ? "text-success" : ""}`}>{shippingPrice === 0 ? "Grátis" : brl(shippingPrice)}</strong><Truck size={13} className="ml-1 inline text-success" /></span></div>}
+          {shipping && <div className="mt-3 flex items-center justify-between rounded-md bg-success-soft px-3 py-2 text-[11px] font-normal"><span>Receba entre {getEstimatedDeliveryRange().compact}</span><span>{shippingDiscount > 0 && <span className="mr-2 text-muted-foreground line-through">{brl(shippingOriginal)}</span>}<strong className={`font-semibold ${shippingPrice === 0 ? "text-success" : ""}`}>{shippingPrice === 0 ? "Grátis" : brl(shippingPrice)}</strong><Truck size={13} className="ml-1 inline text-success" /></span></div>}
         </div>
       </section>
       {savings > 0 && store.checkout?.show_discount !== false && <section className="flex items-center justify-between gap-3 bg-card px-4 py-3 text-[13px]"><strong className="flex min-w-0 items-center gap-2 font-semibold"><Ticket size={16} className="shrink-0 text-primary" /><span className="truncate">{store.checkout?.discount_title?.trim() || `Desconto da ${store.name}`}</span></strong><span className="flex shrink-0 items-center gap-1"><span className="text-right">{shippingDiscount > 0 && <span className="block rounded bg-success-soft px-2 py-0.5 text-[10px] font-medium text-success">Frete grátis</span>}<span className="mt-1 block rounded bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary">- {brl(savings)}</span></span><ChevronRight size={16} className="text-muted-foreground" /></span></section>}

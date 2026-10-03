@@ -1,3 +1,5 @@
+import { rememberPixOrder } from "@/lib/pix-orders";
+import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
 import { checkoutTheme } from "@/lib/checkout-theme";
 import { variantPricing } from "@/lib/product-types";
@@ -36,6 +38,7 @@ import {
 } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento")({
+  validateSearch: (s: Record<string, unknown>): { pedido?: string } => (typeof s["pedido"] === "string" && s["pedido"] ? { pedido: s["pedido"] } : {}),
   loader: async () => ({ store: (await getStoreSettings())! }),
   staleTime: 60_000,
   preloadStaleTime: 60_000,
@@ -64,6 +67,7 @@ type Step = 1 | 2 | 3;
 function CheckoutRoute() {
   const { store: defaultStore } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { pedido: pedidoParam } = Route.useSearch();
   const { draft, ready, update } = useCheckoutDraft();
 
   const fetchBySlug = useServerFn(getProductBySlug);
@@ -108,7 +112,7 @@ function CheckoutRoute() {
     if (ready && draft) setForm({ ...emptyDraft, ...draft });
   }, [ready, draft?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const shippingOptions = useMemo(() => product?.shipping.options ?? [], [product]);
+  const shippingOptions = useMemo(() => (product ? sharedShippingOptions() : []), [product]);
   const selectedShipping = useMemo(
     () => shippingOptions.find((o) => o.id === form.shipping_id) ?? shippingOptions[0],
     [shippingOptions, form.shipping_id],
@@ -139,8 +143,10 @@ function CheckoutRoute() {
 
   // Recarregou a página: reabre o mesmo PIX salvo no pedido, sem gerar outro.
   useEffect(() => {
-    const saved = window.localStorage.getItem(PIX_KEY);
-    if (!saved) return;
+    // Só reabre o PIX do pedido indicado no endereço (refresh da própria tela PIX).
+    // "Comprar agora" chega sem ?pedido e sempre começa uma compra nova.
+    const saved = pedidoParam;
+    if (!saved || window.localStorage.getItem(PIX_KEY) !== saved) return;
     void openPix({ data: { order_number: saved } }).then((charge: unknown) => {
       if (isPixCharge(charge)) {
         setOrder({ number: saved, total: (charge as { total?: number }).total ?? 0 });
@@ -163,6 +169,7 @@ function CheckoutRoute() {
 
   function newPix() {
     window.localStorage.removeItem(PIX_KEY);
+    void navigate({ to: "/pagamento", search: {}, replace: true });
     setOrder(null);
     setPix(null);
     setStep(3);
@@ -262,7 +269,7 @@ function CheckoutRoute() {
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
       if (isPixCharge(charge)) {
         applyCharge(charge);
-        window.localStorage.setItem(PIX_KEY, result.order_number);
+        window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); rememberPixOrder(result.access_token, store.id);
         void trackPaymentPending(store.id, result.order_number, result.total, product.id);
       } else {
         const c = (charge ?? {}) as { configured?: boolean; error?: string };
@@ -436,6 +443,7 @@ function CheckoutRoute() {
                       <span className="block truncate text-[11.5px] text-muted-foreground">{o.eta}</span>
                     </span>
                     <span className={`shrink-0 text-[12.5px] font-bold tnum ${o.price > 0 ? "" : "text-success"}`}>
+                      {o.price === 0 && <span className="mr-1.5 font-normal text-muted-foreground line-through">{brl(SHIPPING.originalPrice)}</span>}
                       {o.price > 0 ? brl(o.price) : "Grátis"}
                     </span>
                   </button>

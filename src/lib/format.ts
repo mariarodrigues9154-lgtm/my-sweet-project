@@ -106,3 +106,33 @@ export function deliveryWindow(minDays = 4, maxDays = 9): string {
   const b = new Date(now + maxDays * 86400000);
   return `${fmt(a)} e ${fmt(b)}`;
 }
+
+/** Converte texto de preço (197,99 · 197.99 · 1.679,99 · 1679,99 · R$ 10.000,50) em reais com 2 casas. */
+export function parseMoney(input: string | number | null | undefined): number {
+  if (typeof input === "number") return Number.isFinite(input) ? toCents(input) / 100 : 0;
+  let s = String(input ?? "").replace(/[R$\s]/g, "");
+  if (!s) return 0;
+  const lc = s.lastIndexOf(","), ld = s.lastIndexOf(".");
+  if (lc >= 0 && ld >= 0) {
+    const dec = lc > ld ? "," : ".";
+    const thou = dec === "," ? "." : ",";
+    s = s.split(thou).join("").replace(dec, ".");
+  } else if (lc >= 0) {
+    s = s.split(".").join("").replace(/,(?=.*,)/g, "").replace(",", ".");
+  } else if (ld >= 0 && /^\d{1,3}(\.\d{3})+$/.test(s)) {
+    s = s.split(".").join("");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 ? toCents(n) / 100 : 0;
+}
+
+/** Reais → centavos inteiros, sem erro de ponto flutuante. */
+export function toCents(value: number): number {
+  return Math.round((Number(value) || 0) * 100 + Number.EPSILON);
+}
+
+/** Texto editável no padrão brasileiro: 197.99 → "197,99". */
+export function moneyInput(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "";
+  return (toCents(value) / 100).toFixed(2).replace(".", ",");
+}
