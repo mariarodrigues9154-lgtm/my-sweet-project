@@ -22,14 +22,14 @@ export type PopupCard = { key: string; image: string | null; title: string; mess
 type Ctx = { storeName: string; product: (Pick<Product, "id" | "name" | "price"> & { reviews?: Product["reviews"] }) | null; products: Array<{ id: string; name: string; price?: number }> };
 
 /** Monta os cartões a partir das configurações e das compras reais. */
-export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: RealPurchase[]): PopupCard[] {
+export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: RealPurchase[], opts: { ignoreScope?: boolean } = {}): PopupCard[] {
   const cards: PopupCard[] = [];
   const useManual = s.source === "manual" || s.source === "both" || s.source === "manual_reviews";
   const useReviews = s.source === "reviews" || s.source === "manual_reviews";
   const useReal = s.source === "real" || s.source === "both";
   if (useManual) {
     for (const item of s.items) {
-      if (!popupMatchesProduct(item, ctx.product?.id ?? null)) continue;
+      if (opts.ignoreScope ? item.active === false : !popupMatchesProduct(item, ctx.product?.id ?? null)) continue;
       const linked = item.use_current_product && ctx.product
         ? ctx.product
         : ctx.products.find((p) => p.id === item.product_id) ?? (item.product_id && item.product_name ? { id: item.product_id, name: item.product_name } : null);
@@ -117,8 +117,10 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
   );
 }
 
+const NO_PRODUCTS: Array<{ id: string; name: string; price?: number }> = [];
+
 /** Popup flutuante da loja: carrega uma vez e gira as notificações no navegador. */
-export function FloatingPopup({ store, product, products = [] }: { store: StoreSettings; product: Product | null; products?: Array<{ id: string; name: string; price?: number }> }) {
+export function FloatingPopup({ store, product, products = NO_PRODUCTS }: { store: StoreSettings; product: Product | null; products?: Array<{ id: string; name: string; price?: number }> }) {
   const settings = useMemo(() => resolvePopupSettings(store.checkout?.popups), [store.checkout?.popups]);
   const enabled = popupEnabledFor(settings, product?.sections?.popup_mode);
   const fetchReal = useServerFn(getRecentPurchases);
@@ -140,7 +142,11 @@ export function FloatingPopup({ store, product, products = [] }: { store: StoreS
     [enabled, settings, store.name, product, allProducts, purchases],
   );
 
+  const cardsKey = useMemo(() => JSON.stringify(cards), [cards]);
+  const cardsRef = useRef(cards);
+  cardsRef.current = cards;
   useEffect(() => {
+    const cards = cardsRef.current;
     const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
     clear();
     setShown(false);
@@ -158,7 +164,7 @@ export function FloatingPopup({ store, product, products = [] }: { store: StoreS
     };
     timers.current.push(setTimeout(showNext, settings.delay * 1000));
     return clear;
-  }, [cards, settings.order, settings.visible, settings.interval, settings.delay]);
+  }, [cardsKey, settings.order, settings.visible, settings.interval, settings.delay]);
 
   if (!enabled || !current) return null;
   return (

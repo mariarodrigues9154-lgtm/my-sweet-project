@@ -38,7 +38,7 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
   const previewSettings = { ...r, enabled: true };
   const sampleProduct = { id: "preview", name: products[0]?.title ?? "Produto", price: 0, reviews: [{ name: "Exemplo de cliente", rating: 5, date: "", text: "Prévia: aqui aparece o texto real das avaliações cadastradas em cada produto.", confirmed: true }] };
   const usesReviews = r.source === "reviews" || r.source === "manual_reviews";
-  const cards = buildPopupCards(previewSettings, { storeName, product: usesReviews ? sampleProduct : null, products: products.map((x) => ({ id: x.id, name: x.title })) }, !(r.source === "real" || r.source === "both") ? [] : [{ name: "Exemplo", city: "Cidade", product_id: null, product: products[0]?.title ?? "Produto", image: null, paid_at: new Date().toISOString() }]);
+  const cards = buildPopupCards(previewSettings, { storeName, product: usesReviews ? sampleProduct : null, products: products.map((x) => ({ id: x.id, name: x.title })) }, !(r.source === "real" || r.source === "both") ? [] : [{ name: "Exemplo", city: "Cidade", product_id: null, product: products[0]?.title ?? "Produto", image: null, paid_at: new Date().toISOString() }], { ignoreScope: true });
   const card = cards.length ? cards[preview % cards.length]! : null;
 
   return (
