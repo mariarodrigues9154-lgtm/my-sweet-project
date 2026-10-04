@@ -578,7 +578,7 @@ export type PopupSettings = {
   review_title?: string;
   review_message?: string;
   review_secondary?: string;
-  review_max_chars?: number;
+  review_max_chars?: number | undefined;
   review_show_location?: boolean;
   review_use_order_location?: boolean;
   review_confirmed_only?: boolean;

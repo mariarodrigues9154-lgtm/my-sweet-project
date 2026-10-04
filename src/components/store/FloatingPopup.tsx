@@ -17,7 +17,7 @@ import {
   type StoreSettings,
 } from "@/lib/product-types";
 
-export type PopupCard = { key: string; image: string | null; title: string; message: string; secondary: string; badge: string; rating?: number; initials?: string };
+export type PopupCard = { key: string; image: string | null; title: string; message: string; secondary: string; badge: string; rating?: number | undefined; initials?: string | undefined };
 
 type Ctx = { storeName: string; product: (Pick<Product, "id" | "name" | "price"> & { reviews?: Product["reviews"] }) | null; products: Array<{ id: string; name: string; price?: number }> };
 
