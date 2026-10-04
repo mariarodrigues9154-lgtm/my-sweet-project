@@ -63,6 +63,20 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
         </label>
       </div>
 
+      <div className="rounded-lg border border-border p-3">
+        <p className="mb-2 text-[11.5px] font-bold">O que aparece no popup</p>
+        <div className="flex flex-wrap gap-2">
+          {([["show_photo", "Mostrar foto"], ["show_name", "Mostrar nome"], ["show_location", "Mostrar cidade/região"], ["show_location_icon", "Mostrar ícone de localização"], ["show_product", "Mostrar produto / mensagem"], ["show_secondary", "Mostrar texto secundário"], ["show_badge", "Mostrar selo"], ["show_time", "Mostrar tempo (\"há X minutos\")"]] as const).map(([k, l]) => (
+            <label key={k} className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11.5px] font-semibold"><input type="checkbox" checked={r[k]} onChange={(e) => up({ [k]: e.target.checked })} />{l}</label>
+          ))}
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Texto do selo</span><input value={p.badge_text ?? ""} placeholder="Verificado" onChange={(e) => up({ badge_text: e.target.value })} className={input} /></label>
+          {sel("Cor do selo", "badge_color", [["accent", "Laranja (Oferta Relâmpago)"], ["primary", "Cor principal da loja"], ["success", "Verde"], ["verified", "Azul (selo verificado)"], ["foreground", "Preto"]])}
+        </div>
+      </div>
+
+
       {usesReviews && (
         <div className="rounded-lg border border-border p-3">
           <p className="mb-2 text-[11.5px] font-bold">Avaliações do produto (usa só as avaliações visíveis do produto aberto, sem inventar dados)</p>
@@ -125,9 +139,15 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
                     <select value={it.product_id ?? ""} disabled={it.use_current_product} onChange={(e) => upItem(i, { product_id: e.target.value || null, product_name: products.find((x) => x.id === e.target.value)?.title ?? "" })} className={input}>
                       <option value="">Nenhum</option>{products.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</select></label>
                   <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!it.use_current_product} onChange={(e) => upItem(i, { use_current_product: e.target.checked })} />Usar automaticamente o produto atual</label>
-                  <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!it.verified} onChange={(e) => upItem(i, { verified: e.target.checked })} />Compra verificada (selo "Verificado")</label>
-                  <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Tempo exibido (minutos)</span>
+                  <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Nome do produto escrito à mão (opcional)</span>
+                    <input value={it.product_text ?? ""} disabled={it.use_current_product} placeholder="a Escova Modeladora Profissional" onChange={(e) => upItem(i, { product_text: e.target.value })} className={input} /></label>
+                  <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!it.verified} onChange={(e) => upItem(i, { verified: e.target.checked })} />Mostrar selo nesta notificação</label>
+                  <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Texto do selo (vazio = texto geral)</span>
+                    <input value={it.badge_text ?? ""} placeholder={r.badge_text} onChange={(e) => upItem(i, { badge_text: e.target.value })} className={input} /></label>
+                  <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Tempo exibido (minutos) — monta "há X minutos"</span>
                     <input type="number" min={0} value={it.minutes ?? ""} placeholder="8" onChange={(e) => upItem(i, { minutes: e.target.value === "" ? undefined : Math.max(0, Math.round(Number(e.target.value))) })} className={input} /></label>
+                  <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Ou texto de tempo digitado (tem prioridade)</span>
+                    <input value={it.time_text ?? ""} placeholder="há 2 minutos" onChange={(e) => upItem(i, { time_text: e.target.value })} className={input} /></label>
                   <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Exibir em</span>
                     <select value={scope} onChange={(e) => upItem(i, { scope: e.target.value as "all", product_ids: e.target.value === "one" ? (it.product_ids ?? []).slice(0, 1) : (it.product_ids ?? []) })} className={input}>
                       <option value="all">Todos os produtos</option><option value="selected">Produtos selecionados</option><option value="one">Somente um produto</option></select></label>

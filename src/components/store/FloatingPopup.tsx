@@ -56,7 +56,7 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
       if (!title && !message) continue;
       const loc = [city, state].filter(Boolean).join(", ");
       const initials = (r.name ?? "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-      cards.push({ key: `rev-${i}`, image: r.avatar || null, title, message, secondary: [fillPopupText(s.review_secondary, vars), loc].filter(Boolean).join(" · "), badge: r.confirmed ? "Verificado" : "", time: s.real_time ? timeAgo(r.date ?? "") : "", rating: Number(r.rating) > 0 ? Number(r.rating) : undefined, initials: initials || "?" });
+      cards.push({ key: `rev-${i}`, image: r.avatar || null, title, message, secondary: [fillPopupText(s.review_secondary, vars), loc].filter(Boolean).join(" · "), badge: r.confirmed ? s.badge_text : "", time: s.real_time ? timeAgo(r.date ?? "") : "", rating: Number(r.rating) > 0 ? Number(r.rating) : undefined, initials: initials || "?" });
     }
   }
   if (useReal) {
