@@ -550,6 +550,8 @@ export type PopupNotification = {
   message?: string;
   secondary?: string;
   product_id?: string | null;
+  /** Nome do produto vinculado, guardado ao escolher no painel. */
+  product_name?: string;
   use_current_product?: boolean;
   scope?: "all" | "selected" | "one";
   product_ids?: string[];

@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, X } from "lucide-react";
 
 import { getRecentPurchases, type RealPurchase } from "@/lib/popups.functions";
-import { formatBRL } from "@/lib/format";
+import { brl } from "@/lib/format";
 import {
   fillPopupText,
   popupEnabledFor,
@@ -24,8 +24,10 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
   if (s.source !== "real") {
     for (const item of s.items) {
       if (!popupMatchesProduct(item, ctx.product?.id ?? null)) continue;
-      const linked = item.use_current_product && ctx.product ? ctx.product : ctx.products.find((p) => p.id === item.product_id) ?? null;
-      const vars = { produto: linked?.name, loja: ctx.storeName, preco: linked?.price != null ? formatBRL(Number(linked.price)) : "", cidade: item.location, nome: item.name };
+      const linked = item.use_current_product && ctx.product
+        ? ctx.product
+        : ctx.products.find((p) => p.id === item.product_id) ?? (item.product_id && item.product_name ? { id: item.product_id, name: item.product_name } : null);
+      const vars = { produto: linked?.name, loja: ctx.storeName, preco: linked && "price" in linked && linked.price != null ? brl(Number(linked.price)) : "", cidade: item.location, nome: item.name };
       const head = [item.name?.trim(), item.location?.trim()].filter(Boolean).join(" — ");
       const title = fillPopupText(item.title, vars) || head;
       const message = fillPopupText(item.message, vars);

@@ -6,6 +6,7 @@ import { StoreHeader } from "@/components/store/StoreHeader";
 import { StoreChat } from "@/components/store/StoreChat";
 import { useOrderChatBadge } from "@/components/store/PendingPixLayer";
 import { StoreFooter } from "@/components/store/StoreFooter";
+import { FloatingPopup } from "@/components/store/FloatingPopup";
 import { BuyBar } from "./BuyBar";
 import { BuySheet } from "./BuySheet";
 import { CreatorVideos } from "./CreatorVideos";
@@ -55,6 +56,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         onChat={openChat}
         chatBadge={orderChat.unread}
       />
+      {!sheet.open && !chatOpen && <FloatingPopup store={store} product={product} />}
       <StoreChat store={store} open={chatOpen} onClose={() => setChatOpen(false)} />
 
       <BuySheet

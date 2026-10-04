@@ -222,6 +222,7 @@ const storeInput = z.object({
         message: z.string().trim().max(300).optional(),
         secondary: z.string().trim().max(80).optional(),
         product_id: z.string().uuid().nullish(),
+        product_name: z.string().trim().max(200).optional(),
         use_current_product: z.boolean().optional(),
         scope: z.enum(["all", "selected", "one"]).optional(),
         product_ids: z.array(z.string().uuid()).max(200).optional(),
