@@ -184,6 +184,16 @@ const storeInput = z.object({
     rating_text: z.string().trim().max(60).nullish(),
     rating_value: z.number().min(0).max(5).nullish(),
     rating_max: z.string().trim().max(10).nullish(),
+    pix_recovery: z.object({
+      enabled: z.boolean().optional(),
+      show_notice: z.boolean().optional(),
+      allow_copy: z.boolean().optional(),
+      allow_chat: z.boolean().optional(),
+      show_badge: z.boolean().optional(),
+      title: z.string().trim().max(80).optional(),
+      copy_label: z.string().trim().max(40).optional(),
+      chat_label: z.string().trim().max(40).optional(),
+    }).optional(),
   }),
   ai_support: z
     .object({

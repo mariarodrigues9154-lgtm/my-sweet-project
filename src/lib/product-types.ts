@@ -238,6 +238,7 @@ export type CheckoutSettings = {
   rating_text?: string | null;
   rating_value?: number | null;
   rating_max?: string | null;
+  pix_recovery?: PixRecoverySettings;
 };
 
 
