@@ -9,12 +9,14 @@ import { adminOverview } from "@/lib/admin.functions";
 import { ProductManager } from "@/components/admin/ProductManager";
 import { ReviewsList, StoresList } from "@/components/admin/AdminLists";
 import { RefundPanel } from "@/components/admin/RefundPanel";
+import { PixRecoveryMetricsPanel } from "@/components/admin/PixRecoveryMetrics";
 
 const TABS = [
   ["lojas", "Lojas"],
   ["produtos", "Produtos"],
   ["avaliacoes", "Avaliações"],
   ["pedidos", "Pedidos"],
+  ["pix", "Recuperação PIX"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -68,7 +70,7 @@ function AdminHome() {
 
   const stores = data.stores.map((s) => ({ id: s.id, name: s.name }));
   const reviewCount = data.products.reduce((n, p) => n + p.reviews.length, 0);
-  const counts: Record<Tab, number> = { lojas: data.stores.length, produtos: data.products.length, avaliacoes: reviewCount, pedidos: data.orders.length };
+  const counts: Record<Tab, number> = { lojas: data.stores.length, produtos: data.products.length, avaliacoes: reviewCount, pedidos: data.orders.length, pix: data.stores.length };
   const orders = data.orders.filter((o) => !orderFilter || o.store_id === orderFilter);
 
   return (
@@ -89,6 +91,7 @@ function AdminHome() {
       {aba === "lojas" && <StoresList stores={data.stores} onChanged={refetch} />}
       {aba === "produtos" && <ProductManager products={data.products} stores={stores} onChanged={refetch} />}
       {aba === "avaliacoes" && <ReviewsList products={data.products} stores={stores} onChanged={refetch} />}
+      {aba === "pix" && <PixRecoveryMetricsPanel />}
       {aba === "pedidos" && (
         <section className="rounded-xl bg-card p-4 shadow-card-soft">
           <div className="flex flex-wrap items-center justify-between gap-2">
