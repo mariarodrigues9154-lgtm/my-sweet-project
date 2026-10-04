@@ -194,6 +194,11 @@ const storeInput = z.object({
       copy_label: z.string().trim().max(40).optional(),
       chat_label: z.string().trim().max(40).optional(),
     }).optional(),
+    product_terms: z.object({
+      enabled: z.boolean().optional(),
+      title: z.string().trim().max(80).optional(),
+      text: z.string().max(5000).optional(),
+    }).optional(),
   }),
   ai_support: z
     .object({

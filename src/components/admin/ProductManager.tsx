@@ -831,7 +831,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
       <Group title="Perguntas sobre o produto / IA">
         <label className="flex items-center gap-2 text-[12.5px] font-semibold">
           <input type="checkbox" checked={d.sections.qa_enabled !== false} onChange={(e) => set("sections", { ...d.sections, qa_enabled: e.target.checked })} />
-          {d.sections.qa_enabled !== false ? "Atendimento por IA: Ativado" : "Atendimento por IA: Desativado (a seção não aparece)"}
+          {d.sections.qa_enabled !== false ? "Exibir Perguntas sobre o produto: Ativado" : "Exibir Perguntas sobre o produto: Desativado (a seção não aparece)"}
         </label>
         <Field numeric={false} label="Título da seção" value={d.sections.qa_title ?? ""} onChange={(v) => set("sections", { ...d.sections, qa_title: v })} />
         <Field numeric={false} label="Subtítulo" value={d.sections.qa_subtitle ?? ""} onChange={(v) => set("sections", { ...d.sections, qa_subtitle: v })} />
