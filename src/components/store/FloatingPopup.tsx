@@ -120,7 +120,7 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
         {card.rating != null && <Stars rating={card.rating} size={11} />}
         {card.message && <p className="line-clamp-2 text-[11.5px] text-muted-foreground">{card.message}</p>}
         {card.secondary && <p className="truncate text-[10.5px] text-muted-foreground">{card.secondary}</p>}
-        {card.badge && <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-md bg-success px-1.5 py-px text-[10px] font-bold text-success-foreground"><BadgeCheck size={10} />{card.badge}</span>}
+        {card.badge && <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-md bg-accent px-1.5 py-px text-[10px] font-bold text-accent-foreground"><BadgeCheck size={10} />{card.badge}</span>}
         {card.time && <p className="mt-0.5 text-[10px] text-muted-foreground/80">{card.time}</p>}
       </div>
       {settings.show_close && onClose && (
