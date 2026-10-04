@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PixQr } from "@/components/checkout/PixQr";
 import { ChevronLeft, Clock, Copy, Check, QrCode } from "lucide-react";
 import { PixIcon } from "@/components/store/VerifiedBadge";
 import { brl, clock } from "@/lib/format";
@@ -70,8 +71,8 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
         <section className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-card-soft">
           <p className="flex items-center gap-2 text-[14px] font-semibold"><PixIcon size={20} /> PIX</p>
 
-          {showQr && qr && !expired && (
-            <img src={qr} alt="QR Code do PIX" className="mx-auto mt-4 size-48 rounded-xl border border-border p-2" />
+          {showQr && (code || qr) && !expired && (
+            <PixQr code={code} fallback={qr} className="mx-auto mt-4 size-48 rounded-xl border border-border bg-card p-2" />
           )}
 
           {code && (
@@ -93,7 +94,7 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
             </button>
           )}
 
-          {qr && !expired && (
+          {(code || qr) && !expired && (
             <button
               type="button"
               onClick={() => setShowQr((v) => !v)}
