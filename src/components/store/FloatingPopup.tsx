@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, User, X } from "lucide-react";
+import { BadgeCheck, MapPin, User, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 
@@ -88,6 +88,14 @@ function timeAgo(iso: string): string {
   const d = Math.round(h / 24);
   return `há ${d} dia${d > 1 ? "s" : ""}`;
 }
+
+const BADGE: Record<string, string> = {
+  accent: "bg-accent text-accent-foreground",
+  primary: "bg-primary text-primary-foreground",
+  success: "bg-success text-success-foreground",
+  verified: "bg-[var(--verified)] text-[var(--verified-foreground)]",
+  foreground: "bg-foreground text-background",
+};
 
 const POS: Record<ResolvedPopupSettings["position"], string> = {
   "bottom-left": "left-3 bottom-[84px]",
