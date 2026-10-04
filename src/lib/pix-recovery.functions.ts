@@ -1,13 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { resolvePixRecovery, type ResolvedPixRecovery } from "./product-types";
+
+// Token de acesso do pedido: hex de 48 caracteres (banco) ou UUID (pedidos antigos).
+const Token = z.string().regex(/^[0-9a-fA-F-]{32,64}$/);
+
 export type PixOrderState = "pendente" | "pago" | "expirado" | "outro";
 
 export type PixOrderView = {
   token: string;
   order_number: string;
   state: PixOrderState;
-  store: { id: string; name: string; logo_url: string | null; avatar_url: string | null };
+  store: { id: string; name: string; logo_url: string | null; avatar_url: string | null; pix: ResolvedPixRecovery };
   product: { title: string; image: string | null; slug: string | null };
   quantity: number;
   total: number;
@@ -23,7 +28,7 @@ export type PixOrderView = {
  * Não devolve dados do cliente (nome, CPF, endereço).
  */
 export const getPixOrders = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({ tokens: z.array(z.string().uuid()).max(10) }).parse(data))
+  .inputValidator((data: unknown) => z.object({ tokens: z.array(Token).max(10) }).parse(data))
   .handler(async ({ data }): Promise<PixOrderView[]> => {
     if (!data.tokens.length) return [];
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -35,7 +40,7 @@ export const getPixOrders = createServerFn({ method: "POST" })
 
     const storeIds = [...new Set(rows.map((r) => r.store_id).filter(Boolean))] as string[];
     const { data: stores } = storeIds.length
-      ? await supabaseAdmin.from("store_settings").select("id, name, logo_url, avatar_url").in("id", storeIds)
+      ? await supabaseAdmin.from("store_settings").select("id, name, logo_url, avatar_url, checkout").in("id", storeIds)
       : { data: [] };
     const { stableMediaUrl } = await import("./media-url");
     const { checkOrderPaymentStatus } = await import("@/lib/payments/order-status.server");
@@ -54,12 +59,15 @@ export const getPixOrders = createServerFn({ method: "POST" })
       const state: PixOrderState =
         status === "pago" || status === "aprovado" ? "pago" : status === "aguardando_pagamento" ? (expired ? "expirado" : "pendente") : "outro";
       const s = stores?.find((x) => x.id === r.store_id);
+      const pix = resolvePixRecovery(((s?.checkout ?? {}) as { pix_recovery?: unknown }).pix_recovery);
+      // Loja com a recuperação desligada: nada aparece na loja (pedido continua salvo).
+      if (!pix.enabled) continue;
       const snap = (r.product_snapshot ?? {}) as { title?: string; image?: string | null; slug?: string };
       out.push({
         token: r.access_token as string,
         order_number: r.order_number as string,
         state,
-        store: { id: r.store_id as string, name: (s?.name as string) ?? "Loja", logo_url: (s?.logo_url as string | null) ?? null, avatar_url: (s?.avatar_url as string | null) ?? null },
+        store: { id: r.store_id as string, name: (s?.name as string) ?? "Loja", logo_url: (s?.logo_url as string | null) ?? null, avatar_url: (s?.avatar_url as string | null) ?? null, pix },
         product: { title: snap.title ?? "", image: snap.image ? stableMediaUrl(snap.image) : null, slug: snap.slug ?? null },
         quantity: Number(r.quantity ?? 1),
         total: Number(r.total),
@@ -98,7 +106,7 @@ export const claimLegacyPixOrders = createServerFn({ method: "POST" })
  * variação, quantidade, cliente e endereço. Preço e frete são recalculados no servidor.
  */
 export const renewExpiredPixOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({ token: z.string().uuid() }).parse(data))
+  .inputValidator((data: unknown) => z.object({ token: Token }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: o } = await supabaseAdmin

@@ -238,6 +238,7 @@ export type CheckoutSettings = {
   rating_text?: string | null;
   rating_value?: number | null;
   rating_max?: string | null;
+  pix_recovery?: PixRecoverySettings;
 };
 
 
@@ -501,3 +502,31 @@ export function checkoutRating(
     max: c.rating_max?.trim() || "5,0",
   };
 }
+
+/** Recuperação de PIX pendente, por loja (fica dentro de store_settings.checkout). */
+export type PixRecoverySettings = {
+  enabled?: boolean;
+  show_notice?: boolean;
+  allow_copy?: boolean;
+  allow_chat?: boolean;
+  show_badge?: boolean;
+  title?: string;
+  copy_label?: string;
+  chat_label?: string;
+};
+
+export function resolvePixRecovery(raw: unknown) {
+  const p = (raw && typeof raw === "object" ? raw : {}) as PixRecoverySettings;
+  const enabled = p.enabled !== false;
+  return {
+    enabled,
+    show_notice: enabled && p.show_notice !== false,
+    allow_copy: enabled && p.allow_copy !== false,
+    allow_chat: enabled && p.allow_chat !== false,
+    show_badge: enabled && p.show_badge !== false,
+    title: p.title?.trim() || "Você possui um pagamento PIX pendente",
+    copy_label: p.copy_label?.trim() || "COPIAR CÓDIGO PIX",
+    chat_label: p.chat_label?.trim() || "Abrir chat",
+  };
+}
+export type ResolvedPixRecovery = ReturnType<typeof resolvePixRecovery>;

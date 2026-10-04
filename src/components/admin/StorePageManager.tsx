@@ -155,6 +155,33 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
       </div>
     </Group>
 
+    <Group title="PIX pendente / Recuperação de pagamento">
+      {(() => {
+        const p = draft.checkout?.pix_recovery ?? {};
+        const on = p.enabled !== false;
+        const setP = (patch: Partial<NonNullable<typeof p>>) => set("checkout", { ...draft.checkout, pix_recovery: { ...p, ...patch } });
+        const flag = (k: "show_notice" | "allow_copy" | "allow_chat" | "show_badge", label: string) => (
+          <Toggle label={`${label}: ${on && p[k] !== false ? "Ativado" : "Desativado"}`} checked={p[k] !== false} onChange={(value) => setP({ [k]: value })} />
+        );
+        return (
+          <div className="space-y-3">
+            <Toggle label={`Ativar recuperação de PIX pendente: ${on ? "Ativado" : "Desativado"}`} checked={on} onChange={(value) => setP({ enabled: value })} />
+            <div className={`grid gap-3 sm:grid-cols-2 ${on ? "" : "pointer-events-none opacity-50"}`}>
+              {flag("show_notice", "Mostrar aviso de pagamento pendente")}
+              {flag("allow_copy", "Permitir copiar PIX pelo aviso")}
+              {flag("allow_chat", "Permitir recuperar PIX pelo chat")}
+              {flag("show_badge", "Mostrar indicador de mensagem")}
+              <Field label="Título do aviso" value={p.title ?? ""} onChange={(value) => setP({ title: value })} />
+              <Field label="Texto do botão de copiar" value={p.copy_label ?? ""} onChange={(value) => setP({ copy_label: value })} />
+              <Field label="Texto do botão do chat" value={p.chat_label ?? ""} onChange={(value) => setP({ chat_label: value })} />
+            </div>
+            <p className="text-[11.5px] text-muted-foreground">Desligar só esconde o aviso na loja. Pedidos e PIX continuam salvos.</p>
+          </div>
+        );
+      })()}
+    </Group>
+
+
 
     <Group title="Rodapé e políticas">
       <div className="mb-3"><Toggle label={draft.show_footer !== false ? "Exibir rodapé: Ativado" : "Exibir rodapé: Desativado"} checked={draft.show_footer !== false} onChange={(value) => set("show_footer", value)} /></div>
