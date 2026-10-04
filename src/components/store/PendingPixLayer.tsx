@@ -62,18 +62,18 @@ export function PendingPixLayer() {
                 <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Seu pedido #{card.order_number} foi criado, mas o pagamento via PIX ainda está <span className="font-semibold text-primary">PENDENTE</span>.</p>
               </div>
             </div>
-            <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <div className={`mt-2.5 grid gap-2 ${card.store.pix.allow_copy && card.store.pix.allow_chat ? "grid-cols-2" : "grid-cols-1"}`}>
               {card.store.pix.allow_copy && <button type="button" onClick={() => void copy(card)} className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary text-[12.5px] font-medium text-primary-foreground">
                 {copied === card.token ? <><Check size={15} /> Código PIX copiado!</> : <><Copy size={15} /> {card.store.pix.copy_label}</>}
               </button>}
-              <button type="button" onClick={() => setChat({ open: true, token: card.token })} className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border text-[12.5px] font-medium">
-                <MessageCircle size={15} /> Abrir chat
-              </button>
+              {card.store.pix.allow_chat && <button type="button" onClick={() => setChat({ open: true, token: card.token })} className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border text-[12.5px] font-medium">
+                <MessageCircle size={15} /> {card.store.pix.chat_label}
+              </button>}
             </div>
           </div>
         </div>
       )}
-      {chat.open && <OrderChat orders={orders} token={chat.token} onPick={(t) => setChat({ open: true, token: t })} onClose={() => setChat({ open: false, token: null })} copied={copied} copy={copy} />}
+      {chat.open && <OrderChat orders={orders.filter((o) => o.store.pix.allow_chat)} token={chat.token} onPick={(t) => setChat({ open: true, token: t })} onClose={() => setChat({ open: false, token: null })} copied={copied} copy={copy} />}
     </>
   );
 }
@@ -171,6 +171,8 @@ function Thread({ o, copied, copy, onClose, onRenewed }: { o: PixOrderView; copi
 
 /** Conversa da loja: se houver pedidos PIX desta loja, abre o chat do pedido. */
 export function useOrderChatBadge(storeId: string) {
-  const { orders, pending } = useStorePixOrders(storeId);
-  return { hasOrders: orders.length > 0, unread: pending.length, open: () => openOrderChat(pending[0]?.token) };
+  const all = useStorePixOrders(storeId);
+  const orders = all.orders.filter((o) => o.store.pix.allow_chat);
+  const pending = orders.filter((o) => o.state === "pendente");
+  return { hasOrders: orders.length > 0, unread: pending.filter((o) => o.store.pix.show_badge).length, open: () => openOrderChat(pending[0]?.token) };
 }
