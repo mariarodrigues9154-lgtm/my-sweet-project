@@ -115,7 +115,7 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
   const [rawName, ...rest] = card.title.split(" — ");
   const name = settings.show_name ? rawName : "";
   const loc = settings.show_location ? rest.join(" — ") : "";
-  const badgeCls = BADGE[settings.badge_color] ?? BADGE.accent;
+  const badgeCls = BADGE[settings.badge_color] ?? BADGE["accent"];
   const fallback = <div className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-bold text-muted-foreground">{card.initials ?? <User size={18} />}</div>;
   return (
     <div
