@@ -1,3 +1,4 @@
+import { PixQr } from "@/components/checkout/PixQr";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
