@@ -101,11 +101,11 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
                 {warn && <p className="rounded-md bg-surface px-2 py-1.5 text-[11px] font-semibold text-destructive">Atenção: este texto fala em compra. Use somente se corresponder a um pedido real; para compras reais, prefira a fonte "Compras reais".</p>}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Produto relacionado ({"{produto}"})</span>
-                    <select value={it.product_id ?? ""} disabled={it.use_current_product} onChange={(e) => upItem(i, { product_id: e.target.value || null, product_name: products.find((x) => x.id === e.target.value)?.title })} className={input}>
+                    <select value={it.product_id ?? ""} disabled={it.use_current_product} onChange={(e) => upItem(i, { product_id: e.target.value || null, product_name: products.find((x) => x.id === e.target.value)?.title ?? "" })} className={input}>
                       <option value="">Nenhum</option>{products.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</select></label>
                   <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!it.use_current_product} onChange={(e) => upItem(i, { use_current_product: e.target.checked })} />Usar automaticamente o produto atual</label>
                   <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Exibir em</span>
-                    <select value={scope} onChange={(e) => upItem(i, { scope: e.target.value as PopupNotification["scope"], product_ids: e.target.value === "one" ? (it.product_ids ?? []).slice(0, 1) : it.product_ids })} className={input}>
+                    <select value={scope} onChange={(e) => upItem(i, { scope: e.target.value as "all", product_ids: e.target.value === "one" ? (it.product_ids ?? []).slice(0, 1) : (it.product_ids ?? []) })} className={input}>
                       <option value="all">Todos os produtos</option><option value="selected">Produtos selecionados</option><option value="one">Somente um produto</option></select></label>
                 </div>
                 {scope !== "all" && (
