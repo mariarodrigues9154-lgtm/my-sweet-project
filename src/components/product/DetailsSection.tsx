@@ -79,7 +79,7 @@ function RichText({ text }: { text: string }) {
 }
 
 /** Termos da loja (store.checkout.product_terms); sem texto da loja, usa o texto antigo do produto. */
-export function TermsSection({ terms, config }: { terms: string | null; config?: { enabled?: boolean; title?: string; text?: string } }) {
+export function TermsSection({ terms, config }: { terms: string | null; config?: { enabled?: boolean; title?: string; text?: string } | undefined }) {
   if (config?.enabled === false) return null;
   const text = config?.text?.trim() ? config.text : terms;
   if (!text?.trim()) return null;
