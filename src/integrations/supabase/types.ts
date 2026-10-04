@@ -129,6 +129,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          access_token: string
           address: Json
           created_at: string
           customer: Json
@@ -160,6 +161,7 @@ export type Database = {
           variant: Json
         }
         Insert: {
+          access_token?: string
           address?: Json
           created_at?: string
           customer?: Json
@@ -191,6 +193,7 @@ export type Database = {
           variant?: Json
         }
         Update: {
+          access_token?: string
           address?: Json
           created_at?: string
           customer?: Json
@@ -442,12 +445,14 @@ export type Database = {
       store_settings: {
         Row: {
           active: boolean
+          ai_support: Json
           avatar_url: string | null
           banner_link: string | null
           banner_url: string | null
           checkout: Json
           cover_url: string | null
           created_at: string
+          favicon_url: string | null
           featured_product_ids: string[]
           footer_logo_url: string | null
           footer_text: string | null
@@ -458,6 +463,7 @@ export type Database = {
           name: string
           policies: Json
           show_follow: boolean
+          show_footer: boolean
           show_message: boolean
           show_visit: boolean
           slug: string
@@ -472,12 +478,14 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          ai_support?: Json
           avatar_url?: string | null
           banner_link?: string | null
           banner_url?: string | null
           checkout?: Json
           cover_url?: string | null
           created_at?: string
+          favicon_url?: string | null
           featured_product_ids?: string[]
           footer_logo_url?: string | null
           footer_text?: string | null
@@ -488,6 +496,7 @@ export type Database = {
           name?: string
           policies?: Json
           show_follow?: boolean
+          show_footer?: boolean
           show_message?: boolean
           show_visit?: boolean
           slug: string
@@ -502,12 +511,14 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          ai_support?: Json
           avatar_url?: string | null
           banner_link?: string | null
           banner_url?: string | null
           checkout?: Json
           cover_url?: string | null
           created_at?: string
+          favicon_url?: string | null
           featured_product_ids?: string[]
           footer_logo_url?: string | null
           footer_text?: string | null
@@ -518,6 +529,7 @@ export type Database = {
           name?: string
           policies?: Json
           show_follow?: boolean
+          show_footer?: boolean
           show_message?: boolean
           show_visit?: boolean
           slug?: string
