@@ -155,6 +155,27 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
       </div>
     </Group>
 
+    <Group title="Termos exibidos na página do produto">
+      {(() => {
+        const t = draft.checkout?.product_terms ?? {};
+        const on = t.enabled !== false;
+        const setT = (patch: Partial<NonNullable<typeof t>>) => set("checkout", { ...draft.checkout, product_terms: { ...t, ...patch } });
+        return (
+          <div className="space-y-3">
+            <Toggle label={`Exibir bloco de termos: ${on ? "Ativado" : "Desativado"}`} checked={on} onChange={(value) => setT({ enabled: value })} />
+            <label className="block space-y-1">
+              <span className="text-[11px] font-semibold text-muted-foreground">Título da seção</span>
+              <input value={t.title ?? ""} maxLength={80} placeholder="TERMOS" onChange={(e) => setT({ title: e.target.value })} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-[13px] outline-none focus:border-primary" />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-[11px] font-semibold text-muted-foreground">Texto (vazio = usa o texto já cadastrado em cada produto)</span>
+              <textarea rows={6} maxLength={5000} value={t.text ?? ""} onChange={(e) => setT({ text: e.target.value })} className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] outline-none focus:border-primary" />
+            </label>
+          </div>
+        );
+      })()}
+    </Group>
+
     <Group title="PIX pendente / Recuperação de pagamento">
       {(() => {
         const p = draft.checkout?.pix_recovery ?? {};

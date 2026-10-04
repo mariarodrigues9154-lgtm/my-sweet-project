@@ -239,6 +239,8 @@ export type CheckoutSettings = {
   rating_value?: number | null;
   rating_max?: string | null;
   pix_recovery?: PixRecoverySettings;
+  /** Bloco de termos da página do produto (por loja). */
+  product_terms?: { enabled?: boolean; title?: string; text?: string };
 };
 
 

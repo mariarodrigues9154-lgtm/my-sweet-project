@@ -78,12 +78,15 @@ function RichText({ text }: { text: string }) {
   return <>{text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => (part.startsWith("**") && part.endsWith("**") && part.length > 4 ? <strong key={i}>{part.slice(2, -2)}</strong> : part))}</>;
 }
 
-export function TermsSection({ terms }: { terms: string | null }) {
-  if (!terms) return null;
+/** Termos da loja (store.checkout.product_terms); sem texto da loja, usa o texto antigo do produto. */
+export function TermsSection({ terms, config }: { terms: string | null; config?: { enabled?: boolean; title?: string; text?: string } }) {
+  if (config?.enabled === false) return null;
+  const text = config?.text?.trim() ? config.text : terms;
+  if (!text?.trim()) return null;
   return (
     <section className="mt-2 bg-card px-4 py-4">
-      <h2 className="text-[13px] font-extrabold uppercase tracking-wide text-muted-foreground">Termos</h2>
-      <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">{terms}</p>
+      <h2 className="text-[13px] font-extrabold uppercase tracking-wide text-muted-foreground">{config?.title?.trim() || "Termos"}</h2>
+      <p className="mt-2 whitespace-pre-line text-[11.5px] leading-relaxed text-muted-foreground">{text}</p>
     </section>
   );
 }
