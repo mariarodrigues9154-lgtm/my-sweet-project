@@ -58,6 +58,9 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
         <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold">
           <input type="checkbox" checked={r.show_close} onChange={(e) => up({ show_close: e.target.checked })} /> Mostrar botão X
         </label>
+        <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold">
+          <input type="checkbox" checked={r.real_time} onChange={(e) => up({ real_time: e.target.checked })} /> Usar tempo real (compras e avaliações)
+        </label>
       </div>
 
       {usesReviews && (
@@ -122,6 +125,9 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
                     <select value={it.product_id ?? ""} disabled={it.use_current_product} onChange={(e) => upItem(i, { product_id: e.target.value || null, product_name: products.find((x) => x.id === e.target.value)?.title ?? "" })} className={input}>
                       <option value="">Nenhum</option>{products.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</select></label>
                   <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!it.use_current_product} onChange={(e) => upItem(i, { use_current_product: e.target.checked })} />Usar automaticamente o produto atual</label>
+                  <label className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!it.verified} onChange={(e) => upItem(i, { verified: e.target.checked })} />Compra verificada (selo "Verificado")</label>
+                  <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Tempo exibido (minutos)</span>
+                    <input type="number" min={0} value={it.minutes ?? ""} placeholder="8" onChange={(e) => upItem(i, { minutes: e.target.value === "" ? undefined : Math.max(0, Math.round(Number(e.target.value))) })} className={input} /></label>
                   <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Exibir em</span>
                     <select value={scope} onChange={(e) => upItem(i, { scope: e.target.value as "all", product_ids: e.target.value === "one" ? (it.product_ids ?? []).slice(0, 1) : (it.product_ids ?? []) })} className={input}>
                       <option value="all">Todos os produtos</option><option value="selected">Produtos selecionados</option><option value="one">Somente um produto</option></select></label>
@@ -148,13 +154,13 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
           {previewOn && <Button type="button" size="sm" variant="ghost" onClick={() => setPreviewOn(false)}>Fechar prévia</Button>}
         </div>
         {previewOn && (
-          <div className="mx-auto mt-3 h-[420px] w-[260px] overflow-hidden rounded-[28px] border-[6px] border-foreground bg-surface">
+          <div className="mx-auto mt-3 h-[440px] w-[300px] overflow-hidden rounded-[28px] border-[6px] border-foreground bg-surface">
             <div className="relative h-full w-full">
               <div className="space-y-2 p-3"><div className="aspect-square rounded-lg bg-muted" /><div className="h-3 w-2/3 rounded bg-muted" /><div className="h-3 w-1/2 rounded bg-muted" /></div>
               <div className="absolute inset-x-0 bottom-0 h-11 bg-primary/80" />
               {card ? (
                 <div className={`absolute ${r.position.startsWith("bottom") ? "bottom-14" : "top-3"} ${r.position.endsWith("left") ? "left-2" : "right-2"} origin-center scale-[0.85]`}>
-                  <PopupCardView card={card} shown settings={r} onClose={() => setPreviewOn(false)} className="w-[250px]" />
+                  <PopupCardView card={card} shown settings={r} onClose={() => setPreviewOn(false)} className="w-[290px]" />
                 </div>
               ) : <p className="absolute inset-x-3 top-1/2 text-center text-[11px] text-muted-foreground">Nenhuma notificação ativa para mostrar.</p>}
             </div>
