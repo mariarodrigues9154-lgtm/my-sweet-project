@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouterState, Link } from "@tanstack/react-router";
 import { Check, ChevronLeft, Copy, MessageCircle, X } from "lucide-react";
 
@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { forgetPixOrders, openOrderChat, rememberPixOrder, useStorePixOrders } from "@/lib/pix-orders";
-import { renewExpiredPixOrder } from "@/lib/pix-recovery.functions";
+import { renewExpiredPixOrder, trackPixRecoveryEvent } from "@/lib/pix-recovery.functions";
 import type { PixOrderView } from "@/lib/pix-recovery.functions";
 
 const HIDDEN = /^\/(pagamento|admin|auth|reset-password|pedido-confirmado)/;
@@ -18,10 +18,38 @@ const STATE_LABEL: Record<PixOrderView["state"], string> = {
   outro: "Pedido atualizado",
 };
 
+function useTrack() {
+  const track = useServerFn(trackPixRecoveryEvent);
+  return (token: string, event: "notice_shown" | "code_copied" | "chat_opened") => { void track({ data: { token, event } }).catch(() => {}); };
+}
+
+/** Gera nova cobrança PIX a partir de um pedido expirado (o código antigo deixa de valer). */
+function useRenew(onRenewed: (t: string) => void) {
+  const renew = useServerFn(renewExpiredPixOrder);
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function regenerate(o: PixOrderView) {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await renew({ data: { token: o.token } });
+      if (!r.ok) { setErr(r.error); return; }
+      rememberPixOrder(r.token, r.store_id);
+      forgetPixOrders([o.token]);
+      await qc.invalidateQueries({ queryKey: ["pix-orders"] });
+      onRenewed(r.token);
+    } catch { setErr("Não foi possível gerar a nova cobrança. Tente novamente."); } finally { setBusy(false); }
+  }
+  return { busy, err, regenerate };
+}
+
 function useCopy() {
   const [copied, setCopied] = useState<string | null>(null);
+  const track = useTrack();
   async function copy(o: PixOrderView) {
     if (!o.copy_paste || o.state !== "pendente") return;
+    track(o.token, "code_copied");
     try { await navigator.clipboard.writeText(o.copy_paste); } catch {
       const t = document.createElement("textarea"); t.value = o.copy_paste; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove();
     }
@@ -38,6 +66,9 @@ export function PendingPixLayer() {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [chat, setChat] = useState<{ open: boolean; token: string | null }>({ open: false, token: null });
   const { copied, copy } = useCopy();
+  const track = useTrack();
+  const shown = useRef<Set<string>>(new Set());
+  const renew = useRenew((t) => setChat({ open: true, token: t }));
 
   useEffect(() => {
     setDismissed(Object.keys(window.sessionStorage).filter((k) => k.startsWith("loja:pix-dismiss:")).map((k) => k.slice(17)));
@@ -46,8 +77,21 @@ export function PendingPixLayer() {
     return () => window.removeEventListener("loja:open-order-chat", open);
   }, []);
 
-  if (HIDDEN.test(path)) return null;
-  const card = pending.find((o) => o.store.pix.show_notice && !dismissed.includes(o.token));
+  const hidden = HIDDEN.test(path);
+  const visible = (o: PixOrderView) => o.store.pix.show_notice && !dismissed.includes(o.token);
+  const card = hidden ? undefined : pending.find(visible) ?? orders.find((o) => o.state === "expirado" && visible(o));
+  const cardToken = card && !chat.open ? card.token : null;
+  useEffect(() => {
+    if (!cardToken || shown.current.has(cardToken)) return;
+    shown.current.add(cardToken);
+    track(cardToken, "notice_shown");
+  }, [cardToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  function openChat(token: string | null) {
+    if (token) track(token, "chat_opened");
+    setChat({ open: true, token });
+  }
+
+  if (hidden) return null;
 
   return (
     <>
@@ -58,18 +102,26 @@ export function PendingPixLayer() {
             <div className="flex items-start gap-2.5 pr-6">
               <StoreAvatar o={card} />
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold">{card.store.pix.title}</p>
-                <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Seu pedido #{card.order_number} foi criado, mas o pagamento via PIX ainda está <span className="font-semibold text-primary">PENDENTE</span>.</p>
+                {card.state === "expirado" ? <>
+                  <p className="text-[13px] font-semibold">Seu PIX expirou</p>
+                  <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">O código PIX do pedido #{card.order_number} <span className="font-semibold text-destructive">não pode mais ser usado</span>. Gere uma nova cobrança para concluir a compra.</p>
+                </> : <>
+                  <p className="text-[13px] font-semibold">{card.store.pix.title}</p>
+                  <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Seu pedido #{card.order_number} foi criado, mas o pagamento via PIX ainda está <span className="font-semibold text-primary">PENDENTE</span>.</p>
+                </>}
               </div>
             </div>
-            <div className={`mt-2.5 grid gap-2 ${card.store.pix.allow_copy && card.store.pix.allow_chat ? "grid-cols-2" : "grid-cols-1"}`}>
+            {card.state === "expirado" ? <>
+              <button type="button" disabled={renew.busy} onClick={() => void renew.regenerate(card)} className="mt-2.5 flex h-9 w-full items-center justify-center rounded-lg bg-primary text-[12.5px] font-medium text-primary-foreground disabled:opacity-60">{renew.busy ? "Gerando nova cobrança..." : "Gerar nova cobrança PIX"}</button>
+              {renew.err && <p className="mt-1.5 text-center text-[11.5px] text-destructive">{renew.err}</p>}
+            </> : <div className={`mt-2.5 grid gap-2 ${card.store.pix.allow_copy && card.store.pix.allow_chat ? "grid-cols-2" : "grid-cols-1"}`}>
               {card.store.pix.allow_copy && <button type="button" onClick={() => void copy(card)} className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary text-[12.5px] font-medium text-primary-foreground">
                 {copied === card.token ? <><Check size={15} /> Código PIX copiado!</> : <><Copy size={15} /> {card.store.pix.copy_label}</>}
               </button>}
-              {card.store.pix.allow_chat && <button type="button" onClick={() => setChat({ open: true, token: card.token })} className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border text-[12.5px] font-medium">
+              {card.store.pix.allow_chat && <button type="button" onClick={() => openChat(card.token)} className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border text-[12.5px] font-medium">
                 <MessageCircle size={15} /> {card.store.pix.chat_label}
               </button>}
-            </div>
+            </div>}
           </div>
         </div>
       )}
@@ -113,29 +165,15 @@ function OrderChat({ orders, token, onPick, onClose, copied, copy }: { orders: P
 }
 
 function Thread({ o, copied, copy, onClose, onRenewed }: { o: PixOrderView; copied: string | null; copy: (o: PixOrderView) => Promise<void>; onClose: () => void; onRenewed: (t: string | null) => void }) {
-  const renew = useServerFn(renewExpiredPixOrder);
-  const qc = useQueryClient();
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  async function regenerate() {
-    if (busy) return;
-    setBusy(true); setErr(null);
-    try {
-      const r = await renew({ data: { token: o.token } });
-      if (!r.ok) { setErr(r.error); return; }
-      rememberPixOrder(r.token, r.store_id);
-      forgetPixOrders([o.token]);
-      await qc.invalidateQueries({ queryKey: ["pix-orders"] });
-      onRenewed(r.token);
-    } catch { setErr("Não foi possível gerar o novo PIX. Tente novamente."); } finally { setBusy(false); }
-  }
+  const { busy, err, regenerate: run } = useRenew(onRenewed);
+  const regenerate = () => run(o);
   return (
     <div className="space-y-2">
       <p className="text-center text-[11px] text-muted-foreground">{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(o.created_at))}</p>
       <div className="max-w-[90%] rounded-2xl rounded-tl-sm bg-card p-3 text-[13px] leading-relaxed shadow-card-soft">
         {o.state === "pendente" && <p>Seu pedido <strong className="font-semibold">#{o.order_number}</strong> foi criado, mas o pagamento via PIX ainda está <strong className="font-semibold text-primary">PENDENTE</strong>.</p>}
         {o.state === "pago" && <p>Pagamento do pedido <strong className="font-semibold">#{o.order_number}</strong> confirmado! Obrigado pela compra, já estamos preparando o envio.</p>}
-        {o.state === "expirado" && <p>O PIX do pedido <strong className="font-semibold">#{o.order_number}</strong> expirou e não pode mais ser pago.</p>}
+        {o.state === "expirado" && <p>O PIX do pedido <strong className="font-semibold">#{o.order_number}</strong> expirou. <strong className="font-semibold text-destructive">O código antigo não pode mais ser usado</strong> — gere uma nova cobrança PIX para concluir a compra.</p>}
         {o.state === "outro" && <p>O pedido <strong className="font-semibold">#{o.order_number}</strong> foi atualizado.</p>}
         <div className="mt-2 flex gap-2.5 rounded-lg bg-surface p-2">
           {o.product.image && <img src={o.product.image} alt="" className="size-12 shrink-0 rounded-md object-cover" />}
@@ -159,7 +197,7 @@ function Thread({ o, copied, copy, onClose, onRenewed }: { o: PixOrderView; copi
         </button>
       )}
       {o.state === "expirado" && (
-        <button type="button" disabled={busy} onClick={() => void regenerate()} className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-60">{busy ? "Gerando novo PIX..." : "Gerar novo PIX"}</button>
+        <button type="button" disabled={busy} onClick={() => void regenerate()} className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-60">{busy ? "Gerando nova cobrança..." : "Gerar nova cobrança PIX"}</button>
       )}
       {err && <p className="text-center text-[12px] text-destructive">{err}</p>}
       {o.state === "expirado" && o.product.slug && (
