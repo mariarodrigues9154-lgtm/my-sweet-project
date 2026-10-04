@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, User, X } from "lucide-react";
+import { BadgeCheck, MapPin, User, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 
@@ -33,13 +33,15 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
       const linked = item.use_current_product && ctx.product
         ? ctx.product
         : ctx.products.find((p) => p.id === item.product_id) ?? (item.product_id && item.product_name ? { id: item.product_id, name: item.product_name } : null);
-      const vars = { produto: linked?.name, loja: ctx.storeName, preco: linked && "price" in linked && linked.price != null ? brl(Number(linked.price)) : "", cidade: item.location, nome: item.name };
+      const productName = (!item.use_current_product && item.product_text?.trim()) || linked?.name;
+      const vars = { produto: productName, loja: ctx.storeName, preco: linked && "price" in linked && linked.price != null ? brl(Number(linked.price)) : "", cidade: item.location, nome: item.name };
       const head = [item.name?.trim(), item.location?.trim()].filter(Boolean).join(" — ");
       const title = fillPopupText(item.title, vars) || head;
-      const message = fillPopupText(item.message, vars) || (linked?.name ? `comprou ${linked.name}` : "");
+      const message = fillPopupText(item.message, vars) || (productName ? `comprou ${productName}` : "");
       if (!title && !message) continue;
       const mins = Number(item.minutes);
-      cards.push({ key: item.id, image: item.image || null, title, message, secondary: fillPopupText(item.secondary, vars), badge: item.verified ? "Verificado" : "", time: Number.isFinite(mins) && mins > 0 && item.minutes != null ? minutesText(mins) : "", initials: initialsOf(item.name) });
+      const time = item.time_text?.trim() || (Number.isFinite(mins) && mins > 0 && item.minutes != null ? minutesText(mins) : "");
+      cards.push({ key: item.id, image: item.image || null, title, message, secondary: fillPopupText(item.secondary, vars), badge: item.verified ? (item.badge_text?.trim() || s.badge_text) : "", time, initials: initialsOf(item.name) });
     }
   }
   if (useReviews && ctx.product) {
@@ -54,7 +56,7 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
       if (!title && !message) continue;
       const loc = [city, state].filter(Boolean).join(", ");
       const initials = (r.name ?? "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-      cards.push({ key: `rev-${i}`, image: r.avatar || null, title, message, secondary: [fillPopupText(s.review_secondary, vars), loc].filter(Boolean).join(" · "), badge: r.confirmed ? "Verificado" : "", time: s.real_time ? timeAgo(r.date ?? "") : "", rating: Number(r.rating) > 0 ? Number(r.rating) : undefined, initials: initials || "?" });
+      cards.push({ key: `rev-${i}`, image: r.avatar || null, title, message, secondary: [fillPopupText(s.review_secondary, vars), loc].filter(Boolean).join(" · "), badge: r.confirmed ? s.badge_text : "", time: s.real_time ? timeAgo(r.date ?? "") : "", rating: Number(r.rating) > 0 ? Number(r.rating) : undefined, initials: initials || "?" });
     }
   }
   if (useReal) {
@@ -87,6 +89,14 @@ function timeAgo(iso: string): string {
   return `há ${d} dia${d > 1 ? "s" : ""}`;
 }
 
+const BADGE: Record<string, string> = {
+  accent: "bg-accent text-accent-foreground",
+  primary: "bg-primary text-primary-foreground",
+  success: "bg-success text-success-foreground",
+  verified: "bg-[var(--verified)] text-[var(--verified-foreground)]",
+  foreground: "bg-foreground text-background",
+};
+
 const POS: Record<ResolvedPopupSettings["position"], string> = {
   "bottom-left": "left-3 bottom-[84px]",
   "bottom-right": "right-3 bottom-[84px]",
@@ -102,26 +112,37 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
   const anim = settings.animation;
   const hidden =
     anim === "none" ? "hidden" : anim === "fade" ? "opacity-0" : anim === "slide" ? (fromBottom ? "translate-y-6" : "-translate-y-6") : `opacity-0 ${fromBottom ? "translate-y-6" : "-translate-y-6"}`;
-  const [name, ...rest] = card.title.split(" — ");
-  const loc = rest.join(" — ");
+  const [rawName, ...rest] = card.title.split(" — ");
+  const name = settings.show_name ? rawName : "";
+  const loc = settings.show_location ? rest.join(" — ") : "";
+  const badgeCls = BADGE[settings.badge_color] ?? BADGE["accent"];
   const fallback = <div className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-bold text-muted-foreground">{card.initials ?? <User size={18} />}</div>;
   return (
     <div
       role="status"
       className={`pointer-events-auto relative flex w-[min(330px,calc(100vw-24px))] items-center gap-3 rounded-2xl bg-card px-3 py-2.5 pr-7 shadow-[0_8px_28px_-8px_hsl(0_0%_0%/0.28)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
     >
-      {card.image && !broken ? (
+      {settings.show_photo && (card.image && !broken ? (
         <img src={card.image} alt="" loading="lazy" className="size-11 shrink-0 rounded-full object-cover" onError={() => setBroken(true)} />
-      ) : fallback}
+      ) : fallback)}
       <div className="min-w-0 flex-1 leading-snug">
-        {card.title && (
-          <p className="truncate text-[13px] text-foreground"><span className="font-extrabold">{name}</span>{loc && <span className="font-semibold"> — {loc}</span>}</p>
+        {(name || loc) && (
+          <p className="flex min-w-0 items-center gap-1 text-[13px] text-foreground">
+            {name && <span className="truncate font-extrabold">{name}</span>}
+            {loc && (settings.show_location_icon ? (
+              <span className="inline-flex min-w-0 items-center gap-0.5 font-semibold text-muted-foreground">
+                {name && <span className="text-border">·</span>}
+                <MapPin size={12} className="shrink-0 text-primary" />
+                <span className="truncate">{loc}</span>
+              </span>
+            ) : <span className="truncate font-semibold">{name ? "— " : ""}{loc}</span>)}
+          </p>
         )}
         {card.rating != null && <Stars rating={card.rating} size={11} />}
-        {card.message && <p className="line-clamp-2 text-[11.5px] text-muted-foreground">{card.message}</p>}
-        {card.secondary && <p className="truncate text-[10.5px] text-muted-foreground">{card.secondary}</p>}
-        {card.badge && <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-md bg-accent px-1.5 py-px text-[10px] font-bold text-accent-foreground"><BadgeCheck size={10} />{card.badge}</span>}
-        {card.time && <p className="mt-0.5 text-[10px] text-muted-foreground/80">{card.time}</p>}
+        {settings.show_product && card.message && <p className="line-clamp-2 text-[11.5px] text-muted-foreground">{card.message}</p>}
+        {settings.show_secondary && card.secondary && <p className="truncate text-[10.5px] text-muted-foreground">{card.secondary}</p>}
+        {settings.show_badge && card.badge && <span className={`mt-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-px text-[10px] font-bold ${badgeCls}`}><BadgeCheck size={10} />{card.badge}</span>}
+        {settings.show_time && card.time && <p className="mt-0.5 text-[10px] text-muted-foreground/80">{card.time}</p>}
       </div>
       {settings.show_close && onClose && (
         <button type="button" aria-label="Fechar" onClick={onClose} className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-muted-foreground hover:bg-surface">
