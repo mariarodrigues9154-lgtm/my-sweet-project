@@ -47,7 +47,7 @@ export function PendingPixLayer() {
   }, []);
 
   if (HIDDEN.test(path)) return null;
-  const card = pending.find((o) => !dismissed.includes(o.token));
+  const card = pending.find((o) => o.store.pix.show_notice && !dismissed.includes(o.token));
 
   return (
     <>
@@ -58,14 +58,14 @@ export function PendingPixLayer() {
             <div className="flex items-start gap-2.5 pr-6">
               <StoreAvatar o={card} />
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold">Você tem uma mensagem da loja</p>
+                <p className="text-[13px] font-semibold">{card.store.pix.title}</p>
                 <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Seu pedido #{card.order_number} foi criado, mas o pagamento via PIX ainda está <span className="font-semibold text-primary">PENDENTE</span>.</p>
               </div>
             </div>
             <div className="mt-2.5 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => void copy(card)} className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary text-[12.5px] font-medium text-primary-foreground">
-                {copied === card.token ? <><Check size={15} /> Código PIX copiado!</> : <><Copy size={15} /> COPIAR CÓDIGO PIX</>}
-              </button>
+              {card.store.pix.allow_copy && <button type="button" onClick={() => void copy(card)} className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary text-[12.5px] font-medium text-primary-foreground">
+                {copied === card.token ? <><Check size={15} /> Código PIX copiado!</> : <><Copy size={15} /> {card.store.pix.copy_label}</>}
+              </button>}
               <button type="button" onClick={() => setChat({ open: true, token: card.token })} className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border text-[12.5px] font-medium">
                 <MessageCircle size={15} /> Abrir chat
               </button>
