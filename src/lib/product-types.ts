@@ -562,9 +562,17 @@ export type PopupNotification = {
   product_ids?: string[];
   /** Mostra o selo Verificado (só para compra confirmada). */
   verified?: boolean;
+  /** Texto próprio do selo desta notificação (vazio = texto geral). */
+  badge_text?: string;
   /** Tempo exibido, em minutos ("há N minutos"). */
   minutes?: number | undefined;
+  /** Texto de tempo digitado à mão (tem prioridade sobre minutos). */
+  time_text?: string;
+  /** Nome do produto digitado à mão (tem prioridade sobre o vinculado). */
+  product_text?: string;
 };
+
+export type PopupBadgeColor = "accent" | "primary" | "success" | "verified" | "foreground";
 
 export type PopupSettings = {
   enabled?: boolean;
@@ -588,6 +596,17 @@ export type PopupSettings = {
   review_confirmed_only?: boolean;
   /** Calcula o tempo a partir da data real (compras/avaliações). */
   real_time?: boolean;
+  /** Partes visíveis do popup. */
+  show_photo?: boolean;
+  show_name?: boolean;
+  show_location?: boolean;
+  show_location_icon?: boolean;
+  show_product?: boolean;
+  show_secondary?: boolean;
+  show_badge?: boolean;
+  show_time?: boolean;
+  badge_text?: string;
+  badge_color?: PopupBadgeColor;
   items?: PopupNotification[];
 };
 
@@ -618,6 +637,16 @@ export function resolvePopupSettings(raw: unknown) {
     review_use_order_location: p.review_use_order_location === true,
     review_confirmed_only: p.review_confirmed_only === true,
     real_time: p.real_time !== false,
+    show_photo: p.show_photo !== false,
+    show_name: p.show_name !== false,
+    show_location: p.show_location !== false,
+    show_location_icon: p.show_location_icon !== false,
+    show_product: p.show_product !== false,
+    show_secondary: p.show_secondary !== false,
+    show_badge: p.show_badge !== false,
+    show_time: p.show_time !== false,
+    badge_text: p.badge_text?.trim() || "Verificado",
+    badge_color: (p.badge_color ?? "accent") as PopupBadgeColor,
     items: (p.items ?? []).filter((i) => i && i.id),
   };
 }
