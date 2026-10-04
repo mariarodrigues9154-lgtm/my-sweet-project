@@ -36,7 +36,9 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
   );
 
   const previewSettings = { ...r, enabled: true };
-  const cards = buildPopupCards(previewSettings, { storeName, product: null, products: products.map((x) => ({ id: x.id, name: x.title })) }, r.source === "manual" ? [] : [{ name: "Exemplo", city: "Cidade", product_id: null, product: products[0]?.title ?? "Produto", image: null, paid_at: new Date().toISOString() }]);
+  const sampleProduct = { id: "preview", name: products[0]?.title ?? "Produto", price: 0, reviews: [{ name: "Exemplo de cliente", rating: 5, date: "", text: "Prévia: aqui aparece o texto real das avaliações cadastradas em cada produto.", confirmed: true }] };
+  const usesReviews = r.source === "reviews" || r.source === "manual_reviews";
+  const cards = buildPopupCards(previewSettings, { storeName, product: usesReviews ? sampleProduct : null, products: products.map((x) => ({ id: x.id, name: x.title })) }, !(r.source === "real" || r.source === "both") ? [] : [{ name: "Exemplo", city: "Cidade", product_id: null, product: products[0]?.title ?? "Produto", image: null, paid_at: new Date().toISOString() }]);
   const card = cards.length ? cards[preview % cards.length]! : null;
 
   return (
@@ -46,7 +48,7 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
         Ativar popup: {r.enabled ? "Ativado" : "Desativado"}
       </label>
       <div className="grid gap-3 sm:grid-cols-3">
-        {sel("Fonte das notificações", "source", [["manual", "Manual"], ["real", "Compras reais"], ["both", "Ambos"]])}
+        {sel("Fonte das notificações", "source", [["manual", "Manual"], ["reviews", "Avaliações do produto"], ["real", "Compras reais"], ["manual_reviews", "Manual + Avaliações"], ["both", "Manual + Compras reais"]])}
         {sel("Posição", "position", [["bottom-left", "Inferior esquerdo"], ["bottom-right", "Inferior direito"], ["top-left", "Superior esquerdo"], ["top-right", "Superior direito"]])}
         {sel("Ordem", "order", [["sequence", "Ordem cadastrada"], ["random", "Aleatória"]])}
         {numField("Primeira notificação após", "delay", 10)}
@@ -58,7 +60,23 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
         </label>
       </div>
 
-      {r.source !== "manual" && (
+      {usesReviews && (
+        <div className="rounded-lg border border-border p-3">
+          <p className="mb-2 text-[11.5px] font-bold">Avaliações do produto (usa só as avaliações visíveis do produto aberto, sem inventar dados)</p>
+          <p className="mb-2 text-[11px] text-muted-foreground">Variáveis: {"{nome} {produto} {nota} {avaliacao} {cidade} {estado} {data}"}. Variável vazia some sem deixar pontuação solta.</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Título</span><input value={p.review_title ?? ""} placeholder="{nome}" onChange={(e) => up({ review_title: e.target.value })} className={input} /></label>
+            <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Modelo para avaliações</span><input value={p.review_message ?? ""} placeholder="{avaliacao}" onChange={(e) => up({ review_message: e.target.value })} className={input} /></label>
+            <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Texto secundário</span><input value={p.review_secondary ?? "Avaliou {produto}"} onChange={(e) => up({ review_secondary: e.target.value })} className={input} /></label>
+            <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Máximo de caracteres</span><input type="number" min={20} max={300} value={p.review_max_chars ?? 100} onChange={(e) => up({ review_max_chars: e.target.value === "" ? undefined : Number(e.target.value) })} className={input} /></label>
+            {([["review_show_location", "Mostrar localização"], ["review_use_order_location", "Usar localização do pedido quando disponível"], ["review_confirmed_only", "Usar somente avaliações com Compra confirmada"]] as const).map(([k, l]) => (
+              <label key={k} className="flex items-center gap-2 self-end rounded-lg border border-border px-3 py-2.5 text-[12px] font-semibold"><input type="checkbox" checked={!!p[k]} onChange={(e) => up({ [k]: e.target.checked })} />{l}</label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(r.source === "real" || r.source === "both") && (
         <div className="rounded-lg border border-border p-3">
           <p className="mb-2 text-[11.5px] font-bold">Compras reais (só pedidos pagos desta loja; mostra primeiro nome e cidade)</p>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -69,7 +87,7 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
         </div>
       )}
 
-      {r.source !== "real" && (
+      {(r.source === "manual" || r.source === "both" || r.source === "manual_reviews") && (
         <>
           <p className="text-[11px] text-muted-foreground">Variáveis: {"{produto} {loja} {preco} {cidade} {nome}"}. Todos os campos são opcionais. Em notificações manuais, use mensagens informativas — não diga que alguém comprou sem um pedido real.</p>
           {items.map((it, i) => {

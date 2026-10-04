@@ -186,6 +186,11 @@ export type Review = {
   hidden?: boolean;
   photos?: string[];
   avatar?: string | null;
+  /** Localização real (opcional) — só existe se veio junto com a avaliação/pedido. */
+  city?: string;
+  state?: string;
+  order_city?: string;
+  order_state?: string;
 };
 
 export type Product = {
@@ -559,7 +564,7 @@ export type PopupNotification = {
 
 export type PopupSettings = {
   enabled?: boolean;
-  source?: "manual" | "real" | "both";
+  source?: "manual" | "reviews" | "real" | "manual_reviews" | "both";
   position?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
   delay?: number;
   visible?: number;
@@ -570,6 +575,13 @@ export type PopupSettings = {
   real_title?: string;
   real_message?: string;
   real_badge?: string;
+  review_title?: string;
+  review_message?: string;
+  review_secondary?: string;
+  review_max_chars?: number;
+  review_show_location?: boolean;
+  review_use_order_location?: boolean;
+  review_confirmed_only?: boolean;
   items?: PopupNotification[];
 };
 
@@ -592,6 +604,13 @@ export function resolvePopupSettings(raw: unknown) {
     real_title: p.real_title?.trim() || "{nome} — {cidade}",
     real_message: p.real_message?.trim() || "comprou {produto}",
     real_badge: p.real_badge?.trim() ?? "Verificado",
+    review_title: p.review_title?.trim() || "{nome}",
+    review_message: p.review_message?.trim() || "{avaliacao}",
+    review_secondary: p.review_secondary?.trim() ?? "Avaliou {produto}",
+    review_max_chars: num(p.review_max_chars, 100, 20, 300),
+    review_show_location: p.review_show_location === true,
+    review_use_order_location: p.review_use_order_location === true,
+    review_confirmed_only: p.review_confirmed_only === true,
     items: (p.items ?? []).filter((i) => i && i.id),
   };
 }
@@ -615,8 +634,20 @@ export function popupMatchesProduct(item: PopupNotification, productId: string |
 
 export function fillPopupText(text: string | undefined, vars: Record<string, string | undefined>): string {
   return (text ?? "")
-    .replace(/\{(produto|loja|preco|cidade|nome)\}/g, (_, k: string) => vars[k] ?? "")
-    .replace(/\s+—\s*$/, "")
-    .replace(/^\s*—\s+/, "")
+    .replace(/\{(produto|loja|preco|cidade|estado|nome|nota|avaliacao|data)\}/g, (_, k: string) => (vars[k] ?? "").trim())
+    .replace(/["“”']\s*["“”']/g, "")
+    .replace(/\s+([,.:;!?])/g, "$1")
+    .replace(/([,:;—-])\s*(?=[,:;—-])/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .replace(/^[,:;—–-]+\s*/, "")
+    .replace(/\s*[,:;—–-]+$/, "")
     .trim();
+}
+
+/** Corta o texto em até `max` caracteres, terminando com "...". */
+export function truncateText(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return t.slice(0, max).replace(/\s+\S*$/, "").trimEnd() + "...";
 }
