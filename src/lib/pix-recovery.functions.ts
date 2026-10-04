@@ -139,5 +139,25 @@ export const renewExpiredPixOrder = createServerFn({ method: "POST" })
     if (!created || !created.ok) return { ok: false as const, error: created && !created.ok ? created.error : "Não foi possível criar o novo pedido." };
     const charge = await createPixCharge({ data: { order_number: created.order_number } }).catch(() => null);
     if (!charge || !(charge as { ok?: boolean }).ok) return { ok: false as const, error: "Não foi possível gerar o novo PIX. Tente novamente." };
+    const { data: newOrder } = await supabaseAdmin.from("orders").select("id").eq("order_number", created.order_number).maybeSingle();
+    if (newOrder && o.store_id) await supabaseAdmin.from("pix_recovery_events").insert({ store_id: o.store_id as string, order_id: newOrder.id, event_type: "renewed" });
     return { ok: true as const, token: created.access_token, store_id: o.store_id as string, order_number: created.order_number };
+  });
+
+/** Registra um evento da recuperação de PIX (métricas por loja). Só aceita pedidos reais via token. */
+export const trackPixRecoveryEvent = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ token: Token, event: z.enum(["notice_shown", "code_copied", "chat_opened"]) }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: o } = await supabaseAdmin.from("orders").select("id, store_id").eq("access_token", data.token).maybeSingle();
+    if (!o?.store_id) return { ok: false };
+    if (data.event === "notice_shown") {
+      // Um aviso por pedido a cada 12h, para não inflar a contagem a cada página.
+      const since = new Date(Date.now() - 12 * 3600000).toISOString();
+      const { count } = await supabaseAdmin.from("pix_recovery_events").select("id", { count: "exact", head: true })
+        .eq("order_id", o.id).eq("event_type", "notice_shown").gte("created_at", since);
+      if (count) return { ok: true };
+    }
+    await supabaseAdmin.from("pix_recovery_events").insert({ store_id: o.store_id, order_id: o.id, event_type: data.event });
+    return { ok: true };
   });
