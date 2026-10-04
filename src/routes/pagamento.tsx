@@ -550,11 +550,11 @@ function CheckoutRoute() {
               <>
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground"><span>Expira em</span><strong className="rounded-md bg-primary-soft px-2 py-1 text-primary tnum">{mmss(pixLeft)}</strong></div>
                 <div className="flex items-baseline justify-between"><span className="text-[11px] text-muted-foreground">Valor total</span><strong className="text-[25px] font-extrabold tnum">{brl(order.total)}</strong></div>
-                {"qr_code" in pix && pix.qr_code ? (
-                  <img
-                    src={pix.qr_code}
-                    alt="QR Code do PIX"
-                    className="mx-auto size-44 rounded-xl border border-border p-2 shadow-card-soft"
+                {pix.copy_paste || pix.qr_code ? (
+                  <PixQr
+                    code={pix.copy_paste}
+                    fallback={pix.qr_code}
+                    className="mx-auto size-44 rounded-xl border border-border bg-card p-2 shadow-card-soft"
                   />
                 ) : (
                   <div className="mx-auto grid size-56 place-items-center rounded-xl border border-dashed border-border text-[12px] text-muted-foreground">
