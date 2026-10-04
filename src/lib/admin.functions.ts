@@ -199,6 +199,35 @@ const storeInput = z.object({
       title: z.string().trim().max(80).optional(),
       text: z.string().max(5000).optional(),
     }).optional(),
+    popups: z.object({
+      enabled: z.boolean().optional(),
+      source: z.enum(["manual", "real", "both"]).optional(),
+      position: z.enum(["bottom-left", "bottom-right", "top-left", "top-right"]).optional(),
+      delay: z.number().min(0).max(600).optional(),
+      visible: z.number().min(1).max(120).optional(),
+      interval: z.number().min(1).max(3600).optional(),
+      order: z.enum(["sequence", "random"]).optional(),
+      animation: z.enum(["slide-fade", "fade", "slide", "none"]).optional(),
+      show_close: z.boolean().optional(),
+      real_title: z.string().trim().max(120).optional(),
+      real_message: z.string().trim().max(200).optional(),
+      real_badge: z.string().trim().max(30).optional(),
+      items: z.array(z.object({
+        id: z.string().min(1).max(60),
+        active: z.boolean().optional(),
+        image: z.string().trim().max(2000).nullish(),
+        name: z.string().trim().max(80).optional(),
+        location: z.string().trim().max(80).optional(),
+        title: z.string().trim().max(120).optional(),
+        message: z.string().trim().max(300).optional(),
+        secondary: z.string().trim().max(80).optional(),
+        product_id: z.string().uuid().nullish(),
+        product_name: z.string().trim().max(200).optional(),
+        use_current_product: z.boolean().optional(),
+        scope: z.enum(["all", "selected", "one"]).optional(),
+        product_ids: z.array(z.string().uuid()).max(200).optional(),
+      })).max(50).optional(),
+    }).optional(),
   }),
   ai_support: z
     .object({
@@ -417,6 +446,7 @@ const sectionsSchema = z
     qa_subtitle: optStr(200),
     qa_placeholder: optStr(120),
     qa_ai_info: optStr(4000),
+    popup_mode: z.enum(["store", "on", "off"]).nullish().transform((v) => v ?? undefined),
   })
   .nullish()
   .transform((v) => v ?? {});

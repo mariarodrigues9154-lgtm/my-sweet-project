@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, ImagePlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { PopupManager } from "@/components/admin/PopupManager";
 import { uploadProductImage } from "@/lib/admin.functions";
 import { parseRatingInput, type StoreSettings } from "@/lib/product-types";
 
@@ -26,6 +27,15 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
     if (!result.ok) { toast.error(result.error); return; }
     if (key === "checkout_logo") set("checkout", { ...draft.checkout, logo_url: result.url });
     else set(key, result.url);
+  }
+
+  async function uploadPopupImage(file: File): Promise<string | null> {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+    if (!allowed.includes(file.type as (typeof allowed)[number])) { toast.error("Use JPG, PNG, WEBP ou GIF."); return null; }
+    const base64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.onerror = reject; reader.readAsDataURL(file); });
+    const result = await upload({ data: { filename: file.name, contentType: file.type as (typeof allowed)[number], base64 } });
+    if (!result.ok) { toast.error(result.error); return null; }
+    return result.url;
   }
 
   function toggleFeatured(id: string) {
@@ -174,6 +184,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
           </div>
         );
       })()}
+    </Group>
+
+    <Group title="Popup / Notificações flutuantes">
+      <PopupManager value={draft.checkout?.popups} onChange={(v) => set("checkout", { ...draft.checkout, popups: v })} products={products} storeName={draft.name} onUpload={uploadPopupImage} />
     </Group>
 
     <Group title="PIX pendente / Recuperação de pagamento">

@@ -114,6 +114,8 @@ export type ProductSections = {
   qa_placeholder?: string;
   /** Informações extras verdadeiras que a IA pode usar sobre este produto. */
   qa_ai_info?: string;
+  /** Popup de notificações neste produto: segue a loja, força ligado ou desligado. */
+  popup_mode?: "store" | "on" | "off";
 };
 
 /** Atendimento por IA e suporte humano — por loja, lido só no servidor. */
@@ -241,6 +243,8 @@ export type CheckoutSettings = {
   pix_recovery?: PixRecoverySettings;
   /** Bloco de termos da página do produto (por loja). */
   product_terms?: { enabled?: boolean; title?: string; text?: string };
+  /** Popups / notificações flutuantes da loja. */
+  popups?: PopupSettings;
 };
 
 
@@ -532,3 +536,87 @@ export function resolvePixRecovery(raw: unknown) {
   };
 }
 export type ResolvedPixRecovery = ReturnType<typeof resolvePixRecovery>;
+
+/* ---------------------------------------------------------------------------
+ * Popups / notificações flutuantes — por loja (store_settings.checkout.popups).
+ * ------------------------------------------------------------------------- */
+export type PopupNotification = {
+  id: string;
+  active?: boolean;
+  image?: string | null;
+  name?: string;
+  location?: string;
+  title?: string;
+  message?: string;
+  secondary?: string;
+  product_id?: string | null;
+  /** Nome do produto vinculado, guardado ao escolher no painel. */
+  product_name?: string;
+  use_current_product?: boolean;
+  scope?: "all" | "selected" | "one";
+  product_ids?: string[];
+};
+
+export type PopupSettings = {
+  enabled?: boolean;
+  source?: "manual" | "real" | "both";
+  position?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
+  delay?: number;
+  visible?: number;
+  interval?: number;
+  order?: "sequence" | "random";
+  animation?: "slide-fade" | "fade" | "slide" | "none";
+  show_close?: boolean;
+  real_title?: string;
+  real_message?: string;
+  real_badge?: string;
+  items?: PopupNotification[];
+};
+
+export function resolvePopupSettings(raw: unknown) {
+  const p = (raw && typeof raw === "object" ? raw : {}) as PopupSettings;
+  const num = (v: unknown, d: number, min: number, max: number) => {
+    const n = Number(v);
+    return Number.isFinite(n) && v !== "" && v != null ? Math.min(max, Math.max(min, n)) : d;
+  };
+  return {
+    enabled: p.enabled === true,
+    source: p.source ?? "manual",
+    position: p.position ?? "bottom-left",
+    delay: num(p.delay, 10, 0, 600),
+    visible: num(p.visible, 5, 1, 120),
+    interval: num(p.interval, 30, 1, 3600),
+    order: p.order ?? "sequence",
+    animation: p.animation ?? "slide-fade",
+    show_close: p.show_close !== false,
+    real_title: p.real_title?.trim() || "{nome} — {cidade}",
+    real_message: p.real_message?.trim() || "comprou {produto}",
+    real_badge: p.real_badge?.trim() ?? "Verificado",
+    items: (p.items ?? []).filter((i) => i && i.id),
+  };
+}
+export type ResolvedPopupSettings = ReturnType<typeof resolvePopupSettings>;
+
+/** O popup aparece neste produto? Considera a loja e a opção do produto. */
+export function popupEnabledFor(settings: ResolvedPopupSettings, productMode: ProductSections["popup_mode"]): boolean {
+  if (productMode === "off") return false;
+  if (productMode === "on") return true;
+  return settings.enabled;
+}
+
+/** A notificação manual vale para este produto? */
+export function popupMatchesProduct(item: PopupNotification, productId: string | null): boolean {
+  if (item.active === false) return false;
+  const scope = item.scope ?? "all";
+  if (scope === "all") return true;
+  if (!productId) return false;
+  return (item.product_ids ?? []).includes(productId);
+}
+
+export function fillPopupText(text: string | undefined, vars: Record<string, string | undefined>): string {
+  return (text ?? "")
+    .replace(/\{(produto|loja|preco|cidade|nome)\}/g, (_, k: string) => vars[k] ?? "")
+    .replace(/\s+—\s*$/, "")
+    .replace(/^\s*—\s+/, "")
+    .trim();
+}

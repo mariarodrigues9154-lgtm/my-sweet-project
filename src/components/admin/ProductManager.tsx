@@ -828,6 +828,14 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
         </div>
       </Group>
 
+      <Group title="Popup de notificações">
+        <select value={d.sections.popup_mode ?? "store"} onChange={(e) => set("sections", { ...d.sections, popup_mode: e.target.value as "store" | "on" | "off" })} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-[13px]">
+          <option value="store">Usar configuração da loja</option>
+          <option value="on">Ativar neste produto</option>
+          <option value="off">Desativar neste produto</option>
+        </select>
+      </Group>
+
       <Group title="Perguntas sobre o produto / IA">
         <label className="flex items-center gap-2 text-[12.5px] font-semibold">
           <input type="checkbox" checked={d.sections.qa_enabled !== false} onChange={(e) => set("sections", { ...d.sections, qa_enabled: e.target.checked })} />
