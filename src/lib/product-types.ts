@@ -560,6 +560,10 @@ export type PopupNotification = {
   use_current_product?: boolean;
   scope?: "all" | "selected" | "one";
   product_ids?: string[];
+  /** Mostra o selo Verificado (só para compra confirmada). */
+  verified?: boolean;
+  /** Tempo exibido, em minutos ("há N minutos"). */
+  minutes?: number | undefined;
 };
 
 export type PopupSettings = {
@@ -582,6 +586,8 @@ export type PopupSettings = {
   review_show_location?: boolean;
   review_use_order_location?: boolean;
   review_confirmed_only?: boolean;
+  /** Calcula o tempo a partir da data real (compras/avaliações). */
+  real_time?: boolean;
   items?: PopupNotification[];
 };
 
@@ -611,6 +617,7 @@ export function resolvePopupSettings(raw: unknown) {
     review_show_location: p.review_show_location === true,
     review_use_order_location: p.review_use_order_location === true,
     review_confirmed_only: p.review_confirmed_only === true,
+    real_time: p.real_time !== false,
     items: (p.items ?? []).filter((i) => i && i.id),
   };
 }
