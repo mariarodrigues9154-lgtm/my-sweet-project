@@ -69,7 +69,7 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
   return (
     <div
       role="status"
-      className={`pointer-events-auto flex w-[min(290px,calc(100vw-24px))] items-center gap-2.5 rounded-xl bg-card p-2.5 pr-7 shadow-[0_6px_24px_-6px_hsl(0_0%_0%/0.25)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
+      className={`pointer-events-auto relative flex w-[min(290px,calc(100vw-24px))] items-center gap-2.5 rounded-xl bg-card p-2.5 pr-7 shadow-[0_6px_24px_-6px_hsl(0_0%_0%/0.25)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
     >
       {card.image && <img src={card.image} alt="" loading="lazy" className="size-10 shrink-0 rounded-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />}
       <div className="min-w-0 flex-1 leading-tight">

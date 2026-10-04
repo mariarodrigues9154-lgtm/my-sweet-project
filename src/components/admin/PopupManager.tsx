@@ -136,7 +136,7 @@ export function PopupManager({ value, onChange, products, storeName, onUpload }:
               <div className="absolute inset-x-0 bottom-0 h-11 bg-primary/80" />
               {card ? (
                 <div className={`absolute ${r.position.startsWith("bottom") ? "bottom-14" : "top-3"} ${r.position.endsWith("left") ? "left-2" : "right-2"} origin-center scale-[0.85]`}>
-                  <PopupCardView card={card} shown settings={r} onClose={() => setPreviewOn(false)} className="relative w-[250px]" />
+                  <PopupCardView card={card} shown settings={r} onClose={() => setPreviewOn(false)} className="w-[250px]" />
                 </div>
               ) : <p className="absolute inset-x-3 top-1/2 text-center text-[11px] text-muted-foreground">Nenhuma notificação ativa para mostrar.</p>}
             </div>
