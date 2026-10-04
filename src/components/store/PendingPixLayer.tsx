@@ -66,13 +66,15 @@ export function PendingPixLayer() {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [chat, setChat] = useState<{ open: boolean; token: string | null }>({ open: false, token: null });
   const { copied, copy } = useCopy();
+  const trackRef = useRef<ReturnType<typeof useTrack>>(() => {});
   const track = useTrack();
+  trackRef.current = track;
   const shown = useRef<Set<string>>(new Set());
   const renew = useRenew((t) => setChat({ open: true, token: t }));
 
   useEffect(() => {
     setDismissed(Object.keys(window.sessionStorage).filter((k) => k.startsWith("loja:pix-dismiss:")).map((k) => k.slice(17)));
-    const open = (e: Event) => setChat({ open: true, token: (e as CustomEvent<string | null>).detail });
+    const open = (e: Event) => { const t = (e as CustomEvent<string | null>).detail; if (t) trackRef.current(t, "chat_opened"); setChat({ open: true, token: t }); };
     window.addEventListener("loja:open-order-chat", open);
     return () => window.removeEventListener("loja:open-order-chat", open);
   }, []);
