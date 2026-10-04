@@ -35,7 +35,6 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
   }
   if (s.source !== "manual") {
     for (const [i, p] of purchases.entries()) {
-      if (ctx.product && p.product_id && p.product_id !== ctx.product.id && s.source === "real" && false) continue;
       const vars = { produto: p.product, loja: ctx.storeName, preco: "", cidade: p.city, nome: p.name };
       cards.push({ key: `real-${i}`, image: p.image, title: fillPopupText(s.real_title, vars), message: fillPopupText(s.real_message, vars), secondary: timeAgo(p.paid_at), badge: s.real_badge });
     }
