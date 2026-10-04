@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, X } from "lucide-react";
+import { BadgeCheck, User, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 
@@ -17,7 +17,7 @@ import {
   type StoreSettings,
 } from "@/lib/product-types";
 
-export type PopupCard = { key: string; image: string | null; title: string; message: string; secondary: string; badge: string; rating?: number | undefined; initials?: string | undefined };
+export type PopupCard = { key: string; image: string | null; title: string; message: string; secondary: string; badge: string; time?: string; rating?: number | undefined; initials?: string | undefined };
 
 type Ctx = { storeName: string; product: (Pick<Product, "id" | "name" | "price"> & { reviews?: Product["reviews"] }) | null; products: Array<{ id: string; name: string; price?: number }> };
 
@@ -36,9 +36,10 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
       const vars = { produto: linked?.name, loja: ctx.storeName, preco: linked && "price" in linked && linked.price != null ? brl(Number(linked.price)) : "", cidade: item.location, nome: item.name };
       const head = [item.name?.trim(), item.location?.trim()].filter(Boolean).join(" — ");
       const title = fillPopupText(item.title, vars) || head;
-      const message = fillPopupText(item.message, vars);
+      const message = fillPopupText(item.message, vars) || (linked?.name ? `comprou ${linked.name}` : "");
       if (!title && !message) continue;
-      cards.push({ key: item.id, image: item.image || null, title, message, secondary: fillPopupText(item.secondary, vars), badge: "" });
+      const mins = Number(item.minutes);
+      cards.push({ key: item.id, image: item.image || null, title, message, secondary: fillPopupText(item.secondary, vars), badge: item.verified ? "Verificado" : "", time: Number.isFinite(mins) && mins > 0 && item.minutes != null ? minutesText(mins) : "", initials: initialsOf(item.name) });
     }
   }
   if (useReviews && ctx.product) {
@@ -53,20 +54,32 @@ export function buildPopupCards(s: ResolvedPopupSettings, ctx: Ctx, purchases: R
       if (!title && !message) continue;
       const loc = [city, state].filter(Boolean).join(", ");
       const initials = (r.name ?? "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-      cards.push({ key: `rev-${i}`, image: r.avatar || null, title, message, secondary: [fillPopupText(s.review_secondary, vars), loc].filter(Boolean).join(" · "), badge: r.confirmed ? "Compra confirmada" : "", rating: Number(r.rating) > 0 ? Number(r.rating) : undefined, initials: initials || "?" });
+      cards.push({ key: `rev-${i}`, image: r.avatar || null, title, message, secondary: [fillPopupText(s.review_secondary, vars), loc].filter(Boolean).join(" · "), badge: r.confirmed ? "Verificado" : "", time: s.real_time ? timeAgo(r.date ?? "") : "", rating: Number(r.rating) > 0 ? Number(r.rating) : undefined, initials: initials || "?" });
     }
   }
   if (useReal) {
     for (const [i, p] of purchases.entries()) {
       const vars = { produto: p.product, loja: ctx.storeName, preco: "", cidade: p.city, nome: p.name };
-      cards.push({ key: `real-${i}`, image: p.image, title: fillPopupText(s.real_title, vars), message: fillPopupText(s.real_message, vars), secondary: timeAgo(p.paid_at), badge: s.real_badge });
+      cards.push({ key: `real-${i}`, image: p.image, title: fillPopupText(s.real_title, vars), message: fillPopupText(s.real_message, vars), secondary: "", badge: s.real_badge, time: s.real_time ? timeAgo(p.paid_at) : "" });
     }
   }
   return cards;
 }
 
+function initialsOf(name?: string): string | undefined {
+  const v = (name ?? "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+  return v || undefined;
+}
+
+function minutesText(min: number): string {
+  const m = Math.max(1, Math.round(min));
+  return m < 60 ? `há ${m} minuto${m > 1 ? "s" : ""}` : timeAgo(new Date(Date.now() - m * 60000).toISOString());
+}
+
 function timeAgo(iso: string): string {
-  const min = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  const t = new Date(iso).getTime();
+  if (!iso || !Number.isFinite(t)) return "";
+  const min = Math.max(1, Math.round((Date.now() - t) / 60000));
   if (min < 60) return `há ${min} minuto${min > 1 ? "s" : ""}`;
   const h = Math.round(min / 60);
   if (h < 24) return `há ${h} hora${h > 1 ? "s" : ""}`;
@@ -83,30 +96,32 @@ const POS: Record<ResolvedPopupSettings["position"], string> = {
 
 /** Cartão visual — usado na loja e na prévia do painel. */
 export function PopupCardView({ card, shown, settings, onClose, className = "" }: { card: PopupCard; shown: boolean; settings: ResolvedPopupSettings; onClose?: () => void; className?: string }) {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [card.image]);
   const fromBottom = settings.position.startsWith("bottom");
   const anim = settings.animation;
   const hidden =
     anim === "none" ? "hidden" : anim === "fade" ? "opacity-0" : anim === "slide" ? (fromBottom ? "translate-y-6" : "-translate-y-6") : `opacity-0 ${fromBottom ? "translate-y-6" : "-translate-y-6"}`;
+  const [name, ...rest] = card.title.split(" — ");
+  const loc = rest.join(" — ");
+  const fallback = <div className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-bold text-muted-foreground">{card.initials ?? <User size={18} />}</div>;
   return (
     <div
       role="status"
-      className={`pointer-events-auto relative flex w-[min(290px,calc(100vw-24px))] items-center gap-2.5 rounded-xl bg-card p-2.5 pr-7 shadow-[0_6px_24px_-6px_hsl(0_0%_0%/0.25)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
+      className={`pointer-events-auto relative flex w-[min(330px,calc(100vw-24px))] items-center gap-3 rounded-2xl bg-card px-3 py-2.5 pr-7 shadow-[0_8px_28px_-8px_hsl(0_0%_0%/0.28)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
     >
-      {card.image ? (
-        <img src={card.image} alt="" loading="lazy" className="size-10 shrink-0 rounded-full object-cover" onError={(e) => { const el = e.currentTarget; if (card.initials) { el.replaceWith(Object.assign(document.createElement("div"), { className: "grid size-10 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-muted-foreground", textContent: card.initials })); } else el.style.display = "none"; }} />
-      ) : card.initials ? (
-        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-muted-foreground">{card.initials}</div>
-      ) : null}
-      <div className="min-w-0 flex-1 leading-tight">
-        {card.title && <p className="truncate text-[12px] font-extrabold text-foreground">{card.title}</p>}
-        {card.rating != null && <Stars rating={card.rating} size={11} />}
-        {card.message && <p className="line-clamp-2 text-[11px] text-muted-foreground">{card.message}</p>}
-        {(card.badge || card.secondary) && (
-          <div className="mt-0.5 flex items-center gap-1.5">
-            {card.badge && <span className="inline-flex items-center gap-0.5 rounded bg-success px-1 py-px text-[9.5px] font-bold text-success-foreground"><BadgeCheck size={10} />{card.badge}</span>}
-            {card.secondary && <span className="truncate text-[10px] text-muted-foreground">{card.secondary}</span>}
-          </div>
+      {card.image && !broken ? (
+        <img src={card.image} alt="" loading="lazy" className="size-11 shrink-0 rounded-full object-cover" onError={() => setBroken(true)} />
+      ) : fallback}
+      <div className="min-w-0 flex-1 leading-snug">
+        {card.title && (
+          <p className="truncate text-[13px] text-foreground"><span className="font-extrabold">{name}</span>{loc && <span className="font-semibold"> — {loc}</span>}</p>
         )}
+        {card.rating != null && <Stars rating={card.rating} size={11} />}
+        {card.message && <p className="line-clamp-2 text-[11.5px] text-muted-foreground">{card.message}</p>}
+        {card.secondary && <p className="truncate text-[10.5px] text-muted-foreground">{card.secondary}</p>}
+        {card.badge && <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-md bg-success px-1.5 py-px text-[10px] font-bold text-success-foreground"><BadgeCheck size={10} />{card.badge}</span>}
+        {card.time && <p className="mt-0.5 text-[10px] text-muted-foreground/80">{card.time}</p>}
       </div>
       {settings.show_close && onClose && (
         <button type="button" aria-label="Fechar" onClick={onClose} className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-muted-foreground hover:bg-surface">
