@@ -844,3 +844,29 @@ export const importReviewImages = createServerFn({ method: "POST" })
     );
     return { results };
   });
+
+export type PixRecoveryMetrics = { store_id: string; name: string; notices: number; copies: number; chats: number; renewed: number; recovered: number; recovered_total: number };
+
+/** Métricas da recuperação de PIX por loja (avisos, cópias, chats, novas cobranças e pagamentos recuperados). */
+export const pixRecoveryMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PixRecoveryMetrics[]> => {
+    await assertAdmin(context);
+    const sb = context.supabase;
+    const [{ data: stores }, { data: events }] = await Promise.all([
+      sb.from("store_settings").select("id, name").order("created_at"),
+      sb.from("pix_recovery_events").select("store_id, order_id, event_type").limit(20000),
+    ]);
+    const ids = [...new Set((events ?? []).map((e: any) => e.order_id as string))];
+    const paid = new Map<string, number>();
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data: rows } = await sb.from("orders").select("id, total, status").in("id", ids.slice(i, i + 200)).in("status", ["pago", "aprovado"]);
+      for (const r of rows ?? []) paid.set(r.id as string, Number(r.total));
+    }
+    return (stores ?? []).map((s: any) => {
+      const ev = (events ?? []).filter((e: any) => e.store_id === s.id);
+      const n = (t: string) => ev.filter((e: any) => e.event_type === t).length;
+      const rec = [...new Set(ev.map((e: any) => e.order_id as string))].filter((id) => paid.has(id));
+      return { store_id: s.id, name: s.name, notices: n("notice_shown"), copies: n("code_copied"), chats: n("chat_opened"), renewed: n("renewed"), recovered: rec.length, recovered_total: rec.reduce((t, id) => t + (paid.get(id) ?? 0), 0) };
+    });
+  });

@@ -79,9 +79,12 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
             <p className={`mt-4 truncate text-[18px] font-bold ${expired ? "text-muted-foreground line-through" : ""}`}>{code}</p>
           )}
 
+          {expired && (
+            <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-[12.5px] font-medium text-destructive">Este código PIX expirou e não pode mais ser usado. Não pague com ele — gere uma nova cobrança abaixo.</p>
+          )}
           {expired ? (
             <button type="button" onClick={onNew} className="mt-4 flex h-12 w-full items-center justify-center rounded-lg bg-primary text-[15px] font-bold text-primary-foreground">
-              Gerar novo Pix
+              Gerar nova cobrança PIX
             </button>
           ) : (
             <button
