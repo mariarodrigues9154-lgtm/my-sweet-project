@@ -229,7 +229,9 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
 
     <Group title="Atendimento por IA e suporte">
       {(() => { const ai = draft.ai_support ?? {}; const up = (patch: Partial<NonNullable<StoreSettings["ai_support"]>>) => set("ai_support", { ...ai, ...patch }); return <>
-        <p className="mb-2 text-[11px] text-muted-foreground">A IA das perguntas usa só estas informações e as do produto. Escreva apenas fatos verdadeiros.</p>
+        <Toggle label="Ativar Atendimento por IA e Suporte" checked={ai.enabled !== false} onChange={(v) => up({ enabled: v })} />
+        <p className="my-2 text-[11px] text-muted-foreground">{ai.enabled !== false ? "A IA das perguntas usa só estas informações e as do produto. Escreva apenas fatos verdadeiros." : "Desativado: a IA não responde e o suporte não aparece na loja. Os dados abaixo continuam salvos."}</p>
+        <fieldset disabled={ai.enabled === false} className={ai.enabled === false ? "pointer-events-none opacity-50" : ""}>
         <div className="grid gap-2 sm:grid-cols-2">
           <Toggle label="Entregamos para todo o Brasil" checked={!!ai.ships_brazil} onChange={(v) => up({ ships_brazil: v })} />
           <Toggle label="Encaminhar para suporte humano" checked={!!ai.forward_enabled} onChange={(v) => up({ forward_enabled: v })} />
@@ -245,6 +247,7 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
           <TextArea label="Informações da loja" value={ai.store_info ?? ""} onChange={(v) => up({ store_info: v })} />
           <TextArea label="Informações adicionais para a IA" value={ai.extra_info ?? ""} onChange={(v) => up({ extra_info: v })} />
         </div>
+        </fieldset>
       </>; })()}
     </Group>
 

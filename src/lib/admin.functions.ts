@@ -247,6 +247,7 @@ const storeInput = z.object({
   }),
   ai_support: z
     .object({
+      enabled: z.boolean().optional(),
       ships_brazil: z.boolean().optional(),
       warranty_text: z.string().trim().max(1000).optional(),
       store_info: z.string().trim().max(4000).optional(),
