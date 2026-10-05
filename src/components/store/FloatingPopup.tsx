@@ -116,37 +116,37 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
   const name = settings.show_name ? rawName : "";
   const loc = settings.show_location ? rest.join(" — ") : "";
   const badgeCls = BADGE[settings.badge_color] ?? BADGE["accent"];
-  const fallback = <div className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-[13px] font-bold text-muted-foreground">{card.initials ?? <User size={18} />}</div>;
+  const fallback = <div className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-muted-foreground">{card.initials ?? <User size={16} />}</div>;
   return (
     <div
       role="status"
-      className={`pointer-events-auto relative flex w-[min(330px,calc(100vw-24px))] items-center gap-3 rounded-2xl bg-card px-3 py-2.5 pr-7 shadow-[0_8px_28px_-8px_hsl(0_0%_0%/0.28)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
+      className={`pointer-events-auto relative flex w-[min(284px,calc(100vw-24px))] items-center gap-2 rounded-2xl bg-card px-2.5 py-2 pr-6 shadow-[0_8px_28px_-8px_hsl(0_0%_0%/0.28)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
     >
       {settings.show_photo && (card.image && !broken ? (
-        <img src={card.image} alt="" loading="lazy" className="size-11 shrink-0 rounded-full object-cover" onError={() => setBroken(true)} />
+        <img src={card.image} alt="" loading="lazy" className="size-9 shrink-0 rounded-full object-cover" onError={() => setBroken(true)} />
       ) : fallback)}
-      <div className="min-w-0 flex-1 leading-snug">
+      <div className="min-w-0 flex-1 leading-tight">
         {(name || loc) && (
-          <p className="flex min-w-0 items-center gap-1 text-[13px] text-foreground">
+          <p className="flex min-w-0 items-center gap-1 text-[12.5px] text-foreground">
             {name && <span className="truncate font-extrabold">{name}</span>}
             {loc && (settings.show_location_icon ? (
               <span className="inline-flex min-w-0 items-center gap-0.5 font-semibold text-muted-foreground">
                 {name && <span className="text-border">·</span>}
-                <MapPin size={12} className="shrink-0 text-primary" />
+                <MapPin size={11} className="shrink-0 text-primary" />
                 <span className="truncate">{loc}</span>
               </span>
             ) : <span className="truncate font-semibold">{name ? "— " : ""}{loc}</span>)}
           </p>
         )}
-        {card.rating != null && <Stars rating={card.rating} size={11} />}
-        {settings.show_product && card.message && <p className="line-clamp-2 text-[11.5px] text-muted-foreground">{card.message}</p>}
-        {settings.show_secondary && card.secondary && <p className="truncate text-[10.5px] text-muted-foreground">{card.secondary}</p>}
-        {settings.show_badge && card.badge && <span className={`mt-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-px text-[10px] font-bold ${badgeCls}`}><BadgeCheck size={10} />{card.badge}</span>}
-        {settings.show_time && card.time && <p className="mt-0.5 text-[10px] text-muted-foreground/80">{card.time}</p>}
+        {card.rating != null && <Stars rating={card.rating} size={10} />}
+        {settings.show_product && card.message && <p className="line-clamp-2 text-[11px] text-muted-foreground">{card.message}</p>}
+        {settings.show_secondary && card.secondary && <p className="truncate text-[10px] text-muted-foreground">{card.secondary}</p>}
+        {settings.show_badge && card.badge && <span className={`mt-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-px text-[9.5px] font-bold ${badgeCls}`}><BadgeCheck size={9} />{card.badge}</span>}
+        {settings.show_time && card.time && <p className="mt-0.5 text-[9.5px] text-muted-foreground/80">{card.time}</p>}
       </div>
       {settings.show_close && onClose && (
         <button type="button" aria-label="Fechar" onClick={onClose} className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-muted-foreground hover:bg-surface">
-          <X size={12} />
+          <X size={11} />
         </button>
       )}
     </div>
