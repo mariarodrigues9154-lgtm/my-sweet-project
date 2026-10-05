@@ -227,6 +227,8 @@ export type Product = {
 };
 
 export type CheckoutSettings = {
+  /** Espelho público de ai_support.enabled (ausente = ligado). */
+  ai_enabled?: boolean;
   checkout_model?: "v1" | "v2";
   logo_url?: string | null;
   primary_color?: string | null;

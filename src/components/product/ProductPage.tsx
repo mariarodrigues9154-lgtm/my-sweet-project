@@ -44,7 +44,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         <ReviewsSection product={product} />
         <StoreProfile store={store} product={product} onMessage={openChat} />
         <SpecsSection product={product} />
-        {product.sections?.qa_enabled !== false && <ProductQA key={product.id} product={product} storeId={store.id} />}
+        {product.sections?.qa_enabled !== false && store.checkout?.ai_enabled !== false && <ProductQA key={product.id} product={product} storeId={store.id} />}
         <TermsSection terms={product.terms} config={store.checkout?.product_terms} />
         <StoreFooter store={store} />
       </main>
