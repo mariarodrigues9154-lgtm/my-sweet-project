@@ -120,6 +120,8 @@ export type ProductSections = {
 
 /** Atendimento por IA e suporte humano — por loja, lido só no servidor. */
 export type StoreAiSupport = {
+  /** Liga/desliga a função inteira; ausente = ligado (lojas antigas). */
+  enabled?: boolean;
   ships_brazil?: boolean;
   warranty_text?: string;
   store_info?: string;
@@ -225,6 +227,8 @@ export type Product = {
 };
 
 export type CheckoutSettings = {
+  /** Espelho público de ai_support.enabled (ausente = ligado). */
+  ai_enabled?: boolean;
   checkout_model?: "v1" | "v2";
   logo_url?: string | null;
   primary_color?: string | null;

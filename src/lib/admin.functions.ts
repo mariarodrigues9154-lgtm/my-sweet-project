@@ -247,6 +247,7 @@ const storeInput = z.object({
   }),
   ai_support: z
     .object({
+      enabled: z.boolean().optional(),
       ships_brazil: z.boolean().optional(),
       warranty_text: z.string().trim().max(1000).optional(),
       store_info: z.string().trim().max(4000).optional(),
@@ -295,6 +296,8 @@ export const updateStoreProfile = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...fields } = data;
+    // Espelho público (só o liga/desliga) para a página esconder as perguntas sem expor ai_support.
+    (fields as { checkout: Record<string, unknown> }).checkout = { ...fields.checkout, ai_enabled: fields.ai_support?.enabled !== false };
     const { data: clash } = await supabaseAdmin.from("store_settings").select("id").eq("slug", fields.slug).maybeSingle();
     if (clash && clash.id !== id) return { ok: false as const, error: "Já existe uma loja com esse endereço." };
     if (id) {

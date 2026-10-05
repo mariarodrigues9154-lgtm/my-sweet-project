@@ -123,6 +123,7 @@ export const askProductQuestion = createServerFn({ method: "POST" })
     if (!sRow) return { ok: false as const, error: "Loja não encontrada.", support: null };
     const store = sRow as unknown as StoreCtx;
     const support = supportLinks(store, product.name);
+    if (store.ai_support?.enabled === false) return { ok: false as const, error: "As perguntas estão indisponíveis no momento.", support: null };
 
     const { getRequestHeader } = await import("@tanstack/react-start/server");
     const ip = getRequestHeader("cf-connecting-ip") || getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
