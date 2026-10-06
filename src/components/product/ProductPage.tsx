@@ -51,6 +51,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
 
       <BuyBar
         product={product}
+        store={store}
         onAddToCart={() => setSheet({ open: true, mode: "cart" })}
         onBuyNow={() => setSheet({ open: true, mode: "buy" })}
         onChat={openChat}

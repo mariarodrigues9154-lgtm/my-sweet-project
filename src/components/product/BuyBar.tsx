@@ -1,16 +1,18 @@
-import { Link } from "@tanstack/react-router";
+import { StoreHomeLink } from "@/components/store/StoreHeader";
 import { MessageCircle, ShoppingCart, Store } from "lucide-react";
-import type { Product } from "@/lib/product-types";
+import type { Product, StoreSettings } from "@/lib/product-types";
 import { brl } from "@/lib/format";
 
 export function BuyBar({
   product,
+  store,
   onAddToCart,
   onBuyNow,
   onChat,
   chatBadge = 0,
 }: {
   product: Product;
+  store: StoreSettings;
   onAddToCart: () => void;
   onBuyNow: () => void;
   onChat: () => void;
@@ -21,10 +23,10 @@ export function BuyBar({
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card">
       <div className="mx-auto flex max-w-[520px] items-center gap-2 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <Link to="/" className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
+        <StoreHomeLink store={store} className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
           <Store size={20} strokeWidth={1.6} />
           Loja
-        </Link>
+        </StoreHomeLink>
         <button type="button" onClick={onChat} className="relative flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
           <MessageCircle size={20} strokeWidth={1.6} />
           {chatBadge > 0 && <span className="absolute -top-1 right-0 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">{chatBadge}</span>}

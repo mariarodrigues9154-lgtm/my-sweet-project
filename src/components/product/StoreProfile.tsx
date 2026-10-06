@@ -39,8 +39,8 @@ export function StoreProfile({
           <p className="truncate text-[12px] text-muted-foreground">{intBR(store.sold_count || product.sold_count)} vendido(s)</p>
         </div>
         {store.show_visit !== false && (store.visit_clickable !== false
-          ? <StoreHomeLink store={store} className="shrink-0 rounded-full border border-border px-4 py-2 text-[12px] font-bold">Visitar</StoreHomeLink>
-          : <span className="shrink-0 cursor-default select-none rounded-full border border-border px-4 py-2 text-[12px] font-bold">Visitar</span>)}
+          ? <StoreHomeLink store={store} className="shrink-0 rounded-full bg-primary px-5 py-2 text-[12.5px] font-bold text-primary-foreground shadow-sm transition active:scale-[0.97]">Visitar</StoreHomeLink>
+          : <span className="shrink-0 cursor-default select-none rounded-full bg-primary px-5 py-2 text-[12.5px] font-bold text-primary-foreground shadow-sm">Visitar</span>)}
       </div>
 
       {(store.show_follow || store.show_message) && <div className={`mt-3 grid gap-2 ${store.show_follow && store.show_message ? "grid-cols-2" : "grid-cols-1"}`}>
