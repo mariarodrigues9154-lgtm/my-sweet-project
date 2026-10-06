@@ -396,10 +396,12 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const release = () => supabaseAdmin.from("orders").update({ provider_status: null } as never).eq("id", order.id).eq("provider_status", "creating");
 
     let postbackUrl: string | undefined;
+    let checkoutUrl: string | undefined;
     try {
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
-      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : `${origin}/api/public/pagamentos/webhook`;
+      checkoutUrl = `${origin}/pagamento`;
+      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : `${origin}/api/public/pagamentos/webhook`;
     } catch {
       postbackUrl = undefined;
     }
@@ -433,6 +435,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
           },
         },
         ...(postbackUrl ? { postbackUrl } : {}),
+        ...(checkoutUrl ? { checkoutUrl } : {}),
         metadata: { order_id: order.id as string, store_id: order.store_id as string },
         expiresInDays: pixDays,
       });

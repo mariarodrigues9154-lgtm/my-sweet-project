@@ -26,6 +26,8 @@ export type PixChargeInput = {
     address: { street: string; street_number: string; complement: string; zip_code: string; neighborhood: string; city: string; state: string; country: string };
   };
   postbackUrl?: string;
+  /** Origem do checkout (PinPay exige metadata.checkout_url). */
+  checkoutUrl?: string;
   metadata?: Record<string, string>;
   expiresInDays?: number;
 };
@@ -367,7 +369,111 @@ const wappi: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, mercadopago, asaas };
+// ----------------------------------------------------------------------- PinPay
+// Doc: https://hub.usepinpay.com/documentacao — Bearer sk_, valores em centavos.
+
+export const PINPAY_BASE = "https://api.usepinpay.com/functions/v1/api-v1";
+
+/** Status da PinPay → status interno (maiúsculo, mesmo padrão da Wappi). */
+export function mapPinpayStatus(raw: unknown): string {
+  const s = String(raw ?? "").toLowerCase();
+  if (s === "paid" || s === "approved") return "PAID";
+  if (s === "pending" || s === "processing") return "PENDING";
+  if (s === "refunded") return "REFUNDED";
+  if (s === "chargeback") return "CHARGEBACK";
+  if (s === "expired") return "EXPIRED";
+  if (s === "refused" || s === "failed") return "REFUSED";
+  return "ERROR";
+}
+
+function pinpayError(status: number): string {
+  if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique a Secret Key da PinPay.";
+  if (status === 422) return "Alguns dados do pedido não foram aceitos. Confira nome, e-mail e CPF/CNPJ.";
+  if (status === 429) return "Muitas tentativas seguidas. Aguarde um minuto.";
+  return "O provedor de pagamento não respondeu. Tente novamente.";
+}
+
+const pinpay: PaymentProvider = {
+  id: "pinpay",
+  async testConnection(config) {
+    const key = config.secrets["secret_key"] ?? "";
+    if (!key) return { ok: false, error: "Informe a Secret Key." };
+    // Listar transações valida a chave sem criar cobrança.
+    const res = await fetch(`${PINPAY_BASE}/transactions`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10000) });
+    if (res.ok) return { ok: true };
+    return { ok: false, error: pinpayError(res.status) };
+  },
+  async createPix(config, input) {
+    const key = config.secrets["secret_key"] ?? "";
+    if (!key) return { ok: false, error: "Gateway sem credenciais." };
+    const amount = input.amountCents ?? Math.round(input.amount * 100);
+    if (!Number.isInteger(amount) || amount < 100) return { ok: false, error: "A PinPay aceita PIX a partir de R$ 1,00." };
+    const doc = digits(input.customer.document);
+    const phone = digits(input.customer.phone ?? "");
+    const body = {
+      amount,
+      description: input.description.slice(0, 140),
+      customer: {
+        name: input.customer.name.trim().slice(0, 120) || "Cliente",
+        email: input.customer.email.trim().slice(0, 160),
+        document: { type: doc.length > 11 ? "CNPJ" : "CPF", number: doc },
+        ...(phone ? { phone } : {}),
+      },
+      expires_in: 900,
+      ...(input.postbackUrl ? { webhook_url: input.postbackUrl } : {}),
+      metadata: {
+        external_reference: input.orderNumber,
+        checkout_url: input.checkoutUrl ?? "",
+      },
+    };
+    const res = await fetch(`${PINPAY_BASE}/pix`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "Idempotency-Key": `pix-${input.orderNumber}` },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30000),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | { id?: string; status?: string; amount?: number; qr_code?: string; qr_code_url?: string; expires_at?: string; pix?: { qr_code?: string; qr_code_url?: string; expires_at?: string } }
+      | null;
+    if (res.status !== 200 && res.status !== 201) {
+      console.error("[pinpay] create falhou", res.status, JSON.stringify(json ?? null).slice(0, 300));
+      return { ok: false, error: pinpayError(res.status) };
+    }
+    if (!json?.id) return { ok: false, error: "O provedor não conseguiu gerar o PIX agora." };
+    const payload = json.pix?.qr_code ?? json.qr_code ?? null;
+    const imgUrl = json.pix?.qr_code_url ?? json.qr_code_url ?? null;
+    const copyPaste = isPixPayload(payload) ? payload.trim() : null;
+    let qr: string | null = copyPaste ? await qrFromPayload(copyPaste) : null;
+    if (!qr && isImage(imgUrl)) qr = imgUrl;
+    if (!qr && !copyPaste) return { ok: false, error: "O provedor não retornou os dados do PIX. Tente novamente." };
+    const expiresAt = json.pix?.expires_at ?? json.expires_at ?? null;
+    const expMs = expiresAt ? Date.parse(expiresAt) - Date.now() : NaN;
+    return {
+      ok: true,
+      transaction_id: String(json.id),
+      qr_code: qr,
+      copy_paste: copyPaste,
+      expires_in: Number.isFinite(expMs) && expMs > 0 ? Math.floor(expMs / 1000) : 900,
+      provider_status: mapPinpayStatus(json.status ?? "pending"),
+      expiration_date: expiresAt,
+      amount_cents: typeof json.amount === "number" ? json.amount : null,
+    };
+  },
+  async getStatus(config, transactionId) {
+    const key = config.secrets["secret_key"] ?? "";
+    if (!key) return { paid: false, status: "unknown" };
+    const res = await fetch(`${PINPAY_BASE}/transactions/${encodeURIComponent(transactionId)}`, {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`pinpay transaction ${res.status}`);
+    const tx = (await res.json().catch(() => null)) as { status?: string; paid_at?: string; approved_at?: string } | null;
+    const status = mapPinpayStatus(tx?.status);
+    return { paid: status === "PAID", status, paid_at: tx?.approved_at ?? tx?.paid_at ?? null };
+  },
+};
+
+const REGISTRY: Record<string, PaymentProvider> = { wappi, pinpay, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;
