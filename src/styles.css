@@ -274,3 +274,18 @@
   70% { box-shadow: 0 0 0 6px oklch(1 0 0 / 0%); }
   100% { box-shadow: 0 0 0 0 oklch(1 0 0 / 0%); }
 }
+
+/* Balanço suave do ícone da oferta de saída */
+@utility gift-swing {
+  transform-origin: 50% 85%;
+  animation: gift-swing 2.8s ease-in-out infinite;
+}
+@keyframes gift-swing {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  66% { transform: rotate(-9deg); }
+  72% { transform: rotate(8deg); }
+  78% { transform: rotate(-5deg); }
+  84% { transform: rotate(3deg); }
+  90% { transform: rotate(0deg); }
+}
+@media (prefers-reduced-motion: reduce) { .gift-swing { animation: none; } }
