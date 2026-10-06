@@ -136,3 +136,12 @@ export function moneyInput(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "";
   return (toCents(value) / 100).toFixed(2).replace(".", ",");
 }
+
+/** Contagem compacta pt-BR: 950 → "950", 1200 → "1,2 mil", 125000 → "125 mil", 2500000 → "2,5 mi". */
+export function compactBR(value: number): string {
+  const n = Math.max(0, Math.round(Number(value) || 0));
+  const f = (v: number, suf: string) => `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(Math.floor(v * 10) / 10)} ${suf}`;
+  if (n >= 1_000_000) return f(n / 1_000_000, "mi");
+  if (n >= 1000) return f(n / 1000, "mil");
+  return String(n);
+}

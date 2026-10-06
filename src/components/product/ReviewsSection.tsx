@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Check, ChevronRight, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
-import { intBR } from "@/lib/format";
+import { compactBR } from "@/lib/format";
 import { ratingDot, reviewsPageSize, reviewsSectionHeader, type Product } from "@/lib/product-types";
 
 export function ReviewsSection({ product }: { product: Product }) {
@@ -19,7 +19,7 @@ export function ReviewsSection({ product }: { product: Product }) {
     <section className="mt-2 bg-card px-4 py-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <h2 className="min-w-0 truncate text-[15px] font-bold">
-          {head.title} <span className="font-normal text-muted-foreground">({intBR(head.count)})</span>
+          {head.title} <span className="font-normal text-muted-foreground">({compactBR(head.count)})</span>
         </h2>
         {reviews.length > count && (
           <button type="button" onClick={more} className="inline-flex shrink-0 items-center gap-0.5 text-[12.5px] font-medium text-muted-foreground">

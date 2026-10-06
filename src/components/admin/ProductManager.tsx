@@ -736,46 +736,56 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
             className={inputCls}
           />
         </label>
-        <label className="text-[12px] font-semibold">
-          Fonte das avaliações
-          <select
-            value={d.display?.rs_source ?? "auto"}
-            onChange={(e) => set("display", { ...(d.display ?? {}), rs_source: e.target.value as "auto" | "manual" })}
-            className={inputCls}
-          >
-            <option value="auto">Automático (dados reais)</option>
-            <option value="manual">Manual</option>
-          </select>
-        </label>
-        <div className="grid grid-cols-3 gap-2">
-          <label className="text-[12px] font-semibold">
-            Quantidade exibida
-            <input
-              defaultValue={d.display?.rs_count != null ? String(d.display.rs_count) : ""}
-              placeholder="722"
-              onChange={(e) => set("display", { ...(d.display ?? {}), rs_count: e.target.value.trim() ? Math.max(0, Math.round(num(e.target.value))) : null })}
-              className={inputCls}
-            />
-          </label>
-          <label className="text-[12px] font-semibold">
-            Nota (0 a 5)
-            <input
-              defaultValue={d.display?.rs_rating != null ? String(d.display.rs_rating).replace(".", ",") : ""}
-              placeholder="4,8"
-              onChange={(e) => set("display", { ...(d.display ?? {}), rs_rating: e.target.value.trim() ? parseRatingInput(e.target.value) : null })}
-              className={inputCls}
-            />
-          </label>
-          <label className="text-[12px] font-semibold">
-            Nota máxima exibida
-            <input
-              value={d.display?.rs_max ?? ""}
-              placeholder="5"
-              onChange={(e) => set("display", { ...(d.display ?? {}), rs_max: e.target.value })}
-              className={inputCls}
-            />
-          </label>
-        </div>
+        {(() => {
+          const ds = d.display ?? {};
+          const cSrc = ds.rs_count_source ?? ds.rs_source ?? "auto";
+          const rSrc = ds.rs_rating_source ?? ds.rs_source ?? "auto";
+          const sel = (v: string, k: "rs_count_source" | "rs_rating_source") => (
+            <select value={v} onChange={(e) => set("display", { ...ds, [k]: e.target.value as "auto" | "manual" })} className={inputCls}>
+              <option value="auto">Automática (avaliações reais)</option>
+              <option value="manual">Manual</option>
+            </select>
+          );
+          return (
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-[12px] font-semibold">
+                Nota média
+                {sel(rSrc, "rs_rating_source")}
+                {rSrc === "manual" && (
+                  <input
+                    defaultValue={ds.rs_rating != null ? String(ds.rs_rating).replace(".", ",") : ""}
+                    placeholder="4,8"
+                    onChange={(e) => set("display", { ...(d.display ?? {}), rs_rating: e.target.value.trim() ? parseRatingInput(e.target.value) : null })}
+                    className={inputCls}
+                  />
+                )}
+              </label>
+              <label className="text-[12px] font-semibold">
+                Quantidade exibida
+                {sel(cSrc, "rs_count_source")}
+                {cSrc === "manual" && (
+                  <input
+                    inputMode="numeric"
+                    defaultValue={ds.rs_count != null ? String(ds.rs_count) : ""}
+                    placeholder="17800"
+                    onChange={(e) => set("display", { ...(d.display ?? {}), rs_count: e.target.value.trim() ? Math.max(0, Math.round(Number(e.target.value.replace(/\D+/g, "")) || 0)) : null })}
+                    className={inputCls}
+                  />
+                )}
+              </label>
+              <label className="text-[12px] font-semibold">
+                Nota máxima exibida
+                <input
+                  value={ds.rs_max ?? ""}
+                  placeholder="5"
+                  onChange={(e) => set("display", { ...(d.display ?? {}), rs_max: e.target.value })}
+                  className={inputCls}
+                />
+              </label>
+            </div>
+          );
+        })()}
+        <p className="text-[11px] text-muted-foreground">Ex.: 17800 aparece como "17,8 mil". "Vendidos" não entra nessa conta.</p>
       </Group>
 
 
