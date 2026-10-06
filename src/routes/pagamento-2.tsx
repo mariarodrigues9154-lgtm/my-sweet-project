@@ -140,7 +140,7 @@ function CheckoutTwo() {
   if (!product) return <div className="grid min-h-screen place-items-center bg-surface px-6 text-center"><div><h1 className="text-[18px] font-extrabold">Seu carrinho está vazio</h1><Link to="/" className="mt-3 inline-block text-[13px] font-bold text-primary">Voltar para a loja</Link></div></div>;
 
   return <div className="min-h-[100dvh] overflow-x-hidden bg-surface pb-36 text-foreground" style={checkoutTheme(store)}>
-    {exitIntent.open && exitOfferCfg && <ExitOfferPopup offer={exitOfferCfg} oldPrice={exitOld} newPrice={exitNew} onAccept={() => { setOfferAccepted(true); exitIntent.close(); toast.success("Desconto aplicado ao seu pedido!"); }} onDecline={exitIntent.decline} />}
+    {exitIntent.open && exitOfferCfg && <ExitOfferPopup offer={exitOfferCfg} oldPrice={exitOld} newPrice={exitNew} offerKey={product.id} product={{ name: product.name, image: image, variant: variant, quantity, rating: Number(product.rating) || null, warranty: product.warranty }} onAccept={() => { setOfferAccepted(true); exitIntent.close(); toast.success("Desconto aplicado ao seu pedido!"); }} onDecline={exitIntent.decline} />}
     <header className="grid h-11 grid-cols-[40px_minmax(0,1fr)_40px] items-center border-b border-border bg-card px-1">
       <Button variant="ghost" size="icon" aria-label="Voltar ao produto" onClick={() => void navigate({ to: "/produto/$slug", params: { slug: product.slug } })}><ChevronLeft size={22} /></Button>
       {headerRating

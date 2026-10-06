@@ -350,7 +350,7 @@ function CheckoutRoute() {
 
   return (
     <div className="min-h-screen bg-surface" style={checkoutStyle}>
-      {exitIntent.open && exitOfferCfg && <ExitOfferPopup offer={exitOfferCfg} oldPrice={exitOld} newPrice={exitNew} onAccept={() => { setOfferAccepted(true); exitIntent.close(); toast.success("Desconto aplicado ao seu pedido!"); }} onDecline={exitIntent.decline} />}
+      {exitIntent.open && exitOfferCfg && <ExitOfferPopup offer={exitOfferCfg} oldPrice={exitOld} newPrice={exitNew} offerKey={product.id} product={{ name: product.name, image: image, variant: variantText, quantity, rating: Number(product.rating) || null, warranty: product.warranty }} onAccept={() => { setOfferAccepted(true); exitIntent.close(); toast.success("Desconto aplicado ao seu pedido!"); }} onDecline={exitIntent.decline} />}
       <CheckoutHeader store={store} />
 
       <main className="mx-auto max-w-[520px] space-y-3 px-3 pb-6 pt-4">
