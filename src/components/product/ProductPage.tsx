@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 
 import { trackViewContent, useMetaPageView } from "@/lib/meta-pixel";
 
@@ -29,6 +30,15 @@ export function ProductPage({ product, store }: { product: Product; store: Store
   const orderChat = useOrderChatBadge(store.id);
   const openChat = () => (orderChat.hasOrders ? orderChat.open() : setChatOpen(true));
   useMetaPageView(store.id || null, () => void trackViewContent(store.id, product));
+  const router = useRouter();
+  const checkoutPath = store.checkout?.checkout_model === "v2" ? "/pagamento-2" : "/pagamento";
+  useEffect(() => {
+    // Pré-carrega o código do checkout quando o navegador fica ocioso.
+    const run = () => void router.preloadRoute({ to: checkoutPath }).catch(() => undefined);
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(run, { timeout: 4000 });
+    else setTimeout(run, 2500);
+  }, [router, checkoutPath]);
 
   return (
     <div className="min-h-screen bg-surface pb-24">
@@ -40,6 +50,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         <ProductHeadline product={product} />
         <DeliveryCard product={product} />
         <div className="h-3 bg-card" />
+        <div className="defer-render">
         <CreatorVideos videos={product.creator_videos} sections={product.sections ?? {}} />
         <ReviewsSection product={product} />
         <StoreProfile store={store} product={product} onMessage={openChat} />
@@ -47,6 +58,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         {product.sections?.qa_enabled !== false && store.checkout?.ai_enabled !== false && <ProductQA key={product.id} product={product} storeId={store.id} />}
         <TermsSection terms={product.terms} config={store.checkout?.product_terms} />
         <StoreFooter store={store} />
+        </div>
       </main>
 
       <BuyBar

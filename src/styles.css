@@ -289,3 +289,9 @@
   90% { transform: rotate(0deg); }
 }
 @media (prefers-reduced-motion: reduce) { .gift-swing { animation: none; } }
+
+/* Seções abaixo da primeira tela: o navegador só desenha quando chegam perto. */
+.defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
