@@ -2,9 +2,9 @@
  * Links assinados do armazenamento privado expiram ou deixam de valer quando as chaves mudam.
  * Convertemos para um endereço permanente do próprio site, que gera um link novo a cada acesso.
  */
-const SIGNED_RE = /\/storage\/v1\/object\/sign\/product-images\/(uploads\/[a-f0-9-]+\.[a-z0-9]+)(?:\?|$)/i;
+const SIGNED_RE = /\/storage\/v1\/object\/sign\/product-images\/((?:uploads\/)?[a-f0-9-]+\.[a-z0-9]+)(?:\?|$)/i;
 
-export const MEDIA_PATH_RE = /^uploads\/[a-f0-9-]+\.[a-z0-9]{1,5}$/i;
+export const MEDIA_PATH_RE = /^(?:uploads\/)?[a-f0-9-]+\.[a-z0-9]{1,5}$/i;
 
 export function stableMediaUrl(url: string | null | undefined): string {
   if (!url) return "";
@@ -14,7 +14,7 @@ export function stableMediaUrl(url: string | null | undefined): string {
 
 /** Larguras permitidas para versões reduzidas (WebP/AVIF automático pelo armazenamento). */
 export const IMG_WIDTHS = [240, 360, 480, 720, 1080] as const;
-const RESIZABLE_RE = /^\/api\/public\/media\/uploads\/[a-f0-9-]+\.(jpe?g|png|webp)$/i;
+const RESIZABLE_RE = /^\/api\/public\/media\/(?:uploads\/)?[a-f0-9-]+\.(jpe?g|png|webp)$/i;
 
 /** Link de uma versão reduzida da foto; fotos externas ficam como estão. */
 export function sizedImage(url: string | null | undefined, width: number): string {
