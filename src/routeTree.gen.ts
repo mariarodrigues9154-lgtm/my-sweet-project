@@ -30,6 +30,7 @@ import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminLojasIdRouteImport } from './routes/_authenticated/admin.lojas.$id'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 import { Route as ApiPublicPagamentosWebhookRouteImport } from './routes/api/public/pagamentos.webhook'
+import { Route as ApiPublicWebhooksPinpayRouteImport } from './routes/api/public/webhooks.pinpay'
 import { Route as ApiPublicWebhooksWappiRouteImport } from './routes/api/public/webhooks.wappi'
 import { Route as ApiPublicPedidosOrderNumberStatusRouteImport } from './routes/api/public/pedidos.$orderNumber.status'
 
@@ -140,6 +141,11 @@ const ApiPublicPagamentosWebhookRoute =
     path: '/api/public/pagamentos/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksPinpayRoute = ApiPublicWebhooksPinpayRouteImport.update({
+  id: '/api/public/webhooks/pinpay',
+  path: '/api/public/webhooks/pinpay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksWappiRoute = ApiPublicWebhooksWappiRouteImport.update({
   id: '/api/public/webhooks/wappi',
   path: '/api/public/webhooks/wappi',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
+  '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
+  '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -222,6 +230,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
+  '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/admin/lojas/$id'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
+    | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
   fileRoutesByTo: FileRoutesByTo
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/admin/lojas/$id'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
+    | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
   id:
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/lojas/$id'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
+    | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
   fileRoutesById: FileRoutesById
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   LojaIndexRoute: typeof LojaIndexRoute
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPagamentosWebhookRoute: typeof ApiPublicPagamentosWebhookRoute
+  ApiPublicWebhooksPinpayRoute: typeof ApiPublicWebhooksPinpayRoute
   ApiPublicWebhooksWappiRoute: typeof ApiPublicWebhooksWappiRoute
   ApiPublicPedidosOrderNumberStatusRoute: typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPagamentosWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/pinpay': {
+      id: '/api/public/webhooks/pinpay'
+      path: '/api/public/webhooks/pinpay'
+      fullPath: '/api/public/webhooks/pinpay'
+      preLoaderRoute: typeof ApiPublicWebhooksPinpayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/wappi': {
       id: '/api/public/webhooks/wappi'
       path: '/api/public/webhooks/wappi'
@@ -532,6 +552,7 @@ const rootRouteChildren: RootRouteChildren = {
   LojaIndexRoute: LojaIndexRoute,
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPagamentosWebhookRoute: ApiPublicPagamentosWebhookRoute,
+  ApiPublicWebhooksPinpayRoute: ApiPublicWebhooksPinpayRoute,
   ApiPublicWebhooksWappiRoute: ApiPublicWebhooksWappiRoute,
   ApiPublicPedidosOrderNumberStatusRoute:
     ApiPublicPedidosOrderNumberStatusRoute,
