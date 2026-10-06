@@ -401,7 +401,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
       checkoutUrl = `${origin}/pagamento`;
-      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : `${origin}/api/public/pagamentos/webhook`;
+      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : `${origin}/api/public/pagamentos/webhook`;
     } catch {
       postbackUrl = undefined;
     }
@@ -457,7 +457,8 @@ export const createPixCharge = createServerFn({ method: "POST" })
     // Se o cliente pagar mesmo assim, o webhook/consulta continua confirmando o pedido normalmente.
     const PIX_WINDOW_MS = 15 * 60 * 1000;
     const gatewayExpMs = charge.expiration_date ? Date.parse(charge.expiration_date) : NaN;
-    const expMs = Math.min(Date.now() + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
+    // Blackcat: a validade devolvida pelo gateway é a fonte de verdade (sem janela de 15 min).
+    const expMs = row.provider === "blackcat" && Number.isFinite(gatewayExpMs) ? gatewayExpMs : Math.min(Date.now() + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
     const expIso = new Date(expMs).toISOString();
     charge = { ...charge, expiration_date: expIso, expires_in: Math.max(0, Math.floor((expMs - Date.now()) / 1000)) };
 

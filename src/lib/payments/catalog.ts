@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "pinpay" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "pinpay" | "blackcat" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -47,6 +47,14 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
       { key: "secret_key", label: "Secret Key", secret: true, required: true, hint: "Começa com sk_" },
       { key: "webhook_secret", label: "Signing Secret do webhook (opcional)", secret: true, required: false, hint: "Começa com whsec_ — só se você cadastrar o webhook no painel da PinPay" },
     ],
+  },
+  {
+    id: "blackcat",
+    name: "Blackcat",
+    supportsPix: true,
+    singleEnvironment: true,
+    docs: "Painel da Blackcat > Integrações > API Key",
+    fields: [{ key: "api_key", label: "API Key", secret: true, required: true }],
   },
   {
     id: "mercadopago",
