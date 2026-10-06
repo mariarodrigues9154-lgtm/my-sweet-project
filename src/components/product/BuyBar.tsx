@@ -23,10 +23,17 @@ export function BuyBar({
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card">
       <div className="mx-auto flex max-w-[520px] items-center gap-2 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <StoreHomeLink store={store} className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
-          <Store size={20} strokeWidth={1.6} />
-          Loja
-        </StoreHomeLink>
+        {store.visit_clickable !== false ? (
+          <StoreHomeLink store={store} className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
+            <Store size={20} strokeWidth={1.6} />
+            Loja
+          </StoreHomeLink>
+        ) : (
+          <span className="flex w-9 shrink-0 cursor-default select-none flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
+            <Store size={20} strokeWidth={1.6} />
+            Loja
+          </span>
+        )}
         <button type="button" onClick={onChat} className="relative flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">
           <MessageCircle size={20} strokeWidth={1.6} />
           {chatBadge > 0 && <span className="absolute -top-1 right-0 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">{chatBadge}</span>}
