@@ -14,7 +14,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
 
-const providerId = z.enum(["none", "wappi", "pinpay", "mercadopago", "asaas"]);
+const providerId = z.enum(["none", "wappi", "pinpay", "blackcat", "mercadopago", "asaas"]);
 
 const settingsInput = z.object({
   store_id: z.string().uuid(),

@@ -473,7 +473,127 @@ const pinpay: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, pinpay, mercadopago, asaas };
+// --------------------------------------------------------------------- Blackcat
+// Doc: https://docs.blackcatoficial.com — header X-API-Key, valores em centavos.
+
+export const BLACKCAT_BASE = "https://api.blackcatoficial.com/api";
+
+/** Status da Blackcat → status interno (maiúsculo). CANCELLED = cancelado ou expirado. */
+export function mapBlackcatStatus(raw: unknown): string {
+  const s = String(raw ?? "").toUpperCase();
+  if (s === "PAID" || s === "PENDING" || s === "REFUNDED" || s === "CANCELLED") return s;
+  if (s === "FAILED" || s === "EXPIRED") return "CANCELLED";
+  return "ERROR";
+}
+
+function blackcatError(status: number): string {
+  if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique a API Key da Blackcat.";
+  if (status === 400 || status === 422) return "Alguns dados do pedido não foram aceitos. Confira nome, e-mail, telefone, CPF e endereço.";
+  if (status === 429) return "Muitas tentativas seguidas. Aguarde um minuto.";
+  return "O provedor de pagamento não respondeu. Tente novamente.";
+}
+
+const blackcat: PaymentProvider = {
+  id: "blackcat",
+  async testConnection(config) {
+    const key = config.secrets["api_key"] ?? "";
+    if (!key) return { ok: false, error: "Informe a API Key." };
+    const res = await fetch(`${BLACKCAT_BASE}/sales/seller`, { headers: { "X-API-Key": key }, signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const j = (await res.json().catch(() => null)) as { data?: { name?: string } } | null;
+      return { ok: true, company: { fantasy_name: j?.data?.name } };
+    }
+    return { ok: false, error: blackcatError(res.status) };
+  },
+  async createPix(config, input) {
+    const key = config.secrets["api_key"] ?? "";
+    if (!key) return { ok: false, error: "Gateway sem credenciais." };
+    const amount = input.amountCents ?? Math.round(input.amount * 100);
+    if (!Number.isInteger(amount) || amount <= 0) return { ok: false, error: "Valor do pedido inválido." };
+    const doc = digits(input.customer.document);
+    const name = input.customer.name.trim().slice(0, 120) || "Cliente";
+    const items = (input.items?.length ? input.items : [{ title: input.description, unit_price: amount, quantity: 1, tangible: true }]).map((i) => ({
+      title: i.title.slice(0, 140),
+      unitPrice: i.unit_price,
+      quantity: i.quantity,
+      tangible: i.tangible,
+    }));
+    const a = input.shipping?.address;
+    const body: Record<string, unknown> = {
+      amount,
+      currency: "BRL",
+      paymentMethod: "pix",
+      items,
+      customer: {
+        name,
+        email: input.customer.email.trim().slice(0, 160),
+        phone: digits(input.customer.phone ?? ""),
+        document: { number: doc, type: doc.length > 11 ? "cnpj" : "cpf" },
+      },
+      pix: { expiresInDays: Math.max(1, input.expiresInDays ?? 1) },
+      externalRef: input.orderNumber,
+      ...(input.postbackUrl ? { postbackUrl: input.postbackUrl } : {}),
+    };
+    if (a) {
+      body["shipping"] = {
+        name,
+        street: a.street,
+        number: a.street_number,
+        complement: a.complement,
+        neighborhood: a.neighborhood,
+        city: a.city,
+        state: a.state,
+        zipCode: a.zip_code,
+      };
+    }
+    const res = await fetch(`${BLACKCAT_BASE}/sales/create-sale`, {
+      method: "POST",
+      headers: { "X-API-Key": key, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30000),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | { success?: boolean; message?: string; error?: string; data?: { transactionId?: string; status?: string; amount?: number; invoiceUrl?: string; paymentData?: { qrCode?: string; qrCodeBase64?: string; copyPaste?: string; expiresAt?: string } } }
+      | null;
+    if (!res.ok || !json?.success || !json.data?.transactionId) {
+      console.error("[blackcat] create falhou", res.status, json?.message ?? "", json?.error ?? "");
+      return { ok: false, error: blackcatError(res.status) };
+    }
+    const d = json.data;
+    const pd = d.paymentData ?? {};
+    const copyPaste = isPixPayload(pd.copyPaste) ? pd.copyPaste.trim() : isPixPayload(pd.qrCode) ? pd.qrCode.trim() : null;
+    let qr: string | null = typeof pd.qrCodeBase64 === "string" && pd.qrCodeBase64.startsWith("data:image/") ? pd.qrCodeBase64 : null;
+    if (!qr && copyPaste) qr = await qrFromPayload(copyPaste);
+    if (!qr && !copyPaste) return { ok: false, error: "O provedor não retornou os dados do PIX. Tente novamente." };
+    const expiresAt = pd.expiresAt ?? null;
+    const expMs = expiresAt ? Date.parse(expiresAt) - Date.now() : NaN;
+    return {
+      ok: true,
+      transaction_id: String(d.transactionId),
+      qr_code: qr,
+      copy_paste: copyPaste,
+      expires_in: Number.isFinite(expMs) && expMs > 0 ? Math.floor(expMs / 1000) : 86400,
+      provider_status: mapBlackcatStatus(d.status ?? "PENDING"),
+      expiration_date: expiresAt,
+      amount_cents: typeof d.amount === "number" ? d.amount : null,
+      payment_url: d.invoiceUrl ?? null,
+    };
+  },
+  async getStatus(config, transactionId) {
+    const key = config.secrets["api_key"] ?? "";
+    if (!key) return { paid: false, status: "unknown" };
+    const res = await fetch(`${BLACKCAT_BASE}/sales/${encodeURIComponent(transactionId)}/status`, {
+      headers: { "X-API-Key": key },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`blackcat status ${res.status}`);
+    const j = (await res.json().catch(() => null)) as { data?: { status?: string; paidAt?: string; endToEndId?: string } } | null;
+    const status = mapBlackcatStatus(j?.data?.status);
+    return { paid: status === "PAID", status, paid_at: j?.data?.paidAt ?? null, e2e: j?.data?.endToEndId ?? null };
+  },
+};
+
+const REGISTRY: Record<string, PaymentProvider> = { wappi, pinpay, blackcat, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;

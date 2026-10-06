@@ -29,3 +29,4 @@
 - Product Q&A AI: per-product toggles/texts in products.sections (qa_*), per-store AI facts and support contacts in store_settings.ai_support (never in public selects); context built server-side from product_id + its store_id; why: no cross-store leakage and no secrets in the client.
 - PIX recovery toggles per store live in store_settings.checkout.pix_recovery, resolved by resolvePixRecovery and enforced server-side in getPixOrders; why: OFF hides UI without touching orders.
 - PinPay entra como mais um provider em src/lib/payments (mesma interface da Wappi); webhook /api/public/webhooks/pinpay sempre reconfirma em GET /transactions/{id}; motivo: postback da PinPay não é assinado.
+- Blackcat entra como provider em src/lib/payments (X-API-Key, centavos); webhook /api/public/webhooks/blackcat reconfirma em GET /sales/{id}/status e a validade do PIX vem do expiresAt da Blackcat; motivo: postback não assinado e prazo real do gateway.

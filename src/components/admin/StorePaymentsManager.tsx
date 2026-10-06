@@ -40,7 +40,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
   }, [data]);
 
   const spec = providerSpec(provider);
-  const hookPath = provider === "wappi" ? "/api/public/webhooks/wappi" : provider === "pinpay" ? "/api/public/webhooks/pinpay" : WEBHOOK_PATH;
+  const hookPath = provider === "wappi" ? "/api/public/webhooks/wappi" : provider === "pinpay" ? "/api/public/webhooks/pinpay" : provider === "blackcat" ? "/api/public/webhooks/blackcat" : WEBHOOK_PATH;
   const webhookUrl = typeof window === "undefined" ? hookPath : `${window.location.origin}${hookPath}`;
 
   async function handleSave() {
@@ -93,7 +93,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
               }}
               className="mt-1 h-11 w-full rounded-lg border border-input bg-background px-3 text-[13.5px] font-semibold"
             >
-              {PAYMENT_PROVIDERS.filter((item) => item.id === "none" || item.id === "wappi" || item.id === "pinpay" || item.id === provider).map((item) => (
+              {PAYMENT_PROVIDERS.filter((item) => item.id === "none" || item.id === "wappi" || item.id === "pinpay" || item.id === "blackcat" || item.id === provider).map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
