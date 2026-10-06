@@ -1,0 +1,2 @@
+ALTER TABLE public.store_payment_settings DROP CONSTRAINT store_payment_provider_valid;
+ALTER TABLE public.store_payment_settings ADD CONSTRAINT store_payment_provider_valid CHECK (provider = ANY (ARRAY['none','wappi','pinpay','blackcat','mercadopago','asaas']));
