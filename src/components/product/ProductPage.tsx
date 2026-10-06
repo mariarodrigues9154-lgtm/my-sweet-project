@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 
 import { trackViewContent, useMetaPageView } from "@/lib/meta-pixel";
 
@@ -29,6 +30,15 @@ export function ProductPage({ product, store }: { product: Product; store: Store
   const orderChat = useOrderChatBadge(store.id);
   const openChat = () => (orderChat.hasOrders ? orderChat.open() : setChatOpen(true));
   useMetaPageView(store.id || null, () => void trackViewContent(store.id, product));
+  const router = useRouter();
+  const checkoutPath = store.checkout?.checkout_model === "v2" ? "/pagamento-2" : "/pagamento";
+  useEffect(() => {
+    // Pré-carrega o código do checkout quando o navegador fica ocioso.
+    const run = () => void router.preloadRoute({ to: checkoutPath }).catch(() => undefined);
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(run, { timeout: 4000 });
+    else setTimeout(run, 2500);
+  }, [router, checkoutPath]);
 
   return (
     <div className="min-h-screen bg-surface pb-24">

@@ -77,7 +77,7 @@ export function ReviewsSection({ product }: { product: Product }) {
                 ))}
                 {(r.videos ?? []).map((v) => (
                   <button key={v} type="button" onClick={() => setVideo(v)} aria-label={`Assistir vídeo de ${r.name}`} className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-foreground">
-                    <video src={`${v}#t=0.1`} preload="metadata" muted playsInline className="pointer-events-none size-full object-cover" />
+                    <video src={`${v}#t=0.1`} preload="none" muted playsInline className="pointer-events-none size-full object-cover" />
                     <span className="absolute inset-0 grid place-items-center">
                       <span className="grid size-9 place-items-center rounded-full bg-foreground/60 text-background"><Play size={18} fill="currentColor" /></span>
                     </span>
