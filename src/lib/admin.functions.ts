@@ -593,6 +593,8 @@ const displaySchema = z
     badge2_text: optStr(60),
     rs_title: optStr(80),
     rs_source: z.enum(["auto", "manual"]).optional(),
+    rs_count_source: z.enum(["auto", "manual"]).optional(),
+    rs_rating_source: z.enum(["auto", "manual"]).optional(),
     rs_count: z.number().int().min(0).nullish(),
     rs_rating: z.number().min(0).max(5).nullish(),
     rs_max: optStr(10),

@@ -157,6 +157,8 @@ export type ProductDisplay = {
   /** Seção "Avaliações dos clientes" — só exibição, nunca altera as avaliações. */
   rs_title?: string | null;
   rs_source?: MetricSource;
+  rs_count_source?: MetricSource;
+  rs_rating_source?: MetricSource;
   rs_count?: number | null;
   rs_rating?: number | null;
   rs_max?: string | null;
@@ -166,9 +168,12 @@ export type ProductDisplay = {
 export function reviewsSectionHeader(product: Product): { title: string; count: number; rating: number; max: string } {
   const d = product.display ?? {};
   const visible = (product.reviews ?? []).filter((r) => !r.hidden);
-  const manual = d.rs_source === "manual";
-  const count = manual && d.rs_count != null ? Math.max(0, Math.round(Number(d.rs_count))) : product.reviews_count || visible.length;
-  const rating = manual && d.rs_rating != null ? Math.min(5, Math.max(0, Number(d.rs_rating))) : Number(product.rating) || 0;
+  const countManual = (d.rs_count_source ?? d.rs_source) === "manual";
+  const ratingManual = (d.rs_rating_source ?? d.rs_source) === "manual";
+  const real = visible.filter((r) => Number.isFinite(Number(r.rating)));
+  const avg = real.length ? real.reduce((a, r) => a + Number(r.rating), 0) / real.length : 0;
+  const count = countManual && d.rs_count != null ? Math.max(0, Math.round(Number(d.rs_count))) : visible.length || product.reviews_count || 0;
+  const rating = ratingManual && d.rs_rating != null ? Math.min(5, Math.max(0, Number(d.rs_rating))) : real.length ? Math.round(avg * 10) / 10 : Number(product.rating) || 0;
   return {
     title: d.rs_title?.trim() || "Avaliações dos clientes",
     count,
