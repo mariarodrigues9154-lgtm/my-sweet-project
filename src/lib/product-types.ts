@@ -30,6 +30,8 @@ export type VariantCombo = {
   previous_price?: number | null;
   stock?: number | null;
   sku?: string | null;
+  /** Imagem própria da combinação (opcional). */
+  image?: string | null;
   active?: boolean;
 };
 
@@ -695,4 +697,18 @@ export function truncateText(text: string, max: number): string {
   const t = text.trim();
   if (t.length <= max) return t;
   return t.slice(0, max).replace(/\s+\S*$/, "").trimEnd() + "...";
+}
+
+/** Imagem da variação escolhida: combinação → opção selecionada → principal. Usa os valores (ids) das opções, nunca o texto. */
+export function variantImage(
+  product: Pick<Product, "variants" | "variant_combos" | "media">,
+  selection: Record<string, string>,
+): string | undefined {
+  const combo = findCombo(product, selection);
+  if (combo?.image) return combo.image;
+  for (const group of product.variants ?? []) {
+    const url = group.options.find((o) => o.value === selection[group.name])?.image;
+    if (url) return url;
+  }
+  return (product.media ?? []).find((m) => m.type === "image")?.url;
 }

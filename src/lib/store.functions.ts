@@ -266,10 +266,8 @@ export const createOrder = createServerFn({ method: "POST" })
         product_snapshot: {
           title: product.title,
           slug: product.slug,
-          image:
-            groups
-              .map((group) => group.options.find((o) => o.value === data.variant[group.name])?.image)
-              .find((url) => !!url) ?? media.find((m) => m.type === "image")?.url ?? null,
+          image: variantImage({ variants: groups, variant_combos: product.variant_combos ?? [], media } as never, data.variant) ?? null,
+          variant_labels: Object.fromEntries(groups.filter((g) => data.variant[g.name]).map((g) => [g.label || g.name, g.options.find((o) => o.value === data.variant[g.name])?.label ?? data.variant[g.name]])),
           sku: pricing.sku,
           ...(exitOfferInfo ? { exit_offer: exitOfferInfo } : {}),
         },

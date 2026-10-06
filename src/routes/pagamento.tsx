@@ -340,7 +340,7 @@ function CheckoutRoute() {
     );
   }
 
-  const image = product.media.find((m) => m.type === "image")?.url;
+  const image = variantImage(product, form.variant);
   const variantText = Object.entries(form.variant)
     .map(([group, value]) => {
       const g = product.variants.find((v) => v.name === group);
