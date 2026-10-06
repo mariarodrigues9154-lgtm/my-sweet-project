@@ -66,7 +66,7 @@ export function ReviewsCsvImport({ existing, onImport }: { existing: Review[]; o
       for (const r of chosen) {
         const failed = [r.avatar, ...r.photos].filter((x): x is ImageRef => !!x && !resolve(x));
         if (failed.length) { errors.push({ line: r.line, raw: r.raw, reason: `Imagem não importada: ${failed.map((f) => (f.kind === "url" ? remote.get(f.value)?.error ?? f.value : f.value)).join("; ")}` }); continue; }
-        add.push({ review: { ...r.review, avatar: r.avatar ? resolve(r.avatar) : null, photos: r.photos.map(resolve).filter((u): u is string => !!u) }, order: r.order });
+        add.push({ review: { ...r.review, avatar: r.avatar ? resolve(r.avatar) : null, photos: r.photos.map(resolve).filter((u): u is string => !!u), videos: r.videos }, order: r.order });
       }
       if (add.length) onImport(add);
       setResult({ imported: add.length, duplicates, errors });
@@ -107,7 +107,7 @@ export function ReviewsCsvImport({ existing, onImport }: { existing: Review[]; o
                   <tr key={r.line} className="border-b border-border align-top">
                     <td className="p-1.5">{r.line}</td><td className="p-1.5">{r.review.name || "-"}</td>
                     <td className="p-1.5">{r.errors.some((e) => e.startsWith("Nota")) ? "-" : String(r.review.rating).replace(".", ",")}</td>
-                    <td className="p-1.5">{r.review.date || "-"}</td><td className="p-1.5">{r.photos.length}{r.avatar ? " + avatar" : ""}</td>
+                    <td className="p-1.5">{r.review.date || "-"}</td><td className="p-1.5">{r.photos.length}{r.videos.length ? ` + ${r.videos.length} vídeo(s)` : ""}{r.avatar ? " + avatar" : ""}</td>
                     <td className={`p-1.5 ${s.ok ? "text-success" : "text-destructive"}`}>{s.text}{r.duplicate && !r.errors.length && <label className="mt-1 flex items-center gap-1 text-foreground"><input type="checkbox" checked={!!importDup[r.line]} onChange={(e) => setImportDup((c) => ({ ...c, [r.line]: e.target.checked }))} /> Importar mesmo assim</label>}</td>
                   </tr>); })}
               </tbody>

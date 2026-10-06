@@ -1017,6 +1017,25 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                   <input type="file" hidden multiple accept={IMAGE_ACCEPT} onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ""; void uploadMany(files, (urls) => setD((cur) => cur ? { ...cur, reviews: cur.reviews.map((x, k) => k === i ? { ...x, photos: [...(x.photos ?? []), ...urls] } : x) } : cur)); }} />
                 </label>
               </div>
+              <div className="space-y-1.5">
+                <p className="text-[11.5px] font-bold">Vídeos da avaliação</p>
+                {(review.videos ?? []).map((v, k) => {
+                  const vids = review.videos ?? [];
+                  return (
+                    <div key={v + k} className="flex items-center gap-2 rounded-lg border border-border p-1.5">
+                      <video src={v} preload="metadata" controls playsInline className="h-20 w-28 shrink-0 rounded bg-foreground object-cover" />
+                      <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{decodeURIComponent(v.split("/").pop() ?? v)}</span>
+                      <label className="cursor-pointer text-[11px] font-semibold text-primary">Substituir
+                        <input type="file" hidden accept={VIDEO_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void uploadOne(f, (url) => setD((cur) => cur ? { ...cur, reviews: cur.reviews.map((x, j) => j === i ? { ...x, videos: (x.videos ?? []).map((u, m) => m === k ? url : u) } : x) } : cur)); }} />
+                      </label>
+                      <Order onUp={() => upd({ videos: move(vids, k, -1) })} onDown={() => upd({ videos: move(vids, k, 1) })} onRemove={() => upd({ videos: vids.filter((_, j) => j !== k) })} />
+                    </div>
+                  );
+                })}
+                <label className={`${btnCls} cursor-pointer`}><Plus size={13} /> Adicionar vídeo
+                  <input type="file" hidden multiple accept={VIDEO_ACCEPT} onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ""; void uploadMany(files, (urls) => setD((cur) => cur ? { ...cur, reviews: cur.reviews.map((x, k) => k === i ? { ...x, videos: [...(x.videos ?? []), ...urls] } : x) } : cur)); }} />
+                </label>
+              </div>
               {review.avatar && <button type="button" onClick={() => upd({ avatar: null })} className="text-[11px] font-semibold text-destructive">Remover avatar</button>}
               <label className="flex items-center gap-2 text-[12px] font-semibold"><input type="checkbox" checked={review.confirmed ?? false} onChange={(e) => upd({ confirmed: e.target.checked })} /> Compra confirmada</label>
             </div>
