@@ -1,3 +1,4 @@
+import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, MapPin, User, X } from "lucide-react";
@@ -123,7 +124,7 @@ export function PopupCardView({ card, shown, settings, onClose, className = "" }
       className={`pointer-events-auto relative flex w-[min(284px,calc(100vw-24px))] items-center gap-2 rounded-2xl bg-card px-2.5 py-2 pr-6 shadow-[0_8px_28px_-8px_hsl(0_0%_0%/0.28)] ring-1 ring-border transition-all duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : hidden} ${className}`}
     >
       {settings.show_photo && (card.image && !broken ? (
-        <img src={card.image} alt="" loading="lazy" className="size-9 shrink-0 rounded-full object-cover" onError={() => setBroken(true)} />
+        <img src={sizedImage(card.image, 240)} alt="" loading="lazy" className="size-9 shrink-0 rounded-full object-cover" onError={() => setBroken(true)} />
       ) : fallback)}
       <div className="min-w-0 flex-1 leading-tight">
         {(name || loc) && (

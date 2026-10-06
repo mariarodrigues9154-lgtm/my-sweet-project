@@ -1,3 +1,4 @@
+import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import type { DescriptionBlock, Product } from "@/lib/product-types";
 
 export function SpecsSection({ product }: { product: Product }) {
@@ -53,7 +54,7 @@ export function Block({ block }: { block: DescriptionBlock }) {
     case "image":
       return (
         <figure>
-          <img src={block.url} alt={block.alt ?? ""} loading="lazy" decoding="async" className="h-auto w-full rounded-xl object-contain" />
+          <img src={sizedImage(block.url, 720)} srcSet={imageSrcSet(block.url)} sizes="(min-width: 520px) 520px, 100vw" alt={block.alt ?? ""} loading="lazy" decoding="async" className="h-auto w-full rounded-xl object-contain" />
           {block.caption && <figcaption className="mt-1 text-center text-[11.5px] text-muted-foreground">{block.caption}</figcaption>}
         </figure>
       );
