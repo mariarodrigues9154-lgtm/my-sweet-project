@@ -197,6 +197,8 @@ export type Review = {
   confirmed?: boolean;
   hidden?: boolean;
   photos?: string[];
+  /** Vídeos opcionais da avaliação (padrão: nenhum). */
+  videos?: string[];
   avatar?: string | null;
   /** Localização real (opcional) — só existe se veio junto com a avaliação/pedido. */
   city?: string;

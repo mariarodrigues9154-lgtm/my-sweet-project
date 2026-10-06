@@ -2,14 +2,14 @@ import { parseRatingInput, type Review } from "@/lib/product-types";
 
 export const CSV_MAX_ROWS = 500;
 export const CSV_MAX_BYTES = 5 * 1024 * 1024;
-export const CSV_HEADERS = ["nome", "data", "nota", "texto", "compra_confirmada", "foto_avatar", "imagem_1", "imagem_2", "imagem_3", "imagem_4", "imagem_5", "titulo", "email", "ordem"] as const;
+export const CSV_HEADERS = ["nome", "data", "nota", "texto", "compra_confirmada", "foto_avatar", "imagem_1", "imagem_2", "imagem_3", "imagem_4", "imagem_5", "video_1", "video_2", "video_3", "titulo", "email", "ordem"] as const;
 
 export const CSV_TEMPLATE =
   "\uFEFF" +
   CSV_HEADERS.join(",") +
   "\n" +
-  'Juliana M.,29/09/2026,5,"Produto excelente, chegou rápido.",sim,https://site.com/avatar.jpg,https://site.com/foto1.jpg,https://site.com/foto2.jpg,,,,,,\n' +
-  'Patricia L.,30/09/2026,"4,9","Gostei muito do produto. Recomendo!",true,,avaliacao_02_1.jpg,,,,,,,\n';
+  'Juliana M.,29/09/2026,5,"Produto excelente, chegou rápido.",sim,https://site.com/avatar.jpg,https://site.com/foto1.jpg,https://site.com/foto2.jpg,,,,https://site.com/video.mp4,,,,,\n' +
+  'Patricia L.,30/09/2026,"4,9","Gostei muito do produto. Recomendo!",true,,avaliacao_02_1.jpg,,,,,,,,,,\n';
 
 /** Parser CSV (RFC 4180): aspas, vírgulas, aspas duplas e quebras de linha dentro de aspas. Aceita ; como separador. */
 export function parseCsv(text: string): string[][] {
@@ -48,6 +48,7 @@ export type CsvRow = {
   order: number | null;
   avatar: ImageRef | null;
   photos: ImageRef[];
+  videos: string[];
   errors: string[];
   duplicate: boolean;
 };
@@ -107,6 +108,12 @@ export function buildRows(text: string, existing: Review[]): { rows: CsvRow[]; f
       if (ref === "invalid") errors.push(`Imagem ${k} inválida`);
       else if (ref) photos.push(ref);
     }
+    const videos: string[] = [];
+    for (let k = 1; k <= 3; k++) {
+      const v = (raw[`video_${k}`] ?? "").trim();
+      if (!v) continue;
+      try { if (!/^https?:\/\//i.test(v)) throw 0; new URL(v); videos.push(v); } catch { errors.push(`Vídeo ${k} inválido (use um link https)`); }
+    }
     const ordRaw = (raw["ordem"] ?? "").trim();
     const order = ordRaw && /^\d+$/.test(ordRaw) ? Number(ordRaw) : null;
     if (ordRaw && order === null) errors.push("Ordem inválida");
@@ -114,7 +121,7 @@ export function buildRows(text: string, existing: Review[]): { rows: CsvRow[]; f
     const key = reviewKey(review);
     const duplicate = known.has(key) || seen.has(key);
     seen.add(key);
-    return { line: idx + 2, raw, review, order, avatar: av === "invalid" ? null : av, photos, errors, duplicate };
+    return { line: idx + 2, raw, review, order, avatar: av === "invalid" ? null : av, photos, videos, errors, duplicate };
   });
   return { rows, fatal: null };
 }

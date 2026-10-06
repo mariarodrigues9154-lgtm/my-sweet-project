@@ -506,6 +506,7 @@ const reviewSchema = z.object({
   confirmed: optBool,
   hidden: optBool,
   photos: strList(2000, 20),
+  videos: strList(2000, 10),
   avatar: z.string().trim().max(2000).nullish().transform((v) => v || null),
 });
 const descriptionSchema = z.discriminatedUnion("type", [
