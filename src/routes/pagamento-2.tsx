@@ -17,7 +17,7 @@ import { checkoutTheme } from "@/lib/checkout-theme";
 import { trackAddPaymentInfo, trackPaymentPending, useMetaPageView } from "@/lib/meta-pixel";
 import { clearDraft, emptyDraft, useCheckoutDraft, type CheckoutDraft } from "@/lib/checkout-store";
 import { brl, digits } from "@/lib/format";
-import { checkoutRating, discountPercent, variantPricing } from "@/lib/product-types";
+import { checkoutRating, discountPercent, variantPricing, variantImage } from "@/lib/product-types";
 import { createOrder, createPixCharge, getFeaturedProduct, getPaymentStatus, getProductBySlug, getStoreSettings } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento-2")({
