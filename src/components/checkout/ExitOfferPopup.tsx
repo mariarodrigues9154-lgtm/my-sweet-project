@@ -59,7 +59,7 @@ export function ExitOfferPopup({ offer, oldPrice, newPrice, onAccept, onDecline 
         </h2>
         <p className="mt-2.5 text-[13.5px] leading-relaxed text-muted-foreground">{offer.text}</p>
         {offer.timer_enabled && (
-          <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1.5 text-[12px] font-bold text-primary">
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-[12px] font-bold text-primary">
             <Clock size={13} />
             <span>{timerText[0]}<strong className="tnum">{mmss(left)}</strong>{timerText[1]}</span>
           </div>
