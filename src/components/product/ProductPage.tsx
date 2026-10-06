@@ -50,6 +50,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         <ProductHeadline product={product} />
         <DeliveryCard product={product} />
         <div className="h-3 bg-card" />
+        <div className="defer-render">
         <CreatorVideos videos={product.creator_videos} sections={product.sections ?? {}} />
         <ReviewsSection product={product} />
         <StoreProfile store={store} product={product} onMessage={openChat} />
@@ -57,6 +58,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         {product.sections?.qa_enabled !== false && store.checkout?.ai_enabled !== false && <ProductQA key={product.id} product={product} storeId={store.id} />}
         <TermsSection terms={product.terms} config={store.checkout?.product_terms} />
         <StoreFooter store={store} />
+        </div>
       </main>
 
       <BuyBar
