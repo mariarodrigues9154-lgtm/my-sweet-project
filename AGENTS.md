@@ -30,3 +30,4 @@
 - PIX recovery toggles per store live in store_settings.checkout.pix_recovery, resolved by resolvePixRecovery and enforced server-side in getPixOrders; why: OFF hides UI without touching orders.
 - PinPay entra como mais um provider em src/lib/payments (mesma interface da Wappi); webhook /api/public/webhooks/pinpay sempre reconfirma em GET /transactions/{id}; motivo: postback da PinPay não é assinado.
 - Blackcat entra como provider em src/lib/payments (X-API-Key, centavos); webhook /api/public/webhooks/blackcat reconfirma em GET /sales/{id}/status e a validade do PIX vem do expiresAt da Blackcat; motivo: postback não assinado e prazo real do gateway.
+- Product photos are resized on demand via `/api/public/media/<path>?w=` (allowed widths in `IMG_WIDTHS`, storage transform delivers WebP) and components use `sizedImage`/`imageSrcSet` from `src/lib/media-url.ts`; why: originals stay untouched while phones download small files.
