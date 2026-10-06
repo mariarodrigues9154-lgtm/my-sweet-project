@@ -159,6 +159,7 @@ export const listActiveProducts = createServerFn({ method: "GET" })
 
 const orderInput = z.object({
   slug: z.string().min(1),
+  exit_offer: z.boolean().optional(),
   quantity: z.number().int().min(1).max(20),
   variant: z.record(z.string(), z.string()),
   shipping_id: z.string().min(1),
@@ -194,7 +195,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const { data: product, error } = await supabaseAdmin
       .from("products")
-      .select("id, slug, title, price, previous_price, media, shipping, stock, active, store_id, variants, variant_combos")
+      .select("id, slug, title, price, previous_price, media, shipping, stock, active, store_id, variants, variant_combos, sections")
       .eq("slug", data.slug)
       .maybeSingle();
 
@@ -229,8 +230,20 @@ export const createOrder = createServerFn({ method: "POST" })
     const { shippingOptions } = await import("./shipping");
     const option = shippingOptions()[0]!;
 
-    const unitPrice = pricing.price;
-    const unitCents = Math.round(Number(unitPrice) * 100);
+    // Oferta de saída: desconto real recalculado no servidor a partir da config da loja/produto.
+    let unitCents = Math.round(Number(pricing.price) * 100);
+    let exitOfferInfo: Record<string, unknown> | null = null;
+    if (data.exit_offer && product.store_id) {
+      const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", product.store_id).maybeSingle();
+      const { resolveExitOffer, discountedUnitCents } = await import("./exit-offer");
+      const offer = resolveExitOffer((storeRow?.checkout as { exit_offer?: unknown } | null)?.exit_offer, product.sections as never);
+      if (offer) {
+        const original = unitCents;
+        unitCents = discountedUnitCents(unitCents, offer);
+        exitOfferInfo = { original_unit_price: original / 100, discount_type: offer.discount_type, discount_value: offer.discount_value };
+      }
+    }
+    const unitPrice = unitCents / 100;
     const shippingCents = Math.round(Number(option.price ?? 0) * 100);
     const subtotal = (unitCents * data.quantity) / 100;
     const shippingPrice = shippingCents / 100;
@@ -258,6 +271,7 @@ export const createOrder = createServerFn({ method: "POST" })
               .map((group) => group.options.find((o) => o.value === data.variant[group.name])?.image)
               .find((url) => !!url) ?? media.find((m) => m.type === "image")?.url ?? null,
           sku: pricing.sku,
+          ...(exitOfferInfo ? { exit_offer: exitOfferInfo } : {}),
         },
 
         variant: data.variant,

@@ -194,6 +194,20 @@ const storeInput = z.object({
       copy_label: z.string().trim().max(40).optional(),
       chat_label: z.string().trim().max(40).optional(),
     }).optional(),
+    exit_offer: z.object({
+      enabled: z.boolean().optional(),
+      style: z.enum(["default", "aggressive"]).optional(),
+      badge: z.string().trim().max(60).optional(),
+      title: z.string().trim().max(120).optional(),
+      text: z.string().trim().max(600).optional(),
+      timer_enabled: z.boolean().optional(),
+      timer_minutes: z.number().min(1).max(120).optional(),
+      timer_text: z.string().trim().max(120).optional(),
+      discount_type: z.enum(["percent", "fixed"]).optional(),
+      discount_value: z.number().min(0).max(100000).optional(),
+      button_text: z.string().trim().max(80).optional(),
+      decline_text: z.string().trim().max(120).optional(),
+    }).optional(),
     product_terms: z.object({
       enabled: z.boolean().optional(),
       title: z.string().trim().max(80).optional(),
@@ -466,6 +480,21 @@ const sectionsSchema = z
     qa_placeholder: optStr(120),
     qa_ai_info: optStr(4000),
     popup_mode: z.enum(["store", "on", "off"]).nullish().transform((v) => v ?? undefined),
+    exit_offer_mode: z.enum(["store", "on", "off"]).nullish().transform((v) => v ?? undefined),
+    exit_offer: z.object({
+        enabled: z.boolean().optional(),
+        style: z.enum(["default", "aggressive"]).optional(),
+        badge: z.string().trim().max(60).optional(),
+        title: z.string().trim().max(120).optional(),
+        text: z.string().trim().max(600).optional(),
+        timer_enabled: z.boolean().optional(),
+        timer_minutes: z.number().min(1).max(120).optional(),
+        timer_text: z.string().trim().max(120).optional(),
+        discount_type: z.enum(["percent", "fixed"]).optional(),
+        discount_value: z.number().min(0).max(100000).optional(),
+        button_text: z.string().trim().max(80).optional(),
+        decline_text: z.string().trim().max(120).optional(),
+    }).partial().optional(),
   })
   .nullish()
   .transform((v) => v ?? {});
