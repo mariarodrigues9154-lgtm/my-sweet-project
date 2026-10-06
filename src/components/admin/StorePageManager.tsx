@@ -1,3 +1,4 @@
+import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronUp, ImagePlus, Trash2 } from "lucide-react";
@@ -184,6 +185,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
           </div>
         );
       })()}
+    </Group>
+
+    <Group title="Oferta de saída do checkout">
+      <ExitOfferFields value={draft.checkout?.exit_offer} onChange={(v) => set("checkout", { ...draft.checkout, exit_offer: v })} />
     </Group>
 
     <Group title="Popup / Notificações flutuantes">

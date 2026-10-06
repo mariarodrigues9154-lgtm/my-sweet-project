@@ -116,6 +116,9 @@ export type ProductSections = {
   qa_ai_info?: string;
   /** Popup de notificações neste produto: segue a loja, força ligado ou desligado. */
   popup_mode?: "store" | "on" | "off";
+  /** Oferta de saída do checkout neste produto. */
+  exit_offer_mode?: "store" | "on" | "off";
+  exit_offer?: import("./exit-offer").ExitOfferSettings;
 };
 
 /** Atendimento por IA e suporte humano — por loja, lido só no servidor. */
@@ -254,6 +257,8 @@ export type CheckoutSettings = {
   product_terms?: { enabled?: boolean; title?: string; text?: string };
   /** Popups / notificações flutuantes da loja. */
   popups?: PopupSettings;
+  /** Oferta de saída do checkout (por loja). */
+  exit_offer?: import("./exit-offer").ExitOfferSettings;
 };
 
 

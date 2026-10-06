@@ -1,3 +1,4 @@
+import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
 import { parseMoney, moneyInput } from "@/lib/format";
 import * as React from "react";
 import { useEffect, useState } from "react";
@@ -834,6 +835,15 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           <option value="on">Ativar neste produto</option>
           <option value="off">Desativar neste produto</option>
         </select>
+      </Group>
+
+      <Group title="Oferta de saída do checkout">
+        <select value={d.sections.exit_offer_mode ?? "store"} onChange={(e) => set("sections", { ...d.sections, exit_offer_mode: e.target.value as "store" | "on" | "off" })} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-[13px]">
+          <option value="store">Usar configuração da loja</option>
+          <option value="on">Ativar neste produto (configuração própria)</option>
+          <option value="off">Desativar neste produto</option>
+        </select>
+        {d.sections.exit_offer_mode === "on" && <ExitOfferFields product value={d.sections.exit_offer} onChange={(v) => set("sections", { ...d.sections, exit_offer: v })} />}
       </Group>
 
       <Group title="Perguntas sobre o produto / IA">
