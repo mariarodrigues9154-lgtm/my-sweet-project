@@ -38,7 +38,7 @@ export function useExitIntent(active: boolean, key: string) {
   return { open, close: () => setOpen(false), decline };
 }
 
-export type ExitOfferProduct = { name: string; image?: string; variant?: string; quantity: number; rating?: number | null; warranty?: string | null };
+export type ExitOfferProduct = { name: string; image?: string | undefined; variant?: string | undefined; quantity: number; rating?: number | null | undefined; warranty?: string | null | undefined };
 
 /** Prazo real da oferta: salvo na sessão para não reiniciar ao reabrir. */
 function useOfferDeadline(key: string, minutes: number) {
