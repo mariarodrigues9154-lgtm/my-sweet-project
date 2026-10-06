@@ -13,6 +13,7 @@ import {
   promoBadges,
   variantPriceRange,
   variantPricing,
+  variantImage,
   type Product,
   type StoreSettings,
 } from "@/lib/product-types";
@@ -99,10 +100,7 @@ export function BuySheet({
     if (quantity > maxQty) setQuantity(maxQty);
   }, [maxQty, quantity]);
 
-  const selectedImage =
-    groups
-      .map((group) => group.options.find((o) => o.value === selection[group.name])?.image)
-      .find((url) => !!url) ?? firstImage;
+  const selectedImage = variantImage(product, selection) ?? firstImage;
 
   const choose = (groupName: string, value: string) => {
     setSelection((current) => ({ ...current, [groupName]: value }));

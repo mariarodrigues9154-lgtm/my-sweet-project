@@ -5,7 +5,7 @@ import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
 import { checkoutTheme } from "@/lib/checkout-theme";
-import { variantPricing } from "@/lib/product-types";
+import { variantPricing, variantImage } from "@/lib/product-types";
 import { trackAddPaymentInfo, trackPaymentPending, useMetaPageView } from "@/lib/meta-pixel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -340,7 +340,7 @@ function CheckoutRoute() {
     );
   }
 
-  const image = product.media.find((m) => m.type === "image")?.url;
+  const image = variantImage(product, form.variant);
   const variantText = Object.entries(form.variant)
     .map(([group, value]) => {
       const g = product.variants.find((v) => v.name === group);

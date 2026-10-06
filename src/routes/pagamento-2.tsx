@@ -17,7 +17,7 @@ import { checkoutTheme } from "@/lib/checkout-theme";
 import { trackAddPaymentInfo, trackPaymentPending, useMetaPageView } from "@/lib/meta-pixel";
 import { clearDraft, emptyDraft, useCheckoutDraft, type CheckoutDraft } from "@/lib/checkout-store";
 import { brl, digits } from "@/lib/format";
-import { checkoutRating, discountPercent, variantPricing } from "@/lib/product-types";
+import { checkoutRating, discountPercent, variantPricing, variantImage } from "@/lib/product-types";
 import { createOrder, createPixCharge, getFeaturedProduct, getPaymentStatus, getProductBySlug, getStoreSettings } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento-2")({
@@ -89,7 +89,7 @@ function CheckoutTwo() {
   const exitNew = Number((discountedUnit(baseUnit, exitOfferCfg) * quantity).toFixed(2));
   const hasAddress = Boolean(form.customer.name && form.customer.email && digits(form.customer.phone).length >= 10 && digits(form.customer.document).length >= 11 && digits(form.address.cep).length === 8 && form.address.street && form.address.number && form.address.district && form.address.city && form.address.state);
   const expiresAt = pix?.configured && pix.expires_at ? new Date(pix.expires_at).getTime() : null;
-  const image = product?.media.find((item) => item.type === "image")?.url;
+  const image = product ? variantImage(product, form.variant) : undefined;
   const variant = product ? Object.entries(form.variant).map(([key, value]) => product.variants.find((group) => group.name === key)?.options.find((option) => option.value === value)?.label ?? value).join(" · ") : "";
   const countdown = product?.offer.countdown_seconds ?? 0;
   const freeReturn = Boolean(product?.protection.items?.some((item) => /devolu/i.test(item)));
