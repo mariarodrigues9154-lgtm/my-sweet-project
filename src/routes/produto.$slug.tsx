@@ -1,3 +1,4 @@
+import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { ProductPage } from "@/components/product/ProductPage";
@@ -28,7 +29,9 @@ export const Route = createFileRoute("/produto/$slug")({
         { property: "og:type", content: "product" },
         { name: "twitter:card", content: "summary_large_image" },
       ],
-      links: first?.url ? [{ rel: "preload", as: "image", href: first.url, fetchPriority: "high" }] : [],
+      links: first?.url
+        ? [{ rel: "preload", as: "image", href: sizedImage(first.url, 720), imageSrcSet: imageSrcSet(first.url), imageSizes: "(min-width: 520px) 520px, 100vw", fetchPriority: "high" }]
+        : [],
     };
   },
   notFoundComponent: () => (

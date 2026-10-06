@@ -1,3 +1,4 @@
+import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Volume2, VolumeX } from "lucide-react";
 
@@ -40,7 +41,9 @@ export function Gallery({ media, title }: { media: Media[]; title: string }) {
               <GalleryVideo media={m} active={i === index} />
             ) : (
               <img
-                src={m.url}
+                src={sizedImage(m.url, 720)}
+                srcSet={imageSrcSet(m.url)}
+                sizes="(min-width: 520px) 520px, 100vw"
                 alt={m.alt ?? `${title} — imagem ${i + 1}`}
                 width={1024}
                 height={1024}

@@ -1,3 +1,4 @@
+import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronRight, Play, Video, X } from "lucide-react";
 
@@ -152,7 +153,7 @@ function Preview({ video }: { video: CreatorVideo }) {
   return (
     <span ref={ref} className="absolute inset-0 block">
       {useThumb ? (
-        <img src={video.thumb} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
+        <img src={sizedImage(video.thumb, 480)} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
       ) : video.video && near && !previewFailed ? (
         <video src={`${video.video}#t=0.5`} preload="metadata" muted playsInline onError={() => setPreviewFailed(true)} className="pointer-events-none size-full object-cover" />
       ) : null}
@@ -175,7 +176,7 @@ function Avatar({ video, size }: { video: CreatorVideo; size: number }) {
   if (video.show_avatar === false || !video.avatar || failed) return null;
   return (
     <img
-      src={video.avatar}
+      src={sizedImage(video.avatar, 240)}
       alt=""
       loading="lazy"
       decoding="async"

@@ -1,3 +1,4 @@
+import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useState } from "react";
 import { Check, ChevronRight, Play, X } from "lucide-react";
 
@@ -40,7 +41,7 @@ export function ReviewsSection({ product }: { product: Product }) {
           <li key={`${r.name}-${i}`} className="py-3 first:pt-0">
             <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5">
               {r.avatar ? (
-                <img src={r.avatar} alt={r.name} loading="lazy" className="size-8 shrink-0 rounded-full object-cover" />
+                <img src={sizedImage(r.avatar, 240)} alt={r.name} loading="lazy" className="size-8 shrink-0 rounded-full object-cover" />
               ) : (
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-strong text-[12px] font-bold text-muted-foreground">
                   {r.name.slice(0, 1)}
@@ -67,7 +68,7 @@ export function ReviewsSection({ product }: { product: Product }) {
                 {(r.photos ?? []).map((p) => (
                   <button key={p} type="button" onClick={() => setPhoto(p)} className="shrink-0">
                     <img
-                      src={p}
+                      src={sizedImage(p, 240)}
                       alt={`Foto enviada por ${r.name}`}
                       loading="lazy"
                       decoding="async"
@@ -103,7 +104,7 @@ export function ReviewsSection({ product }: { product: Product }) {
       )}
       {photo && (
         <div role="dialog" aria-modal="true" onClick={() => setPhoto(null)} className="fixed inset-0 z-50 grid place-items-center bg-foreground/80 p-4">
-          <img src={photo} alt="Foto da avaliação" onClick={(e) => e.stopPropagation()} className="max-h-[88vh] max-w-[92vw] rounded-2xl object-contain" />
+          <img src={sizedImage(photo, 1080)} alt="Foto da avaliação" onClick={(e) => e.stopPropagation()} className="max-h-[88vh] max-w-[92vw] rounded-2xl object-contain" />
           <button type="button" onClick={() => setPhoto(null)} aria-label="Fechar foto" className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-foreground/60 text-background">
             <X size={20} />
           </button>
