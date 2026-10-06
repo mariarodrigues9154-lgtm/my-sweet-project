@@ -1,3 +1,5 @@
+import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
+import { discountedUnit, resolveExitOffer } from "@/lib/exit-offer";
 import { PixQr } from "@/components/checkout/PixQr";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
@@ -99,6 +101,7 @@ function CheckoutRoute() {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<CheckoutDraft>(emptyDraft);
   const [placing, setPlacing] = useState(false);
+  const [offerAccepted, setOfferAccepted] = useState(false);
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<
     | null
@@ -120,10 +123,16 @@ function CheckoutRoute() {
   );
 
   const quantity = Math.max(1, form.quantity || 1);
-  const unitPrice = product ? variantPricing(product, form.variant).price : 0;
+  const exitOfferCfg = useMemo(() => (product ? resolveExitOffer(store.checkout?.exit_offer, product.sections) : null), [product, store.checkout?.exit_offer]);
+  const baseUnitPrice = product ? variantPricing(product, form.variant).price : 0;
+  const unitPrice = offerAccepted ? discountedUnit(baseUnitPrice, exitOfferCfg) : baseUnitPrice;
   const subtotal = Number((unitPrice * quantity).toFixed(2));
   const shippingPrice = Number((selectedShipping?.price ?? 0).toFixed(2));
   const total = Number((subtotal + shippingPrice).toFixed(2));
+
+  const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !offerAccepted && !order, product?.id ?? "");
+  const exitOld = Number((baseUnitPrice * quantity).toFixed(2));
+  const exitNew = Number((discountedUnit(baseUnitPrice, exitOfferCfg) * quantity).toFixed(2));
 
   const patch = (next: Partial<CheckoutDraft>) => {
     setForm((f) => {
@@ -260,6 +269,7 @@ function CheckoutRoute() {
           shipping_id: selectedShipping.id,
           customer: form.customer,
           address: form.address,
+          exit_offer: offerAccepted,
         },
       });
       if (!result.ok) {
@@ -340,6 +350,7 @@ function CheckoutRoute() {
 
   return (
     <div className="min-h-screen bg-surface" style={checkoutStyle}>
+      {exitIntent.open && exitOfferCfg && <ExitOfferPopup offer={exitOfferCfg} oldPrice={exitOld} newPrice={exitNew} onAccept={() => { setOfferAccepted(true); exitIntent.close(); toast.success("Desconto aplicado ao seu pedido!"); }} onDecline={exitIntent.decline} />}
       <CheckoutHeader store={store} />
 
       <main className="mx-auto max-w-[520px] space-y-3 px-3 pb-6 pt-4">

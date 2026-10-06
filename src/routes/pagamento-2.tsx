@@ -1,3 +1,5 @@
+import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
+import { discountedUnit, resolveExitOffer } from "@/lib/exit-offer";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
@@ -67,7 +69,10 @@ function CheckoutTwo() {
   const shipping = shippingOptions.find((item) => item.id === form.shipping_id) ?? shippingOptions[0];
   const quantity = Math.max(1, form.quantity || 1);
   const pricing = product ? variantPricing(product, form.variant) : null;
-  const unit = pricing?.price ?? product?.price ?? 0;
+  const [offerAccepted, setOfferAccepted] = useState(false);
+  const exitOfferCfg = useMemo(() => (product ? resolveExitOffer(store.checkout?.exit_offer, product.sections) : null), [product, store.checkout?.exit_offer]);
+  const baseUnit = pricing?.price ?? product?.price ?? 0;
+  const unit = offerAccepted ? discountedUnit(baseUnit, exitOfferCfg) : baseUnit;
   const originalUnit = Math.max(unit, pricing?.previous_price ?? product?.previous_price ?? unit);
 
   const subtotal = Number((unit * quantity).toFixed(2));
@@ -78,6 +83,10 @@ function CheckoutTwo() {
   const shippingDiscount = Number(Math.max(0, shippingOriginal - shippingPrice).toFixed(2));
   const savings = Number((productDiscount + shippingDiscount).toFixed(2));
   const total = Number((subtotal + shippingPrice).toFixed(2));
+
+  const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !offerAccepted && !order, product?.id ?? "");
+  const exitOld = Number((baseUnit * quantity).toFixed(2));
+  const exitNew = Number((discountedUnit(baseUnit, exitOfferCfg) * quantity).toFixed(2));
   const hasAddress = Boolean(form.customer.name && form.customer.email && digits(form.customer.phone).length >= 10 && digits(form.customer.document).length >= 11 && digits(form.address.cep).length === 8 && form.address.street && form.address.number && form.address.district && form.address.city && form.address.state);
   const expiresAt = pix?.configured && pix.expires_at ? new Date(pix.expires_at).getTime() : null;
   const image = product?.media.find((item) => item.type === "image")?.url;
@@ -117,7 +126,7 @@ function CheckoutTwo() {
     setPlacing(true);
     void trackAddPaymentInfo(store.id, product, quantity, total);
     try {
-      const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address } });
+      const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: offerAccepted } });
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
@@ -131,6 +140,7 @@ function CheckoutTwo() {
   if (!product) return <div className="grid min-h-screen place-items-center bg-surface px-6 text-center"><div><h1 className="text-[18px] font-extrabold">Seu carrinho está vazio</h1><Link to="/" className="mt-3 inline-block text-[13px] font-bold text-primary">Voltar para a loja</Link></div></div>;
 
   return <div className="min-h-[100dvh] overflow-x-hidden bg-surface pb-36 text-foreground" style={checkoutTheme(store)}>
+    {exitIntent.open && exitOfferCfg && <ExitOfferPopup offer={exitOfferCfg} oldPrice={exitOld} newPrice={exitNew} onAccept={() => { setOfferAccepted(true); exitIntent.close(); toast.success("Desconto aplicado ao seu pedido!"); }} onDecline={exitIntent.decline} />}
     <header className="grid h-11 grid-cols-[40px_minmax(0,1fr)_40px] items-center border-b border-border bg-card px-1">
       <Button variant="ghost" size="icon" aria-label="Voltar ao produto" onClick={() => void navigate({ to: "/produto/$slug", params: { slug: product.slug } })}><ChevronLeft size={22} /></Button>
       {headerRating
