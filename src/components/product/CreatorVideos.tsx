@@ -91,7 +91,8 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               <BelowCard key={`all-${i}`} video={v} grid onPlay={() => v.video && setActive(i)} />
             ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {current?.video && createPortal(
@@ -123,7 +124,8 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               <X size={20} />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   );
