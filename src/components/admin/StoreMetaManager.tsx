@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { getStoreMetaSettings, listMetaEventLogs, saveStoreMetaSettings, testStoreMetaPixel } from "@/lib/meta.functions";
+import { getStoreMetaSettings, listMetaEventLogs, saveStoreMetaSettings, sendMetaTestEvents, testStoreMetaPixel } from "@/lib/meta.functions";
 
 export function StoreMetaManager({ storeId }: { storeId: string }) {
   const load = useServerFn(getStoreMetaSettings);
@@ -74,9 +74,39 @@ export function StoreMetaManager({ storeId }: { storeId: string }) {
         <Button type="button" variant="outline" className="rounded-full" disabled={busy !== ""} onClick={() => void onTest()}>{busy === "test" ? "Testando..." : "Testar Pixel"}</Button>
         <Button type="button" className="rounded-full px-6 font-extrabold" disabled={busy !== ""} onClick={() => void onSave()}>{busy === "save" ? "Salvando..." : "Salvar"}</Button>
       </div>
+      <MetaTestMode storeId={storeId} pixelId={data?.pixel_id ?? ""} hasCode={Boolean(data?.test_event_code)} hasToken={Boolean(data?.capi_configured)} />
       <MetaEventLog storeId={storeId} />
     </>}
   </section>;
+}
+
+function MetaTestMode({ storeId, pixelId, hasCode, hasToken }: { storeId: string; pixelId: string; hasCode: boolean; hasToken: boolean }) {
+  const send = useServerFn(sendMetaTestEvents);
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; message: string; results: Array<{ event: string; ok: boolean; error?: string }> } | null>(null);
+  async function run() {
+    setBusy(true);
+    try { setRes(await send({ data: { store_id: storeId } })); await qc.invalidateQueries({ queryKey: ["admin-meta-logs", storeId] }); }
+    catch (e) { setRes({ ok: false, message: e instanceof Error ? e.message : "Falha no teste.", results: [] }); }
+    finally { setBusy(false); }
+  }
+  return <div className="mt-6 rounded-lg border border-primary/40 bg-primary/5 p-3">
+    <p className="text-[13px] font-extrabold">Modo de teste</p>
+    <p className="mt-1 text-[11.5px] text-muted-foreground">Envia eventos de exemplo que aparecem só na aba "Eventos de teste" da Meta. Não contam como vendas reais nem afetam suas campanhas.</p>
+    <ol className="mt-2 list-decimal space-y-0.5 pl-4 text-[11.5px] text-muted-foreground">
+      <li>No Gerenciador de Eventos da Meta, abra seu Pixel{pixelId ? ` (${pixelId})` : ""} → <b>Eventos de teste</b> e copie o código (ex.: TEST12345).</li>
+      <li>Cole no campo "Meta Test Event Code" acima e clique em <b>Salvar</b> {hasCode ? "✓" : ""}.</li>
+      <li>Clique em <b>Enviar eventos de teste</b> e veja PageView, ViewContent, AddToCart, InitiateCheckout e Purchase chegarem na Meta.</li>
+      <li>Para testar o navegador, na mesma aba da Meta digite o endereço da loja em "Testar eventos do navegador" e navegue pelo produto e checkout.</li>
+    </ol>
+    {!hasToken && <p className="mt-2 text-[11.5px] font-semibold text-destructive">O teste pelo servidor precisa do Access Token salvo.</p>}
+    <Button type="button" variant="outline" className="mt-3 rounded-full" disabled={busy} onClick={() => void run()}>{busy ? "Enviando..." : "Enviar eventos de teste"}</Button>
+    {res && <div className="mt-3 text-[12px]">
+      <p className={`font-semibold ${res.ok ? "text-success" : "text-destructive"}`}>{res.message}</p>
+      {res.results.length > 0 && <ul className="mt-2 space-y-1">{res.results.map((r) => <li key={r.event} className="flex flex-wrap gap-2"><span className={r.ok ? "text-success" : "text-destructive"}>{r.ok ? "✓" : "✗"}</span><span className="font-medium">{r.event}</span>{r.error && <span className="break-words text-destructive">{r.error}</span>}</li>)}</ul>}
+    </div>}
+  </div>;
 }
 
 function MetaEventLog({ storeId }: { storeId: string }) {
