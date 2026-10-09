@@ -126,7 +126,7 @@ function CheckoutRoute() {
   const exitOfferCfg = useMemo(() => (product ? resolveExitOffer(store.checkout?.exit_offer, product.sections) : null), [product, store.checkout?.exit_offer]);
   const [productOfferFlag, setProductOfferFlag] = useState(false);
   useEffect(() => { setProductOfferFlag(Boolean(product) && hasProductOffer(product!.slug)); }, [product?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
-  const productOfferCfg = useMemo(() => (productOfferFlag ? resolveProductExitOffer(store.checkout?.product_exit_offer) : null), [productOfferFlag, store.checkout?.product_exit_offer]);
+  const productOfferCfg = useMemo(() => (productOfferFlag ? resolveProductExitOffer(store.checkout?.product_exit_offer, product?.sections) : null), [productOfferFlag, store.checkout?.product_exit_offer, product?.sections]);
   const baseUnitPrice = product ? variantPricing(product, form.variant).price : 0;
   const unitPrice = productOfferCfg ? discountedUnit(baseUnitPrice, productOfferCfg) : offerAccepted ? discountedUnit(baseUnitPrice, exitOfferCfg) : baseUnitPrice;
   const subtotal = Number((unitPrice * quantity).toFixed(2));

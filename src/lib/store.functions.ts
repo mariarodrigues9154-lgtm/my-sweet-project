@@ -239,7 +239,7 @@ export const createOrder = createServerFn({ method: "POST" })
       const { resolveExitOffer, resolveProductExitOffer, discountedUnitCents } = await import("./exit-offer");
       const cfg = storeRow?.checkout as { exit_offer?: unknown; product_exit_offer?: unknown } | null;
       const offer = data.exit_offer === "product"
-        ? resolveProductExitOffer(cfg?.product_exit_offer)
+        ? resolveProductExitOffer(cfg?.product_exit_offer, product.sections as never)
         : resolveExitOffer(cfg?.exit_offer, product.sections as never);
       if (offer) {
         const original = unitCents;

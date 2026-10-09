@@ -77,9 +77,13 @@ export function discountedUnit(unit: number, offer: Pick<ResolvedExitOffer, "dis
   return discountedUnitCents(Math.round(unit * 100), offer) / 100;
 }
 
-/** Pop-up de saída da página do produto: config própria da loja (checkout.product_exit_offer), independente do checkout. */
-export function resolveProductExitOffer(storeRaw: unknown): ResolvedExitOffer | null {
-  return resolveExitOffer(storeRaw, null);
+/** Pop-up de saída da página do produto: config da loja (checkout.product_exit_offer) com override por produto
+ *  (sections.product_exit_offer_mode / product_exit_offer), independente do checkout. */
+export function resolveProductExitOffer(
+  storeRaw: unknown,
+  sections?: { product_exit_offer_mode?: "store" | "on" | "off"; product_exit_offer?: ExitOfferSettings } | null,
+): ResolvedExitOffer | null {
+  return resolveExitOffer(storeRaw, { exit_offer_mode: sections?.product_exit_offer_mode ?? "store", exit_offer: sections?.product_exit_offer ?? {} });
 }
 
 const productOfferKey = (slug: string) => `product-exit-offer:${slug}`;

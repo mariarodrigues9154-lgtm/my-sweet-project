@@ -121,6 +121,8 @@ export type ProductSections = {
   /** Oferta de saída do checkout neste produto. */
   exit_offer_mode?: "store" | "on" | "off";
   exit_offer?: import("./exit-offer").ExitOfferSettings;
+  product_exit_offer_mode?: "store" | "on" | "off";
+  product_exit_offer?: import("./exit-offer").ExitOfferSettings;
 };
 
 /** Atendimento por IA e suporte humano — por loja, lido só no servidor. */

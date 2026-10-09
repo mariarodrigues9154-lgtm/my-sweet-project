@@ -523,6 +523,26 @@ const sectionsSchema = z
         button_text: z.string().trim().max(80).optional(),
         decline_text: z.string().trim().max(120).optional(),
     }).partial().optional(),
+    product_exit_offer_mode: z.enum(["store", "on", "off"]).nullish().transform((v) => v ?? undefined),
+    product_exit_offer: z.object({
+        badge: z.string().trim().max(60).optional(),
+        title: z.string().trim().max(120).optional(),
+        text: z.string().trim().max(600).optional(),
+        timer_enabled: z.boolean().optional(),
+        timer_minutes: z.number().min(1).max(120).optional(),
+        timer_text: z.string().trim().max(120).optional(),
+        discount_type: z.enum(["percent", "fixed"]).optional(),
+        discount_value: z.number().min(0).max(100000).optional(),
+        button_text: z.string().trim().max(80).optional(),
+        decline_text: z.string().trim().max(120).optional(),
+        show_old_price: z.boolean().optional(),
+        show_new_price: z.boolean().optional(),
+        show_icon: z.boolean().optional(),
+        icon_url: z.string().trim().max(2000).optional(),
+        button_color: z.string().trim().max(20).optional(),
+        accent_color: z.string().trim().max(20).optional(),
+        bg_color: z.string().trim().max(20).optional(),
+    }).partial().optional(),
   })
   .nullish()
   .transform((v) => v ?? {});
