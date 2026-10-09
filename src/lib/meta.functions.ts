@@ -86,12 +86,21 @@ export const testStoreMetaPixel = createServerFn({ method: "POST" })
     if (!row?.pixel_id) return { ok: false as const, message: "Salve um Pixel ID primeiro." };
     if (!row.enabled) return { ok: false as const, message: "O Pixel está salvo, mas desativado." };
     if (!row.capi_token) return { ok: true as const, message: "Pixel pronto no navegador. Conversions API não configurada." };
-    const res = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(row.pixel_id)}?fields=id,name&access_token=${encodeURIComponent(row.capi_token)}`);
+    // Token da CAPI só tem permissão para enviar eventos: valida com um POST marcado como teste
+    // (aparece apenas em "Eventos de teste", nunca conta como evento real).
+    const testCode = row.test_event_code?.trim() || "TEST_CONEXAO";
+    const res = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(row.pixel_id)}/events?access_token=${encodeURIComponent(row.capi_token)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        test_event_code: testCode,
+        data: [{ event_name: "PageView", event_time: Math.floor(Date.now() / 1000), event_id: `conn_${Date.now()}`, action_source: "website", user_data: { external_id: ["teste_conexao"], client_user_agent: "painel-teste" } }],
+      }),
+    });
     const { logMetaEvent } = await import("./meta.server");
     if (res.ok) {
       await logMetaEvent({ store_id: data.store_id, event_name: "Teste de conexão", ok: true, http_status: res.status, source: "painel" });
-      const body = (await res.json()) as { name?: string };
-      return { ok: true as const, message: `Pixel e Conversions API prontos${body.name ? ` (${body.name})` : ""}.` };
+      return { ok: true as const, message: "Pixel e Conversions API prontos. A Meta aceitou o token." };
     }
     const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
     await logMetaEvent({ store_id: data.store_id, event_name: "Teste de conexão", ok: false, http_status: res.status, error: body.error?.message ?? "sem detalhes", source: "painel" });
