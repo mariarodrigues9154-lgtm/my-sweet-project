@@ -1,5 +1,5 @@
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
-import { discountedUnit, resolveExitOffer } from "@/lib/exit-offer";
+import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { PixQr } from "@/components/checkout/PixQr";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
@@ -124,13 +124,16 @@ function CheckoutRoute() {
 
   const quantity = Math.max(1, form.quantity || 1);
   const exitOfferCfg = useMemo(() => (product ? resolveExitOffer(store.checkout?.exit_offer, product.sections) : null), [product, store.checkout?.exit_offer]);
+  const [productOfferFlag, setProductOfferFlag] = useState(false);
+  useEffect(() => { setProductOfferFlag(Boolean(product) && hasProductOffer(product!.slug)); }, [product?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  const productOfferCfg = useMemo(() => (productOfferFlag ? resolveProductExitOffer(store.checkout?.product_exit_offer) : null), [productOfferFlag, store.checkout?.product_exit_offer]);
   const baseUnitPrice = product ? variantPricing(product, form.variant).price : 0;
-  const unitPrice = offerAccepted ? discountedUnit(baseUnitPrice, exitOfferCfg) : baseUnitPrice;
+  const unitPrice = productOfferCfg ? discountedUnit(baseUnitPrice, productOfferCfg) : offerAccepted ? discountedUnit(baseUnitPrice, exitOfferCfg) : baseUnitPrice;
   const subtotal = Number((unitPrice * quantity).toFixed(2));
   const shippingPrice = Number((selectedShipping?.price ?? 0).toFixed(2));
   const total = Number((subtotal + shippingPrice).toFixed(2));
 
-  const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !offerAccepted && !order, product?.id ?? "");
+  const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !productOfferCfg && !offerAccepted && !order, product?.id ?? "");
   const exitOld = Number((baseUnitPrice * quantity).toFixed(2));
   const exitNew = Number((discountedUnit(baseUnitPrice, exitOfferCfg) * quantity).toFixed(2));
 
@@ -269,7 +272,7 @@ function CheckoutRoute() {
           shipping_id: selectedShipping.id,
           customer: form.customer,
           address: form.address,
-          exit_offer: offerAccepted,
+          exit_offer: productOfferCfg ? "product" as const : offerAccepted,
         },
       });
       if (!result.ok) {

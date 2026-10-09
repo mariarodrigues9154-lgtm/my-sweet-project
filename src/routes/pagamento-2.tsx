@@ -1,5 +1,5 @@
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
-import { discountedUnit, resolveExitOffer } from "@/lib/exit-offer";
+import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
@@ -71,8 +71,11 @@ function CheckoutTwo() {
   const pricing = product ? variantPricing(product, form.variant) : null;
   const [offerAccepted, setOfferAccepted] = useState(false);
   const exitOfferCfg = useMemo(() => (product ? resolveExitOffer(store.checkout?.exit_offer, product.sections) : null), [product, store.checkout?.exit_offer]);
+  const [productOfferFlag, setProductOfferFlag] = useState(false);
+  useEffect(() => { setProductOfferFlag(Boolean(product) && hasProductOffer(product!.slug)); }, [product?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  const productOfferCfg = useMemo(() => (productOfferFlag ? resolveProductExitOffer(store.checkout?.product_exit_offer) : null), [productOfferFlag, store.checkout?.product_exit_offer]);
   const baseUnit = pricing?.price ?? product?.price ?? 0;
-  const unit = offerAccepted ? discountedUnit(baseUnit, exitOfferCfg) : baseUnit;
+  const unit = productOfferCfg ? discountedUnit(baseUnit, productOfferCfg) : offerAccepted ? discountedUnit(baseUnit, exitOfferCfg) : baseUnit;
   const originalUnit = Math.max(unit, pricing?.previous_price ?? product?.previous_price ?? unit);
 
   const subtotal = Number((unit * quantity).toFixed(2));
@@ -84,7 +87,7 @@ function CheckoutTwo() {
   const savings = Number((productDiscount + shippingDiscount).toFixed(2));
   const total = Number((subtotal + shippingPrice).toFixed(2));
 
-  const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !offerAccepted && !order, product?.id ?? "");
+  const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !productOfferCfg && !offerAccepted && !order, product?.id ?? "");
   const exitOld = Number((baseUnit * quantity).toFixed(2));
   const exitNew = Number((discountedUnit(baseUnit, exitOfferCfg) * quantity).toFixed(2));
   const hasAddress = Boolean(form.customer.name && form.customer.email && digits(form.customer.phone).length >= 10 && digits(form.customer.document).length >= 11 && digits(form.address.cep).length === 8 && form.address.street && form.address.number && form.address.district && form.address.city && form.address.state);
@@ -126,7 +129,7 @@ function CheckoutTwo() {
     setPlacing(true);
     void trackAddPaymentInfo(store.id, product, quantity, total);
     try {
-      const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: offerAccepted } });
+      const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });

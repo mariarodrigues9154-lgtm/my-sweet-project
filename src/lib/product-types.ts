@@ -268,6 +268,7 @@ export type CheckoutSettings = {
   popups?: PopupSettings;
   /** Oferta de saída do checkout (por loja). */
   exit_offer?: import("./exit-offer").ExitOfferSettings;
+  product_exit_offer?: import("./exit-offer").ExitOfferSettings;
 };
 
 

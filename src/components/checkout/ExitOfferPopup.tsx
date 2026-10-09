@@ -67,9 +67,9 @@ export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = 
   ];
   return (
     <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-foreground/60 p-3 backdrop-blur-[2px] animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-label={offer.title}>
-      <div className="relative max-h-[calc(100dvh-24px)] w-full max-w-[380px] overflow-y-auto rounded-[24px] bg-card px-5 pb-4 pt-5 text-center shadow-[0_24px_60px_-24px_hsl(0_0%_0%/0.45)] animate-in fade-in zoom-in-95 duration-300 ease-out">
+      <div style={{ ...(offer.bg_color ? { backgroundColor: offer.bg_color } : {}), ...(offer.accent_color ? { ["--primary" as string]: offer.accent_color } : {}) }} className="relative max-h-[calc(100dvh-24px)] w-full max-w-[380px] overflow-y-auto rounded-[24px] bg-card px-5 pb-4 pt-5 text-center shadow-[0_24px_60px_-24px_hsl(0_0%_0%/0.45)] animate-in fade-in zoom-in-95 duration-300 ease-out">
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[10.5px] font-extrabold uppercase tracking-wider text-primary">
-          <Gift size={12} strokeWidth={2.6} className="gift-swing" /> {offer.badge}
+          {offer.show_icon && (offer.icon_url ? <img src={offer.icon_url} alt="" className="gift-swing size-4 object-contain" /> : <Gift size={12} strokeWidth={2.6} className="gift-swing" />)} {offer.badge}
         </span>
         <h2 className="mt-3 text-[20px] font-extrabold leading-[1.2] text-foreground">{offer.title}</h2>
         <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">{offer.text}</p>
@@ -88,8 +88,8 @@ export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = 
         )}
 
         <div className="mt-3">
-          <p className="text-[13px] font-medium text-muted-foreground line-through tnum">{brl(oldPrice)}</p>
-          <p className="text-[34px] font-extrabold leading-none tracking-tight text-primary tnum">{brl(newPrice)}</p>
+          {offer.show_old_price && <p className="text-[13px] font-medium text-muted-foreground line-through tnum">{brl(oldPrice)}</p>}
+          {offer.show_new_price && <p className="text-[34px] font-extrabold leading-none tracking-tight text-primary tnum">{brl(newPrice)}</p>}
           {savings > 0 && <span className="mt-2 inline-block rounded-full bg-success-soft px-2.5 py-0.5 text-[11.5px] font-bold text-success">Você economiza {brl(savings)}</span>}
         </div>
 
@@ -106,7 +106,7 @@ export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = 
           ))}
         </div>
 
-        <button type="button" onClick={onAccept} className="mt-4 w-full rounded-2xl bg-primary px-4 py-3.5 text-[15px] font-extrabold uppercase tracking-wide text-primary-foreground shadow-[0_10px_24px_-12px_var(--primary)] transition hover:brightness-110 active:scale-[0.98]">
+        <button type="button" onClick={onAccept} style={offer.button_color ? { backgroundColor: offer.button_color } : undefined} className="mt-4 w-full rounded-2xl bg-primary px-4 py-3.5 text-[15px] font-extrabold uppercase tracking-wide text-primary-foreground shadow-[0_10px_24px_-12px_var(--primary)] transition hover:brightness-110 active:scale-[0.98]">
           {offer.button_text}
         </button>
         <button type="button" onClick={onDecline} className="mt-2.5 w-full py-1 text-[12px] font-medium text-muted-foreground hover:text-foreground">{decline}</button>

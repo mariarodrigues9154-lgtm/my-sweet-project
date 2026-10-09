@@ -191,6 +191,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
       <ExitOfferFields value={draft.checkout?.exit_offer} onChange={(v) => set("checkout", { ...draft.checkout, exit_offer: v })} />
     </Group>
 
+    <Group title="Pop-up de saída da página do produto">
+      <ExitOfferFields enableLabel="Ativar pop-up de saída na página do produto" value={draft.checkout?.product_exit_offer} onChange={(v) => set("checkout", { ...draft.checkout, product_exit_offer: v })} />
+    </Group>
+
     <Group title="Popup / Notificações flutuantes">
       <PopupManager value={draft.checkout?.popups} onChange={(v) => set("checkout", { ...draft.checkout, popups: v })} products={products} storeName={draft.name} onUpload={uploadPopupImage} />
     </Group>
