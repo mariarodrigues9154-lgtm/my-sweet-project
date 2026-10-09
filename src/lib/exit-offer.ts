@@ -83,7 +83,7 @@ export function resolveProductExitOffer(
   storeRaw: unknown,
   sections?: { product_exit_offer_mode?: "store" | "on" | "off"; product_exit_offer?: ExitOfferSettings } | null,
 ): ResolvedExitOffer | null {
-  return resolveExitOffer(storeRaw, { exit_offer_mode: sections?.product_exit_offer_mode, exit_offer: sections?.product_exit_offer });
+  return resolveExitOffer(storeRaw, { exit_offer_mode: sections?.product_exit_offer_mode ?? "store", exit_offer: sections?.product_exit_offer ?? {} });
 }
 
 const productOfferKey = (slug: string) => `product-exit-offer:${slug}`;
