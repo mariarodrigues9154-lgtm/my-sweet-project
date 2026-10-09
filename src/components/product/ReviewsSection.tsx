@@ -63,21 +63,25 @@ export function ReviewsSection({ product }: { product: Product }) {
               </div>
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-foreground/90">{r.text}</p>
-            {((r.photos ?? []).length > 0 || (r.videos ?? []).length > 0) && (
+            {((r.photos ?? []).length > 0 || (r.videos ?? []).length > 0) && (() => {
+              const items: ViewerItem[] = [...(r.photos ?? []).map((url) => ({ type: "image" as const, url })), ...(r.videos ?? []).map((url) => ({ type: "video" as const, url }))];
+              const open = (index: number) => setViewer({ items, index });
+              const nPhotos = (r.photos ?? []).length;
+              return (
               <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto pb-0.5">
-                {(r.photos ?? []).map((p) => (
-                  <button key={p} type="button" onClick={() => setPhoto(p)} className="shrink-0">
+                {(r.photos ?? []).map((p, pi) => (
+                  <button key={p} type="button" onClick={() => open(pi)} aria-label={`Ampliar foto de ${r.name}`} className="shrink-0">
                     <img
                       src={sizedImage(p, 240)}
                       alt={`Foto enviada por ${r.name}`}
                       loading="lazy"
                       decoding="async"
-                      className="size-24 rounded-lg object-cover"
+                      className="pointer-events-none size-24 rounded-lg object-cover"
                     />
                   </button>
                 ))}
-                {(r.videos ?? []).map((v) => (
-                  <button key={v} type="button" onClick={() => setVideo(v)} aria-label={`Assistir vídeo de ${r.name}`} className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-foreground">
+                {(r.videos ?? []).map((v, vi) => (
+                  <button key={v} type="button" onClick={() => open(nPhotos + vi)} aria-label={`Assistir vídeo de ${r.name}`} className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-foreground">
                     <video src={`${v}#t=0.1`} preload="none" muted playsInline className="pointer-events-none size-full object-cover" />
                     <span className="absolute inset-0 grid place-items-center">
                       <span className="grid size-9 place-items-center rounded-full bg-foreground/60 text-background"><Play size={18} fill="currentColor" /></span>
@@ -94,21 +98,9 @@ export function ReviewsSection({ product }: { product: Product }) {
           Ver mais avaliações ({reviews.length - count})
         </button>
       )}
-      {video && (
-        <div role="dialog" aria-modal="true" onClick={() => setVideo(null)} className="fixed inset-0 z-50 grid place-items-center bg-foreground/85 p-3">
-          <video src={video} controls autoPlay playsInline onClick={(e) => e.stopPropagation()} className="max-h-[85vh] w-full max-w-[520px] rounded-2xl bg-foreground" />
-          <button type="button" onClick={() => setVideo(null)} aria-label="Fechar vídeo" className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-foreground/60 text-background">
-            <X size={20} />
-          </button>
-        </div>
-      )}
-      {photo && (
-        <div role="dialog" aria-modal="true" onClick={() => setPhoto(null)} className="fixed inset-0 z-50 grid place-items-center bg-foreground/80 p-4">
-          <img src={sizedImage(photo, 1080)} alt="Foto da avaliação" onClick={(e) => e.stopPropagation()} className="max-h-[88vh] max-w-[92vw] rounded-2xl object-contain" />
-          <button type="button" onClick={() => setPhoto(null)} aria-label="Fechar foto" className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-foreground/60 text-background">
-            <X size={20} />
-          </button>
-        </div>
+      {viewer && typeof document !== "undefined" && createPortal(
+        <MediaViewer items={viewer.items} start={viewer.index} onClose={() => setViewer(null)} />,
+        document.body,
       )}
     </section>
   );
