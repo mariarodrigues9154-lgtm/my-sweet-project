@@ -44,6 +44,8 @@
   --color-success-soft: var(--success-soft);
   --color-flash: var(--flash);
   --color-star: var(--star);
+  --color-secure-soft: oklch(0.97 0.025 80);
+  --color-secure: oklch(0.55 0.1 70);
 
   --color-surface: var(--surface);
   --color-surface-strong: var(--surface-strong);
