@@ -1,5 +1,6 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Check, ChevronRight, Play, Video, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
@@ -77,7 +78,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
         )}
       </div>
 
-      {all && active === null && (
+      {all && active === null && createPortal(
         <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-50 overflow-y-auto bg-card animate-in fade-in">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-3 py-3">
             <h3 className="truncate text-[15px] font-bold">{title}</h3>
@@ -90,10 +91,11 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               <BelowCard key={`all-${i}`} video={v} grid onPlay={() => v.video && setActive(i)} />
             ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {current?.video && (
+      {current?.video && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -111,7 +113,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               playsInline
               preload="auto"
               onError={() => console.warn("[videos] falha ao reproduzir vídeo do criador")}
-              className="block max-h-[88vh] w-auto max-w-[min(92vw,420px)] aspect-[9/16] rounded-2xl bg-foreground object-contain"
+              className="block h-auto max-h-[88vh] w-[min(92vw,420px,calc(88vh*9/16))] aspect-[9/16] rounded-2xl bg-foreground object-contain"
             />
             <button
               type="button"
@@ -122,7 +124,8 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               <X size={20} />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   );

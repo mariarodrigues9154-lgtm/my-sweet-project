@@ -1,6 +1,7 @@
-import { imageSrcSet, sizedImage } from "@/lib/media-url";
-import { useState } from "react";
-import { Check, ChevronRight, Play, X } from "lucide-react";
+import { sizedImage } from "@/lib/media-url";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { Check, ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { compactBR } from "@/lib/format";
@@ -9,8 +10,7 @@ import { ratingDot, reviewsPageSize, reviewsSectionHeader, type Product } from "
 export function ReviewsSection({ product }: { product: Product }) {
   const PAGE = reviewsPageSize(product);
   const [count, setCount] = useState(PAGE);
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [video, setVideo] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<{ items: ViewerItem[]; index: number } | null>(null);
   const reviews = (product.reviews ?? []).filter((r) => !r.hidden);
   if (!reviews.length) return null;
   const head = reviewsSectionHeader(product);
@@ -63,21 +63,25 @@ export function ReviewsSection({ product }: { product: Product }) {
               </div>
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-foreground/90">{r.text}</p>
-            {((r.photos ?? []).length > 0 || (r.videos ?? []).length > 0) && (
+            {((r.photos ?? []).length > 0 || (r.videos ?? []).length > 0) && (() => {
+              const items: ViewerItem[] = [...(r.photos ?? []).map((url) => ({ type: "image" as const, url })), ...(r.videos ?? []).map((url) => ({ type: "video" as const, url }))];
+              const open = (index: number) => setViewer({ items, index });
+              const nPhotos = (r.photos ?? []).length;
+              return (
               <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto pb-0.5">
-                {(r.photos ?? []).map((p) => (
-                  <button key={p} type="button" onClick={() => setPhoto(p)} className="shrink-0">
+                {(r.photos ?? []).map((p, pi) => (
+                  <button key={p} type="button" onClick={() => open(pi)} aria-label={`Ampliar foto de ${r.name}`} className="shrink-0">
                     <img
                       src={sizedImage(p, 240)}
                       alt={`Foto enviada por ${r.name}`}
                       loading="lazy"
                       decoding="async"
-                      className="size-24 rounded-lg object-cover"
+                      className="pointer-events-none size-24 rounded-lg object-cover"
                     />
                   </button>
                 ))}
-                {(r.videos ?? []).map((v) => (
-                  <button key={v} type="button" onClick={() => setVideo(v)} aria-label={`Assistir vídeo de ${r.name}`} className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-foreground">
+                {(r.videos ?? []).map((v, vi) => (
+                  <button key={v} type="button" onClick={() => open(nPhotos + vi)} aria-label={`Assistir vídeo de ${r.name}`} className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-foreground">
                     <video src={`${v}#t=0.1`} preload="none" muted playsInline className="pointer-events-none size-full object-cover" />
                     <span className="absolute inset-0 grid place-items-center">
                       <span className="grid size-9 place-items-center rounded-full bg-foreground/60 text-background"><Play size={18} fill="currentColor" /></span>
@@ -85,7 +89,8 @@ export function ReviewsSection({ product }: { product: Product }) {
                   </button>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </li>
         ))}
       </ul>
@@ -94,22 +99,56 @@ export function ReviewsSection({ product }: { product: Product }) {
           Ver mais avaliações ({reviews.length - count})
         </button>
       )}
-      {video && (
-        <div role="dialog" aria-modal="true" onClick={() => setVideo(null)} className="fixed inset-0 z-50 grid place-items-center bg-foreground/85 p-3">
-          <video src={video} controls autoPlay playsInline onClick={(e) => e.stopPropagation()} className="max-h-[85vh] w-full max-w-[520px] rounded-2xl bg-foreground" />
-          <button type="button" onClick={() => setVideo(null)} aria-label="Fechar vídeo" className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-foreground/60 text-background">
-            <X size={20} />
-          </button>
-        </div>
-      )}
-      {photo && (
-        <div role="dialog" aria-modal="true" onClick={() => setPhoto(null)} className="fixed inset-0 z-50 grid place-items-center bg-foreground/80 p-4">
-          <img src={sizedImage(photo, 1080)} alt="Foto da avaliação" onClick={(e) => e.stopPropagation()} className="max-h-[88vh] max-w-[92vw] rounded-2xl object-contain" />
-          <button type="button" onClick={() => setPhoto(null)} aria-label="Fechar foto" className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-foreground/60 text-background">
-            <X size={20} />
-          </button>
-        </div>
+      {viewer && typeof document !== "undefined" && createPortal(
+        <MediaViewer items={viewer.items} start={viewer.index} onClose={() => setViewer(null)} />,
+        document.body,
       )}
     </section>
+  );
+}
+
+type ViewerItem = { type: "image" | "video"; url: string };
+
+/** Visualizador em tela cheia (portal no body: fica acima de tudo, sem ser cortado pela página). */
+function MediaViewer({ items, start, onClose }: { items: ViewerItem[]; start: number; onClose: () => void }) {
+  const [i, setI] = useState(start);
+  const item = items[i];
+  const go = (d: number) => setI((n) => (n + d + items.length) % items.length);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "ArrowLeft") go(-1);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (!item) return null;
+  return (
+    <div role="dialog" aria-modal="true" onClick={onClose} className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-foreground/90 p-3">
+      <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[520px] items-center justify-center">
+        {item.type === "image" ? (
+          <img key={item.url} src={sizedImage(item.url, 1080)} alt={`Mídia ${i + 1} de ${items.length}`} className="block max-h-[80vh] max-w-full rounded-2xl object-contain" />
+        ) : (
+          <video key={item.url} src={item.url} controls autoPlay playsInline preload="auto" className="block h-auto max-h-[80vh] w-full rounded-2xl bg-foreground object-contain" />
+        )}
+      </div>
+      {items.length > 1 && (
+        <div onClick={(e) => e.stopPropagation()} className="mt-3 flex items-center gap-4 text-background">
+          <button type="button" onClick={() => go(-1)} aria-label="Anterior" className="grid size-10 place-items-center rounded-full bg-background/15"><ChevronLeft size={22} /></button>
+          <span className="text-[13px] font-semibold tabular-nums">{i + 1} de {items.length}</span>
+          <button type="button" onClick={() => go(1)} aria-label="Próxima" className="grid size-10 place-items-center rounded-full bg-background/15"><ChevronRight size={22} /></button>
+        </div>
+      )}
+      <button type="button" onClick={onClose} aria-label="Fechar" className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-background/15 text-background">
+        <X size={22} />
+      </button>
+    </div>
   );
 }
