@@ -109,3 +109,31 @@ export const listMetaEventLogs = createServerFn({ method: "GET" })
     if (error) throw new Error("Não foi possível carregar o histórico.");
     return (rows ?? []) as Array<{ id: string; event_name: string; event_id: string | null; order_number: string | null; source: string; ok: boolean; http_status: number | null; error: string | null; test_mode: boolean; created_at: string }>;
   });
+
+/** Modo de teste: envia eventos de exemplo com o Test Event Code (aparecem só em "Eventos de teste" da Meta). */
+export const sendMetaTestEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ store_id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { loadMetaSettings, activeTestCode, sendCapiEvent } = await import("./meta.server");
+    const row = await loadMetaSettings(data.store_id);
+    if (!row?.pixel_id) return { ok: false as const, results: [], message: "Salve um Pixel ID primeiro." };
+    if (!row.capi_token) return { ok: false as const, results: [], message: "Salve o Access Token da Conversions API para usar o modo de teste." };
+    if (!activeTestCode(row)) return { ok: false as const, results: [], message: "Cole o Test Event Code da Meta e clique em Salvar antes de testar." };
+    const now = Math.floor(Date.now() / 1000);
+    const stamp = Date.now();
+    const custom = { currency: "BRL", value: 1, content_ids: ["teste"], content_type: "product", content_name: "Produto de teste" };
+    const names = ["PageView", "ViewContent", "AddToCart", "InitiateCheckout", "Purchase"];
+    const results: Array<{ event: string; ok: boolean; error?: string }> = [];
+    for (const name of names) {
+      const r = await sendCapiEvent({ ...row, enabled: true }, {
+        event_name: name, event_time: now, event_id: `test_${name}_${stamp}`, action_source: "website",
+        user_data: { external_id: [`teste_${stamp}`], client_user_agent: "painel-teste" },
+        ...(name === "PageView" ? {} : { custom_data: name === "Purchase" ? { ...custom, order_id: `TESTE-${stamp}` } : custom }),
+      }, { store_id: data.store_id });
+      results.push({ event: name, ok: r.ok, ...(r.error ? { error: r.error } : {}) });
+    }
+    const ok = results.every((r) => r.ok);
+    return { ok, results, message: ok ? "Os 5 eventos de teste foram aceitos pela Meta. Confira em Gerenciador de Eventos → Eventos de teste." : "Alguns eventos foram recusados pela Meta. Veja os detalhes abaixo." };
+  });
