@@ -29,3 +29,15 @@ describe("oferta de saída da página do produto", () => {
     expect(discountedUnitCents(5790, { discount_type: "fixed", discount_value: 10 })).toBe(4790);
   });
 });
+
+describe("pop-up de saída da página do produto por produto", () => {
+  it("ativa só neste produto mesmo com a loja desligada", () => {
+    expect(resolveProductExitOffer({ enabled: false, discount_value: 10 }, { product_exit_offer_mode: "on", product_exit_offer: { discount_value: 25 } })?.discount_value).toBe(25);
+  });
+  it("desativa neste produto mesmo com a loja ligada", () => {
+    expect(resolveProductExitOffer({ enabled: true, discount_value: 10 }, { product_exit_offer_mode: "off" })).toBeNull();
+  });
+  it("segue a loja por padrão", () => {
+    expect(resolveProductExitOffer({ enabled: true, discount_value: 10 }, {})?.discount_value).toBe(10);
+  });
+});
