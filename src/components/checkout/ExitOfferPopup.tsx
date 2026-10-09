@@ -21,7 +21,7 @@ export function useExitIntent(active: boolean, key: string) {
       return true;
     };
     const onMouse = (e: MouseEvent) => { if (!e.relatedTarget && e.clientY <= 0) trigger(); };
-    if (!history.state?.exitOffer) history.pushState({ ...(history.state ?? {}), exitOffer: true }, "");
+    if (!history.state?.exitOffer) history.pushState({ exitOffer: true }, "");
     const onPop = () => {
       if (leaving.current) return;
       if (trigger()) history.pushState({ exitOffer: true }, "");
