@@ -30,7 +30,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
     open: false,
     mode: "buy",
   });
-  const exitCfg = store.checkout?.product_exit_offer ? resolveProductExitOffer(store.checkout.product_exit_offer) : null;
+  const exitCfg = resolveProductExitOffer(store.checkout?.product_exit_offer, product.sections);
   const exitIntent = useExitIntent(Boolean(exitCfg) && !sheet.open, `product:${product.id}`);
   const offerView = (() => {
     if (!exitIntent.open) return null;

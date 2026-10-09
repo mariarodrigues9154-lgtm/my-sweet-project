@@ -73,7 +73,7 @@ function CheckoutTwo() {
   const exitOfferCfg = useMemo(() => (product ? resolveExitOffer(store.checkout?.exit_offer, product.sections) : null), [product, store.checkout?.exit_offer]);
   const [productOfferFlag, setProductOfferFlag] = useState(false);
   useEffect(() => { setProductOfferFlag(Boolean(product) && hasProductOffer(product!.slug)); }, [product?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
-  const productOfferCfg = useMemo(() => (productOfferFlag ? resolveProductExitOffer(store.checkout?.product_exit_offer) : null), [productOfferFlag, store.checkout?.product_exit_offer]);
+  const productOfferCfg = useMemo(() => (productOfferFlag ? resolveProductExitOffer(store.checkout?.product_exit_offer, product?.sections) : null), [productOfferFlag, store.checkout?.product_exit_offer, product?.sections]);
   const baseUnit = pricing?.price ?? product?.price ?? 0;
   const unit = productOfferCfg ? discountedUnit(baseUnit, productOfferCfg) : offerAccepted ? discountedUnit(baseUnit, exitOfferCfg) : baseUnit;
   const originalUnit = Math.max(unit, pricing?.previous_price ?? product?.previous_price ?? unit);
