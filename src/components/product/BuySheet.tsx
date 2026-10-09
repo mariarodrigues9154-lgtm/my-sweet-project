@@ -29,7 +29,9 @@ export function BuySheet({
   open,
   mode,
   onClose,
+  autoCheckout = false,
 }: {
+  autoCheckout?: boolean;
   product: Product;
   store?: StoreSettings;
   open: boolean;
@@ -49,6 +51,7 @@ export function BuySheet({
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [highlight, setHighlight] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Abertura instantânea: reaproveita o que já está carregado e pré-carrega o checkout.
@@ -73,8 +76,10 @@ export function BuySheet({
     setQuantity(draft?.slug === product.slug ? draft.quantity : 1);
     setSelection(draft?.slug === product.slug ? draft.variant : {});
     setHighlight(null);
-    setNotice(null);
-  }, [open, product.slug]);
+    setNotice(autoCheckout ? "Oferta aplicada! Escolha as opções para finalizar." : null);
+    setLoaded(true);
+    return () => setLoaded(false);
+  }, [open, product.slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return;
@@ -143,6 +148,16 @@ export function BuySheet({
     void trackInitiateCheckout(store?.id, product, quantity);
     void navigate({ to: checkoutPath });
   };
+
+  // Oferta da página do produto aceita: com tudo escolhido, segue direto ao checkout.
+  const autoDone = useRef(false);
+  useEffect(() => {
+    if (!open) { autoDone.current = false; return; }
+    if (autoCheckout && loaded && !autoDone.current && missing.length === 0 && pricing.available) {
+      autoDone.current = true;
+      confirm();
+    }
+  }); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 

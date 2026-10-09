@@ -20,12 +20,26 @@ import { ReviewsSection } from "./ReviewsSection";
 import { ProductQA } from "./ProductQA";
 import { StoreProfile } from "./StoreProfile";
 import type { Product, StoreSettings } from "@/lib/product-types";
+import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
+import { discountedUnit, markProductOffer, resolveProductExitOffer } from "@/lib/exit-offer";
+import { readDraft } from "@/lib/checkout-store";
+import { variantImage, variantPricing } from "@/lib/product-types";
 
 export function ProductPage({ product, store }: { product: Product; store: StoreSettings }) {
-  const [sheet, setSheet] = useState<{ open: boolean; mode: "buy" | "cart" }>({
+  const [sheet, setSheet] = useState<{ open: boolean; mode: "buy" | "cart"; offer?: boolean }>({
     open: false,
     mode: "buy",
   });
+  const exitCfg = store.checkout?.product_exit_offer ? resolveProductExitOffer(store.checkout.product_exit_offer) : null;
+  const exitIntent = useExitIntent(Boolean(exitCfg) && !sheet.open, `product:${product.id}`);
+  const offerView = (() => {
+    if (!exitIntent.open) return null;
+    const d = readDraft();
+    const sel = d?.slug === product.slug ? d.variant : {};
+    const qty = d?.slug === product.slug ? Math.max(1, d.quantity) : 1;
+    const unit = Object.keys(sel).length ? variantPricing(product, sel).price : product.price;
+    return { qty, unit, image: variantImage(product, sel) ?? product.media.find((m) => m.type === "image")?.url, variant: Object.values(sel).join(" · ") || undefined };
+  })();
   const [chatOpen, setChatOpen] = useState(false);
   const orderChat = useOrderChatBadge(store.id);
   const openChat = () => (orderChat.hasOrders ? orderChat.open() : setChatOpen(true));
@@ -72,7 +86,20 @@ export function ProductPage({ product, store }: { product: Product; store: Store
       {!sheet.open && !chatOpen && <FloatingPopup store={store} product={product} />}
       <StoreChat store={store} open={chatOpen} onClose={() => setChatOpen(false)} />
 
+      {exitIntent.open && exitCfg && offerView && (
+        <ExitOfferPopup
+          offer={exitCfg}
+          offerKey={`product:${product.id}`}
+          oldPrice={Number((offerView.unit * offerView.qty).toFixed(2))}
+          newPrice={Number((discountedUnit(offerView.unit, exitCfg) * offerView.qty).toFixed(2))}
+          product={{ name: product.name, image: offerView.image, variant: offerView.variant, quantity: offerView.qty, rating: Number(product.rating) || null, warranty: product.warranty }}
+          onAccept={() => { markProductOffer(product.slug); exitIntent.close(); setSheet({ open: true, mode: "buy", offer: true }); }}
+          onDecline={exitIntent.decline}
+        />
+      )}
+
       <BuySheet
+        autoCheckout={sheet.mode === "buy" && sheet.offer === true}
         product={product}
         store={store}
         open={sheet.open}
