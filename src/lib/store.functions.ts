@@ -160,7 +160,7 @@ export const listActiveProducts = createServerFn({ method: "GET" })
 
 const orderInput = z.object({
   slug: z.string().min(1),
-  exit_offer: z.boolean().optional(),
+  exit_offer: z.union([z.boolean(), z.literal("product")]).optional(),
   quantity: z.number().int().min(1).max(20),
   variant: z.record(z.string(), z.string()),
   shipping_id: z.string().min(1),
@@ -236,12 +236,15 @@ export const createOrder = createServerFn({ method: "POST" })
     let exitOfferInfo: Record<string, unknown> | null = null;
     if (data.exit_offer && product.store_id) {
       const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", product.store_id).maybeSingle();
-      const { resolveExitOffer, discountedUnitCents } = await import("./exit-offer");
-      const offer = resolveExitOffer((storeRow?.checkout as { exit_offer?: unknown } | null)?.exit_offer, product.sections as never);
+      const { resolveExitOffer, resolveProductExitOffer, discountedUnitCents } = await import("./exit-offer");
+      const cfg = storeRow?.checkout as { exit_offer?: unknown; product_exit_offer?: unknown } | null;
+      const offer = data.exit_offer === "product"
+        ? resolveProductExitOffer(cfg?.product_exit_offer)
+        : resolveExitOffer(cfg?.exit_offer, product.sections as never);
       if (offer) {
         const original = unitCents;
         unitCents = discountedUnitCents(unitCents, offer);
-        exitOfferInfo = { original_unit_price: original / 100, discount_type: offer.discount_type, discount_value: offer.discount_value };
+        exitOfferInfo = { source: data.exit_offer === "product" ? "product_page" : "checkout", original_unit_price: original / 100, discount_type: offer.discount_type, discount_value: offer.discount_value };
       }
     }
     const unitPrice = unitCents / 100;

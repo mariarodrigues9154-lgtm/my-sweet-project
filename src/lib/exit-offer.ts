@@ -12,6 +12,13 @@ export type ExitOfferSettings = {
   discount_value?: number;
   button_text?: string;
   decline_text?: string;
+  show_old_price?: boolean;
+  show_new_price?: boolean;
+  show_icon?: boolean;
+  icon_url?: string;
+  button_color?: string;
+  accent_color?: string;
+  bg_color?: string;
 };
 
 export type ExitOfferProductSections = {
@@ -21,6 +28,7 @@ export type ExitOfferProductSections = {
 
 export type ResolvedExitOffer = Required<Omit<ExitOfferSettings, "enabled">>;
 
+const color = (v: unknown) => (typeof v === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v.trim()) ? v.trim() : "");
 const clean = (s?: string) => (typeof s === "string" ? s.trim() : "");
 
 /** Retorna a oferta efetiva ou null quando não deve aparecer. */
@@ -46,6 +54,13 @@ export function resolveExitOffer(storeRaw: unknown, sections?: ExitOfferProductS
     discount_value: value,
     button_text: clean(pick("button_text") as string) || "SIM, QUERO APROVEITAR O DESCONTO!",
     decline_text: clean(pick("decline_text") as string) || "Não, prefiro pagar o valor normal depois",
+    show_old_price: pick("show_old_price") !== false,
+    show_new_price: pick("show_new_price") !== false,
+    show_icon: pick("show_icon") !== false,
+    icon_url: clean(pick("icon_url") as string),
+    button_color: color(pick("button_color")),
+    accent_color: color(pick("accent_color")),
+    bg_color: color(pick("bg_color")),
   };
 }
 
@@ -60,4 +75,18 @@ export function discountedUnitCents(unitCents: number, offer: Pick<ResolvedExitO
 export function discountedUnit(unit: number, offer: Pick<ResolvedExitOffer, "discount_type" | "discount_value"> | null): number {
   if (!offer) return unit;
   return discountedUnitCents(Math.round(unit * 100), offer) / 100;
+}
+
+/** Pop-up de saída da página do produto: config própria da loja (checkout.product_exit_offer), independente do checkout. */
+export function resolveProductExitOffer(storeRaw: unknown): ResolvedExitOffer | null {
+  return resolveExitOffer(storeRaw, null);
+}
+
+const productOfferKey = (slug: string) => `product-exit-offer:${slug}`;
+/** Marca na sessão que o cliente aceitou a oferta da página do produto (o servidor recalcula o desconto). */
+export function markProductOffer(slug: string) {
+  try { sessionStorage.setItem(productOfferKey(slug), "1"); } catch { /* ignore */ }
+}
+export function hasProductOffer(slug: string) {
+  try { return sessionStorage.getItem(productOfferKey(slug)) === "1"; } catch { return false; }
 }
