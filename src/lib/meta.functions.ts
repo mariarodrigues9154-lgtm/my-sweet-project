@@ -132,7 +132,7 @@ export const sendMetaTestEvents = createServerFn({ method: "POST" })
         user_data: { external_id: [`teste_${stamp}`], client_user_agent: "painel-teste" },
         ...(name === "PageView" ? {} : { custom_data: name === "Purchase" ? { ...custom, order_id: `TESTE-${stamp}` } : custom }),
       }, { store_id: data.store_id });
-      results.push({ event: name, ok: r.ok, error: r.error });
+      results.push({ event: name, ok: r.ok, ...(r.error ? { error: r.error } : {}) });
     }
     const ok = results.every((r) => r.ok);
     return { ok, results, message: ok ? "Os 5 eventos de teste foram aceitos pela Meta. Confira em Gerenciador de Eventos → Eventos de teste." : "Alguns eventos foram recusados pela Meta. Veja os detalhes abaixo." };
