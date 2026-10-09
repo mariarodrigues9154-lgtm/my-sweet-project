@@ -29,7 +29,7 @@ export const adminOverview = createServerFn({ method: "GET" })
         .limit(50),
       supabaseAdmin
         .from("store_settings")
-        .select("id, slug, name, active, is_default, logo_url, created_at")
+        .select("id, slug, name, active, is_default, logo_url, avatar_url, created_at")
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true }),
     ]);
