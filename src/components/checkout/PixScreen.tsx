@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PixQr } from "@/components/checkout/PixQr";
-import { ChevronLeft, Clock, Copy, Check, QrCode } from "lucide-react";
+import { ChevronLeft, Clock, Copy, Check, QrCode, ShieldCheck } from "lucide-react";
 import { PixIcon } from "@/components/store/VerifiedBadge";
 import { brl, clock } from "@/lib/format";
 
@@ -113,21 +113,25 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
           Copie o código de pagamento acima, selecione Pix no seu app de internet ou de banco e cole o código.
         </p>
 
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-secure-soft px-4 py-3.5">
+          <p className="text-[13px] text-secure">Seus dados estão seguros e criptografados</p>
+          <ShieldCheck size={22} strokeWidth={2} className="shrink-0 text-secure" />
+        </div>
+
+        <button type="button" onClick={() => setShowOrder((v) => !v)} className="mt-4 h-12 w-full rounded-lg bg-muted text-[15px] font-semibold text-foreground/85">
+          {showOrder ? "Ocultar pedido" : "Ver pedido"}
+        </button>
+
         {showOrder && (
-          <div className="mt-5 rounded-xl bg-surface p-3 text-[13px]">
+          <div className="mt-3 rounded-xl bg-surface p-3 text-[13px]">
             <p><span className="text-muted-foreground">Pedido:</span> <strong>{orderNumber}</strong></p>
             {productTitle && <p className="mt-1 line-clamp-2">{productTitle}</p>}
             <p className="mt-1"><span className="text-muted-foreground">Total:</span> <strong className="tnum">{brl(total)}</strong></p>
             <p className="mt-1 text-muted-foreground">Status: {expired ? "Pix expirado" : "Aguardando pagamento"}</p>
           </div>
         )}
+        <div style={{ height: "calc(env(safe-area-inset-bottom) + 24px)" }} />
       </main>
-
-      <div className="sticky bottom-0 mx-auto w-full max-w-[520px] bg-background px-4 pt-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
-        <button type="button" onClick={() => setShowOrder((v) => !v)} className="h-12 w-full rounded-lg bg-muted text-[15px] font-semibold">
-          {showOrder ? "Ocultar pedido" : "Ver pedido"}
-        </button>
-      </div>
     </div>
   );
 }
