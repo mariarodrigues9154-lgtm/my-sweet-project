@@ -47,3 +47,4 @@
 - [x] Gerar novo PIX a partir de pedido expirado
 - [x] Frete único grátis (Frete Expresso, R$ 24,90 riscado, entrega +2 a +4 dias) em produto e checkouts
 - [x] Comprar agora não reabre PIX antigo; PIX novo vale 15 min
+- [ ] Auditoria e correção de fotos/vídeos que não carregam (todo o site)
