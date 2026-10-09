@@ -144,9 +144,12 @@ export function BuySheet({
       onClose();
       return;
     }
-    onClose();
+    // Navega no mesmo clique; a janela fica aberta até o checkout assumir a tela.
+    // Fechar antes reativava o detector de saída, que mexia no histórico e engolia a navegação.
     void trackInitiateCheckout(store?.id, product, quantity);
-    void navigate({ to: checkoutPath });
+    void navigate({ to: checkoutPath }).catch(() => {
+      window.location.assign(checkoutPath);
+    });
   };
 
   // Oferta da página do produto aceita: com tudo escolhido, segue direto ao checkout.
