@@ -1,5 +1,6 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Check, ChevronRight, Play, Video, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
@@ -77,7 +78,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
         )}
       </div>
 
-      {all && active === null && (
+      {all && active === null && createPortal(
         <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-50 overflow-y-auto bg-card animate-in fade-in">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-3 py-3">
             <h3 className="truncate text-[15px] font-bold">{title}</h3>
@@ -93,7 +94,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
         </div>
       )}
 
-      {current?.video && (
+      {current?.video && createPortal(
         <div
           role="dialog"
           aria-modal="true"
