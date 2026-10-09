@@ -5,6 +5,7 @@ import { Check, Copy, ExternalLink, EyeOff, Eye, Pencil, Plus, Star, Trash2, X }
 import { toast } from "sonner";
 
 import { createStore, deleteStore, duplicateStore, updateReview } from "@/lib/admin.functions";
+import { sizedImage } from "@/lib/media-url";
 
 const inputCls = "w-full rounded-lg border border-input bg-card px-3 py-2 text-[13px] outline-none focus:border-primary";
 const btnCls = "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold disabled:opacity-50";
@@ -27,7 +28,7 @@ async function run(fn: () => Promise<Result>, success: string, after: () => Prom
   }
 }
 
-type StoreRow = { id: string; slug: string; name: string; active: boolean; is_default: boolean; logo_url: string | null; product_count: number };
+type StoreRow = { id: string; slug: string; name: string; active: boolean; is_default: boolean; logo_url: string | null; avatar_url?: string | null; product_count: number };
 
 export function StoresList({ stores, onChanged }: { stores: StoreRow[]; onChanged: () => Promise<unknown> }) {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ export function StoresList({ stores, onChanged }: { stores: StoreRow[]; onChange
         {visible.map((s) => (
           <li key={s.id} className="grid grid-cols-[48px_minmax(0,1fr)] items-center gap-3 rounded-xl border border-border p-3 sm:grid-cols-[48px_minmax(0,1fr)_auto]">
             <div className="grid size-12 place-items-center overflow-hidden rounded-lg bg-surface">
-              {s.logo_url ? <img src={s.logo_url} alt="" className="size-full object-contain p-1" /> : <span className="text-[16px] font-extrabold text-muted-foreground">{s.name.charAt(0)}</span>}
+              {s.avatar_url ? <img src={sizedImage(s.avatar_url, 240)} alt={`Logo ${s.name}`} loading="lazy" className="size-full object-contain p-1" /> : <span className="text-[16px] font-extrabold text-muted-foreground">{s.name.charAt(0)}</span>}
             </div>
             <div className="min-w-0">
               <p className="truncate text-[13.5px] font-bold">
