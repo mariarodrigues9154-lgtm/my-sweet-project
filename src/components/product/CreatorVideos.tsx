@@ -113,7 +113,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               playsInline
               preload="auto"
               onError={() => console.warn("[videos] falha ao reproduzir vídeo do criador")}
-              className="block max-h-[88vh] w-auto max-w-[min(92vw,420px)] aspect-[9/16] rounded-2xl bg-foreground object-contain"
+              className="block h-auto max-h-[88vh] w-[min(92vw,420px,calc(88vh*9/16))] aspect-[9/16] rounded-2xl bg-foreground object-contain"
             />
             <button
               type="button"
