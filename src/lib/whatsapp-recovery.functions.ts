@@ -54,10 +54,11 @@ export const saveWhatsappRecovery = createServerFn({ method: "POST" })
       provider: z.enum(["meta", "zapi", "evolution"]),
       sender: z.string().trim().max(40),
       message: z.string().max(2000),
-      delays: z.array(z.number().int().min(1).max(10080)).length(3),
+      delays: z.array(z.number().int().min(1).max(10080)).min(1).max(3),
       max_reminders: z.number().int().min(1).max(3),
       public_data: z.record(z.string(), z.string().max(300)),
-      secrets: z.record(z.enum(SECRET_KEYS), z.string().max(1000)),
+      secrets: z.record(z.string(), z.string().max(1000)).transform((s) =>
+        Object.fromEntries(Object.entries(s).filter(([k]) => (SECRET_KEYS as readonly string[]).includes(k)))),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
