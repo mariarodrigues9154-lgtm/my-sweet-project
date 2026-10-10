@@ -45,6 +45,9 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
     try {
       const r = await save({ data: { store_id: storeId, enabled, provider, sender, message, delays, max_reminders: max, public_data: pub, secrets: secrets as never } });
       if (!r.ok) toast.error(r.error); else { toast.success("Recuperação via WhatsApp salva."); await refetch(); }
+    } catch (e) {
+      toast.error("Não foi possível salvar. Confira os campos e tente novamente.");
+      console.error(e);
     } finally { setBusy(""); }
   }
   async function onTest() {
