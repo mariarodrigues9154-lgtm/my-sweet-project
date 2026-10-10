@@ -48,18 +48,18 @@ async function body(res: Response) {
 /** Envia a mensagem pelo provedor da loja. Retorna id da mensagem ou lança erro com o motivo. */
 export async function sendWhatsApp(i: SendInput): Promise<string | null> {
   if (i.provider === "meta") {
-    const token = i.secrets.access_token;
-    const phoneId = i.pub.phone_number_id;
-    const template = i.pub.template_name;
+    const token = i.secrets["access_token"];
+    const phoneId = i.pub["phone_number_id"];
+    const template = i.pub["template_name"];
     if (!token || !phoneId || !template) throw new Error("Integração incompleta (token, ID do número ou modelo).");
-    const names = (i.pub.template_vars || "nome,pedido,valor").split(",").map((s) => s.trim()).filter(Boolean);
+    const names = (i.pub["template_vars"] || "nome,pedido,valor").split(",").map((s) => s.trim()).filter(Boolean);
     const components: unknown[] = [];
     if (names.length) components.push({ type: "body", parameters: names.map((n) => ({ type: "text", text: i.vars[n] || "-" })) });
-    if (i.pub.template_button === "true") components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: i.token }] });
+    if (i.pub["template_button"] === "true") components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: i.token }] });
     const res = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(phoneId)}/messages`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ messaging_product: "whatsapp", to: i.to, type: "template", template: { name: template, language: { code: i.pub.template_lang || "pt_BR" }, components } }),
+      body: JSON.stringify({ messaging_product: "whatsapp", to: i.to, type: "template", template: { name: template, language: { code: i.pub["template_lang"] || "pt_BR" }, components } }),
     });
     if (!res.ok) throw new Error(`API do WhatsApp (${res.status}): ${await body(res)}`);
     const j = (await res.json()) as { messages?: Array<{ id?: string }> };
@@ -67,8 +67,8 @@ export async function sendWhatsApp(i: SendInput): Promise<string | null> {
   }
   if (i.provider === "zapi") {
     const { instance_id: inst, instance_token: tok } = i.pub as Record<string, string>;
-    const client = i.secrets.client_token;
-    const tokenSecret = i.secrets.instance_token || tok;
+    const client = i.secrets["client_token"];
+    const tokenSecret = i.secrets["instance_token"] || tok;
     if (!inst || !tokenSecret) throw new Error("Integração incompleta (instância ou token).");
     const res = await fetch(`https://api.z-api.io/instances/${encodeURIComponent(inst)}/token/${encodeURIComponent(tokenSecret)}/send-text`, {
       method: "POST",
@@ -79,9 +79,9 @@ export async function sendWhatsApp(i: SendInput): Promise<string | null> {
     const j = (await res.json().catch(() => ({}))) as { messageId?: string; zaapId?: string };
     return j.messageId ?? j.zaapId ?? null;
   }
-  const base = (i.pub.base_url || "").replace(/\/+$/, "");
-  const inst = i.pub.instance;
-  const key = i.secrets.api_key;
+  const base = (i.pub["base_url"] || "").replace(/\/+$/, "");
+  const inst = i.pub["instance"];
+  const key = i.secrets["api_key"];
   if (!/^https:\/\//.test(base) || !inst || !key) throw new Error("Integração incompleta (URL https, instância ou API key).");
   const res = await fetch(`${base}/message/sendText/${encodeURIComponent(inst)}`, {
     method: "POST",
@@ -158,7 +158,7 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
       const expired = !!exp && new Date(exp).getTime() <= now;
       const pub = (cfg.public_data ?? {}) as Record<string, string>;
-      const site = (pub.site_url || DEFAULT_SITE).replace(/\/+$/, "");
+      const site = (pub["site_url"] || DEFAULT_SITE).replace(/\/+$/, "");
       const link = `${site}/pix/${o.access_token}`;
       const snap = (o.product_snapshot ?? {}) as { title?: string };
       const name = String((o.customer as { name?: string })?.name ?? "").trim().split(/\s+/)[0] || "cliente";
