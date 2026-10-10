@@ -28,7 +28,7 @@ export type PixOrderView = {
  * Não devolve dados do cliente (nome, CPF, endereço).
  */
 export const getPixOrders = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({ tokens: z.array(Token).max(10) }).parse(data))
+  .inputValidator((data: unknown) => z.object({ tokens: z.array(Token).max(10), direct: z.boolean().optional() }).parse(data))
   .handler(async ({ data }): Promise<PixOrderView[]> => {
     if (!data.tokens.length) return [];
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -61,7 +61,7 @@ export const getPixOrders = createServerFn({ method: "POST" })
       const s = stores?.find((x) => x.id === r.store_id);
       const pix = resolvePixRecovery(((s?.checkout ?? {}) as { pix_recovery?: unknown }).pix_recovery);
       // Loja com a recuperação desligada: nada aparece na loja (pedido continua salvo).
-      if (!pix.enabled) continue;
+      if (!pix.enabled && !data.direct) continue;
       const snap = (r.product_snapshot ?? {}) as { title?: string; image?: string | null; slug?: string };
       out.push({
         token: r.access_token as string,
