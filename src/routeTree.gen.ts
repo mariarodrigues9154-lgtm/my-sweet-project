@@ -28,6 +28,7 @@ import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminLojasIdRouteImport } from './routes/_authenticated/admin.lojas.$id'
+import { Route as ApiPublicHooksPixWhatsappRouteImport } from './routes/api/public/hooks.pix-whatsapp'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 import { Route as ApiPublicPagamentosWebhookRouteImport } from './routes/api/public/pagamentos.webhook'
 import { Route as ApiPublicWebhooksBlackcatRouteImport } from './routes/api/public/webhooks.blackcat'
@@ -131,6 +132,12 @@ const AuthenticatedAdminLojasIdRoute =
     path: '/lojas/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiPublicHooksPixWhatsappRoute =
+  ApiPublicHooksPixWhatsappRouteImport.update({
+    id: '/api/public/hooks/pix-whatsapp',
+    path: '/api/public/hooks/pix-whatsapp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
   id: '/api/public/media/$',
   path: '/api/public/media/$',
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/hooks/pix-whatsapp': typeof ApiPublicHooksPixWhatsappRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
@@ -209,6 +217,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/hooks/pix-whatsapp': typeof ApiPublicHooksPixWhatsappRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
@@ -237,6 +246,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/hooks/pix-whatsapp': typeof ApiPublicHooksPixWhatsappRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/'
     | '/admin/lojas/$id'
+    | '/api/public/hooks/pix-whatsapp'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin'
     | '/admin/lojas/$id'
+    | '/api/public/hooks/pix-whatsapp'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
@@ -317,6 +329,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/lojas/$id'
+    | '/api/public/hooks/pix-whatsapp'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
@@ -341,6 +354,7 @@ export interface RootRouteChildren {
   LojaSlugRoute: typeof LojaSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   LojaIndexRoute: typeof LojaIndexRoute
+  ApiPublicHooksPixWhatsappRoute: typeof ApiPublicHooksPixWhatsappRoute
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPagamentosWebhookRoute: typeof ApiPublicPagamentosWebhookRoute
   ApiPublicWebhooksBlackcatRoute: typeof ApiPublicWebhooksBlackcatRoute
@@ -484,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLojasIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/hooks/pix-whatsapp': {
+      id: '/api/public/hooks/pix-whatsapp'
+      path: '/api/public/hooks/pix-whatsapp'
+      fullPath: '/api/public/hooks/pix-whatsapp'
+      preLoaderRoute: typeof ApiPublicHooksPixWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/media/$': {
       id: '/api/public/media/$'
       path: '/api/public/media/$'
@@ -571,6 +592,7 @@ const rootRouteChildren: RootRouteChildren = {
   LojaSlugRoute: LojaSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   LojaIndexRoute: LojaIndexRoute,
+  ApiPublicHooksPixWhatsappRoute: ApiPublicHooksPixWhatsappRoute,
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPagamentosWebhookRoute: ApiPublicPagamentosWebhookRoute,
   ApiPublicWebhooksBlackcatRoute: ApiPublicWebhooksBlackcatRoute,
