@@ -24,6 +24,7 @@ import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as LojaIndexRouteImport } from './routes/loja.index'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as PixTokenRouteImport } from './routes/pix.$token'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
@@ -110,6 +111,11 @@ const LojaSlugRoute = LojaSlugRouteImport.update({
   path: '/loja/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PixTokenRoute = PixTokenRouteImport.update({
+  id: '/pix/$token',
+  path: '/pix/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   id: '/produto/$slug',
   path: '/produto/$slug',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
+  '/pix/$token': typeof PixTokenRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/loja/': typeof LojaIndexRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/pix/$token': typeof PixTokenRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/loja': typeof LojaIndexRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
+  '/pix/$token': typeof PixTokenRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/loja/': typeof LojaIndexRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/admin'
     | '/loja/$slug'
+    | '/pix/$token'
     | '/produto/$slug'
     | '/loja/'
     | '/admin/pedidos'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/termos-de-uso'
     | '/loja/$slug'
+    | '/pix/$token'
     | '/produto/$slug'
     | '/loja'
     | '/admin/pedidos'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/_authenticated/admin'
     | '/loja/$slug'
+    | '/pix/$token'
     | '/produto/$slug'
     | '/loja/'
     | '/_authenticated/admin/pedidos'
@@ -352,6 +364,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermosDeUsoRoute: typeof TermosDeUsoRoute
   LojaSlugRoute: typeof LojaSlugRoute
+  PixTokenRoute: typeof PixTokenRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   LojaIndexRoute: typeof LojaIndexRoute
   ApiPublicHooksPixWhatsappRoute: typeof ApiPublicHooksPixWhatsappRoute
@@ -468,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/loja/$slug'
       fullPath: '/loja/$slug'
       preLoaderRoute: typeof LojaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pix/$token': {
+      id: '/pix/$token'
+      path: '/pix/$token'
+      fullPath: '/pix/$token'
+      preLoaderRoute: typeof PixTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produto/$slug': {
@@ -590,6 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermosDeUsoRoute: TermosDeUsoRoute,
   LojaSlugRoute: LojaSlugRoute,
+  PixTokenRoute: PixTokenRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   LojaIndexRoute: LojaIndexRoute,
   ApiPublicHooksPixWhatsappRoute: ApiPublicHooksPixWhatsappRoute,
