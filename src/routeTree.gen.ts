@@ -24,10 +24,12 @@ import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as LojaIndexRouteImport } from './routes/loja.index'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as PixTokenRouteImport } from './routes/pix.$token'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminLojasIdRouteImport } from './routes/_authenticated/admin.lojas.$id'
+import { Route as ApiPublicHooksPixWhatsappRouteImport } from './routes/api/public/hooks.pix-whatsapp'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 import { Route as ApiPublicPagamentosWebhookRouteImport } from './routes/api/public/pagamentos.webhook'
 import { Route as ApiPublicWebhooksBlackcatRouteImport } from './routes/api/public/webhooks.blackcat'
@@ -109,6 +111,11 @@ const LojaSlugRoute = LojaSlugRouteImport.update({
   path: '/loja/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PixTokenRoute = PixTokenRouteImport.update({
+  id: '/pix/$token',
+  path: '/pix/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   id: '/produto/$slug',
   path: '/produto/$slug',
@@ -130,6 +137,12 @@ const AuthenticatedAdminLojasIdRoute =
     id: '/lojas/$id',
     path: '/lojas/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const ApiPublicHooksPixWhatsappRoute =
+  ApiPublicHooksPixWhatsappRouteImport.update({
+    id: '/api/public/hooks/pix-whatsapp',
+    path: '/api/public/hooks/pix-whatsapp',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
   id: '/api/public/media/$',
@@ -179,11 +192,13 @@ export interface FileRoutesByFullPath {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
+  '/pix/$token': typeof PixTokenRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/loja/': typeof LojaIndexRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/hooks/pix-whatsapp': typeof ApiPublicHooksPixWhatsappRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
@@ -204,11 +219,13 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/pix/$token': typeof PixTokenRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/loja': typeof LojaIndexRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/hooks/pix-whatsapp': typeof ApiPublicHooksPixWhatsappRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
@@ -232,11 +249,13 @@ export interface FileRoutesById {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
+  '/pix/$token': typeof PixTokenRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/loja/': typeof LojaIndexRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/lojas/$id': typeof AuthenticatedAdminLojasIdRoute
+  '/api/public/hooks/pix-whatsapp': typeof ApiPublicHooksPixWhatsappRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
@@ -260,11 +279,13 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/admin'
     | '/loja/$slug'
+    | '/pix/$token'
     | '/produto/$slug'
     | '/loja/'
     | '/admin/pedidos'
     | '/admin/'
     | '/admin/lojas/$id'
+    | '/api/public/hooks/pix-whatsapp'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
@@ -285,11 +306,13 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/termos-de-uso'
     | '/loja/$slug'
+    | '/pix/$token'
     | '/produto/$slug'
     | '/loja'
     | '/admin/pedidos'
     | '/admin'
     | '/admin/lojas/$id'
+    | '/api/public/hooks/pix-whatsapp'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
@@ -312,11 +335,13 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/_authenticated/admin'
     | '/loja/$slug'
+    | '/pix/$token'
     | '/produto/$slug'
     | '/loja/'
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/lojas/$id'
+    | '/api/public/hooks/pix-whatsapp'
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
@@ -339,8 +364,10 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermosDeUsoRoute: typeof TermosDeUsoRoute
   LojaSlugRoute: typeof LojaSlugRoute
+  PixTokenRoute: typeof PixTokenRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   LojaIndexRoute: typeof LojaIndexRoute
+  ApiPublicHooksPixWhatsappRoute: typeof ApiPublicHooksPixWhatsappRoute
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPagamentosWebhookRoute: typeof ApiPublicPagamentosWebhookRoute
   ApiPublicWebhooksBlackcatRoute: typeof ApiPublicWebhooksBlackcatRoute
@@ -456,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LojaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pix/$token': {
+      id: '/pix/$token'
+      path: '/pix/$token'
+      fullPath: '/pix/$token'
+      preLoaderRoute: typeof PixTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/produto/$slug': {
       id: '/produto/$slug'
       path: '/produto/$slug'
@@ -483,6 +517,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/lojas/$id'
       preLoaderRoute: typeof AuthenticatedAdminLojasIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/public/hooks/pix-whatsapp': {
+      id: '/api/public/hooks/pix-whatsapp'
+      path: '/api/public/hooks/pix-whatsapp'
+      fullPath: '/api/public/hooks/pix-whatsapp'
+      preLoaderRoute: typeof ApiPublicHooksPixWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/media/$': {
       id: '/api/public/media/$'
@@ -569,8 +610,10 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermosDeUsoRoute: TermosDeUsoRoute,
   LojaSlugRoute: LojaSlugRoute,
+  PixTokenRoute: PixTokenRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   LojaIndexRoute: LojaIndexRoute,
+  ApiPublicHooksPixWhatsappRoute: ApiPublicHooksPixWhatsappRoute,
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPagamentosWebhookRoute: ApiPublicPagamentosWebhookRoute,
   ApiPublicWebhooksBlackcatRoute: ApiPublicWebhooksBlackcatRoute,

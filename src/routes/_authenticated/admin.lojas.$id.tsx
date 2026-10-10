@@ -8,6 +8,7 @@ import { getAdminStore, updateStoreProfile } from "@/lib/admin.functions";
 import { StorePageManager, type StoreDraft } from "@/components/admin/StorePageManager";
 import { StoreMetaManager } from "@/components/admin/StoreMetaManager";
 import { StorePaymentsManager } from "@/components/admin/StorePaymentsManager";
+import { StoreWhatsappRecovery } from "@/components/admin/StoreWhatsappRecovery";
 
 export const Route = createFileRoute("/_authenticated/admin/lojas/$id")({
   head: () => ({
@@ -58,6 +59,7 @@ function EditStore() {
           />
           <StoreMetaManager storeId={id} />
           <StorePaymentsManager storeId={id} />
+          <StoreWhatsappRecovery storeId={id} />
         </>
       )}
     </main>

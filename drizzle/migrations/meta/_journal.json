@@ -8,6 +8,13 @@
       "when": 1790946163148,
       "tag": "0000_store_visit_button",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791643829175,
+      "tag": "0001_whatsapp_pix_recovery",
+      "breakpoints": true
     }
   ]
 }

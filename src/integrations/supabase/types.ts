@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      internal_job_tokens: {
+        Row: {
+          name: string
+          token: string
+        }
+        Insert: {
+          name: string
+          token?: string
+        }
+        Update: {
+          name?: string
+          token?: string
+        }
+        Relationships: []
+      }
       meta_event_logs: {
         Row: {
           created_at: string
@@ -583,6 +598,59 @@ export type Database = {
         }
         Relationships: []
       }
+      store_whatsapp_settings: {
+        Row: {
+          created_at: string
+          delays: number[]
+          enabled: boolean
+          id: string
+          max_reminders: number
+          message: string
+          provider: string
+          public_data: Json
+          secret_data: Json
+          sender: string | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delays?: number[]
+          enabled?: boolean
+          id?: string
+          max_reminders?: number
+          message?: string
+          provider?: string
+          public_data?: Json
+          secret_data?: Json
+          sender?: string | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delays?: number[]
+          enabled?: boolean
+          id?: string
+          max_reminders?: number
+          message?: string
+          provider?: string
+          public_data?: Json
+          secret_data?: Json
+          sender?: string | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_whatsapp_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "store_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -603,6 +671,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      whatsapp_pix_reminders: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          order_id: string
+          phone_masked: string | null
+          pix_status: string | null
+          provider_message_id: string | null
+          status: string
+          step: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          order_id: string
+          phone_masked?: string | null
+          pix_status?: string | null
+          provider_message_id?: string | null
+          status?: string
+          step: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          order_id?: string
+          phone_masked?: string | null
+          pix_status?: string | null
+          provider_message_id?: string | null
+          status?: string
+          step?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_pix_reminders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_pix_reminders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_settings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
