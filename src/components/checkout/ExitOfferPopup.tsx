@@ -6,34 +6,33 @@ import type { ResolvedExitOffer } from "@/lib/exit-offer";
 
 const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-/** Detecta tentativa de saída (mouse saindo pelo topo no computador, botão voltar no celular). */
+/** Detecta SOMENTE o botão/gesto Voltar (celular e computador). Uma única entrada de guarda no histórico,
+ *  sem gatilho por tempo, rolagem ou mouse; ao recusar, a saída acontece de verdade (sem loop). */
 export function useExitIntent(active: boolean, key: string) {
   const [open, setOpen] = useState(false);
+  const activeRef = useRef(active);
+  activeRef.current = active;
   const leaving = useRef(false);
   useEffect(() => {
-    if (!active || typeof window === "undefined") return;
+    if (!active || !key || typeof window === "undefined") return;
     const seenKey = `exit-offer:${key}`;
     if (sessionStorage.getItem(seenKey)) return;
-    const trigger = () => {
-      if (sessionStorage.getItem(seenKey)) return false;
+    // Uma guarda só: se já estamos nela (ex.: voltou do checkout), não empilha outra.
+    if (!history.state?.exitOffer) history.pushState({ ...(history.state ?? {}), exitOffer: true }, "");
+    const onPop = (e: PopStateEvent) => {
+      if (leaving.current || e.state?.exitOffer) return; // avançou para a guarda: ignora
+      window.removeEventListener("popstate", onPop); // consumiu a guarda: nunca intercepta de novo
+      if (!activeRef.current || sessionStorage.getItem(seenKey)) return;
       sessionStorage.setItem(seenKey, "1");
       setOpen(true);
-      return true;
     };
-    const onMouse = (e: MouseEvent) => { if (!e.relatedTarget && e.clientY <= 0) trigger(); };
-    if (!history.state?.exitOffer) history.pushState({ exitOffer: true }, "");
-    const onPop = () => {
-      if (leaving.current) return;
-      if (trigger()) history.pushState({ exitOffer: true }, "");
-      else history.back();
-    };
-    document.addEventListener("mouseout", onMouse);
     window.addEventListener("popstate", onPop);
-    return () => { document.removeEventListener("mouseout", onMouse); window.removeEventListener("popstate", onPop); };
+    return () => window.removeEventListener("popstate", onPop);
   }, [active, key]);
   const decline = () => {
     setOpen(false);
-    if (history.state?.exitOffer) { leaving.current = true; history.go(-2); }
+    leaving.current = true;
+    history.back(); // executa o Voltar que o cliente pediu
   };
   return { open, close: () => setOpen(false), decline };
 }
