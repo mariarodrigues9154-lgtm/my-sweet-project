@@ -646,7 +646,11 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
     if (!charge.ok) {
       const refused = normalizeCardStatus("freepay", charge.status) === "refused";
       await supabaseAdmin.from("orders").update({ provider_status: refused ? "refused" : null } as never).eq("id", order.id);
-      return refused ? { status: "refused" as const, error: null } : fail(charge.error);
+      if (refused) return { status: "refused" as const, error: null };
+      // Falha técnica: a tentativa pode ter sido aprovada em segundo plano; o webhook marca como pago
+      // e a próxima tentativa começa conferindo o pedido (topo da função), evitando cobrança dupla.
+      if (charge.unavailable) return { status: "unavailable" as const, error: null };
+      return fail(charge.error);
     }
 
     const result = normalizeCardStatus("freepay", charge.status);

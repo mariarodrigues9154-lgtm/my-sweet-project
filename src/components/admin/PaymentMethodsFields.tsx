@@ -1,4 +1,4 @@
-import { CARD_PROVIDERS, DEFAULT_DECLINE, cardProviderReady, installmentPlan, resolvePaymentMethods, type PaymentMethodsConfig } from "@/lib/payment-methods";
+import { CARD_PROVIDERS, DEFAULT_DECLINE, DEFAULT_PROVIDER_ERROR, cardProviderReady, installmentPlan, resolvePaymentMethods, type PaymentMethodsConfig } from "@/lib/payment-methods";
 import { brl } from "@/lib/format";
 
 const input = "h-9 w-full rounded-md border border-border bg-card px-2 text-[13px]";
@@ -18,6 +18,7 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
   const cfg = resolvePaymentMethods(value);
   const pix = (p: Partial<PaymentMethodsConfig["pix"]>) => onChange({ ...cfg, pix: { ...cfg.pix, ...p } });
   const card = (p: Partial<PaymentMethodsConfig["card"]>) => onChange(resolvePaymentMethods({ ...cfg, card: { ...cfg.card, ...p } }));
+  const perr = (p: Partial<PaymentMethodsConfig["provider_error"]>) => onChange({ ...cfg, provider_error: { ...cfg.provider_error, ...p } });
   const decline = (p: Partial<PaymentMethodsConfig["decline"]>) => onChange({ ...cfg, decline: { ...cfg.decline, ...p } });
   const ready = cardProviderReady(cfg);
   const example = installmentPlan(11700, cfg);
@@ -75,6 +76,16 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
             <Field label="Botão PIX"><input className={input} value={cfg.decline.pix_label} onChange={(e) => decline({ pix_label: e.target.value })} /></Field>
           </div>
           <Field label="Texto do benefício PIX (só aparece se houver desconto)"><input className={input} value={cfg.decline.pix_benefit} onChange={(e) => decline({ pix_benefit: e.target.value })} /></Field>
+        </div>
+        <div className="space-y-2 rounded-md border border-border p-2.5">
+          <p className="text-[12px] font-extrabold">Erro do provedor de cartão</p>
+          <p className="text-[11.5px] text-muted-foreground">Aparece quando o gateway fica fora do ar, demora ou responde com erro técnico (não é recusa).</p>
+          <Field label="Título"><input className={input} placeholder={DEFAULT_PROVIDER_ERROR.title} value={cfg.provider_error.title} onChange={(e) => perr({ title: e.target.value })} /></Field>
+          <Field label="Mensagem"><textarea rows={3} className={`${input} h-auto py-1.5`} placeholder={DEFAULT_PROVIDER_ERROR.message} value={cfg.provider_error.message} onChange={(e) => perr({ message: e.target.value })} /></Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Botão 1"><input className={input} value={cfg.provider_error.retry_label} onChange={(e) => perr({ retry_label: e.target.value })} /></Field>
+            <Field label="Botão 2 (PIX)"><input className={input} value={cfg.provider_error.pix_label} onChange={(e) => perr({ pix_label: e.target.value })} /></Field>
+          </div>
         </div>
         <div>
           <p className="mb-1 text-[12px] font-bold text-muted-foreground">Juros total por parcela (%) — exemplo com R$ 117,00</p>

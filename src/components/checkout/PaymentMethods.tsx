@@ -146,6 +146,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
   const [installments, setInstallments] = useState(1);
   const [orderNo, setOrderNo] = useState<string | null>(null);
   const [declined, setDeclined] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const [number, setNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
@@ -194,10 +195,12 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
         setNumber(""); setExpiry(""); setCvv(""); setErrors({}); setDeclined(true);
         return;
       }
+      if (res.status === "unavailable") { setErrors({}); setUnavailable(true); return; }
       if (res.status === "pending") { setErrors({ form: "Pagamento em análise pelo banco. Você receberá a confirmação assim que for aprovado." }); return; }
       setErrors({ form: res.error ?? "Não foi possível processar o cartão." });
     } catch {
-      setErrors({ form: "Não foi possível processar o cartão. Confira os dados ou tente outra forma de pagamento." });
+      // Erro de rede até o nosso servidor também é instabilidade, não recusa.
+      setErrors({}); setUnavailable(true);
     } finally {
       setBusy(false);
     }
@@ -221,6 +224,30 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
             )}
             {cfg.pix.enabled && off && <p className="text-[12.5px] font-semibold text-primary">{d.pix_benefit.replace(/\{desconto\}/g, off)}</p>}
             <Button type="button" variant="outline" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={() => setDeclined(false)}>{d.retry_label}</Button>
+          </div>
+        </div>
+      </Sheet>
+    );
+  }
+
+  if (unavailable) {
+    const t = cfg.provider_error;
+    return (
+      <Sheet onClose={onClose}>
+        <div className="space-y-4 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-6">
+          <div className="rounded-2xl bg-destructive/10 p-4 text-center">
+            <AlertTriangle size={36} className="mx-auto text-destructive" />
+            <h2 className="mt-2 text-[17px] font-bold text-destructive">{t.title}</h2>
+            <p className="mt-1 text-[13.5px] text-destructive/90">{t.message}</p>
+          </div>
+          <div className="space-y-2.5">
+            {cfg.pix.enabled && onPayPix && (
+              <Button type="button" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={onPayPix}>{t.pix_label}</Button>
+            )}
+            {cfg.pix.enabled && pixDiscountLabel(cfg) && <p className="text-center text-[12.5px] font-semibold text-primary">{cfg.decline.pix_benefit.replace(/\{desconto\}/g, pixDiscountLabel(cfg) ?? "")}</p>}
+            <Button type="button" variant="ghost" disabled={busy} className="h-11 w-full rounded-full text-[14px] font-semibold text-muted-foreground" onClick={() => { setUnavailable(false); void submit(); }}>
+              {busy ? <><Loader2 size={16} className="animate-spin" /> Processando...</> : t.retry_label}
+            </Button>
           </div>
         </div>
       </Sheet>
