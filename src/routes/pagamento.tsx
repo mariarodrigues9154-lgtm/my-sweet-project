@@ -268,6 +268,15 @@ function CheckoutRoute() {
     return false;
   }
 
+  async function prepareCardOrder(): Promise<string | null> {
+    if (!product || !selectedShipping) return null;
+    if (!validateStep1() || !validateStep2()) { setCardSheet(false); return null; }
+    void trackAddPaymentInfo(store.id, product, quantity, Number((unitPrice * quantity + selectedShipping.price).toFixed(2)));
+    const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: selectedShipping.id, customer: form.customer, address: form.address, method: "card" as const, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
+    if (!result.ok) { toast.error(result.error); return null; }
+    return result.order_number;
+  }
+
   async function placeOrder() {
     if (!product || !selectedShipping) return;
     if (!validateStep1() || !validateStep2()) return;
@@ -567,7 +576,7 @@ function CheckoutRoute() {
             <PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />
             {!payCfg.pix.enabled && !showCard && <p className="py-3 text-[12.5px] text-muted-foreground">Nenhuma forma de pagamento disponível no momento.</p>}
             <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : "Efetuar pagamento"}</PrimaryButton></div>
-            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} onDone={() => setCardSheet(false)} customerName={form.customer.name} onPayPix={() => { setPayMethod("pix"); setCardSheet(false); toast.success("PIX selecionado. Toque em finalizar para gerar seu código."); }} />}
+            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => void navigate({ to: "/pedido-confirmado", search: { pedido: no } })} customerName={form.customer.name} onPayPix={() => { setPayMethod("pix"); setCardSheet(false); toast.success("PIX selecionado. Toque em finalizar para gerar seu código."); }} />}
           </section>
         )}
 
