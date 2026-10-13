@@ -60,7 +60,7 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
   const brandUp = useImageUpload();
   const brands = cfg.card.brands;
   const setBrands = (b: typeof brands) => card({ brands: b });
-  const moveBrand = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= brands.length) return; const n = [...brands]; [n[i], n[j]] = [n[j], n[i]]; setBrands(n); };
+  const moveBrand = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= brands.length) return; const n = [...brands]; const t = n[i]!; n[i] = n[j]!; n[j] = t; setBrands(n); };
 
   return (
     <div className="space-y-5">
