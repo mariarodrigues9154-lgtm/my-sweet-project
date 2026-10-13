@@ -398,7 +398,7 @@ export type CardChargeInput = {
   postbackUrl?: string;
   ip?: string;
 };
-export type CardChargeResult = { ok: true; transaction_id: string; status: string } | { ok: false; error: string; status?: string };
+export type CardChargeResult = { ok: true; transaction_id: string; status: string } | { ok: false; error: string; status?: string | undefined };
 
 /**
  * Cobrança de cartão na FreePay (POST /v1/payment-transaction/create, payment_method credit_card).

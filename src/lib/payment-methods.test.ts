@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardAvailable, cardProviderReady, installmentPlan, pixDiscountCents, resolvePaymentMethods } from "./payment-methods";
+import { cardAvailable, cardProviderReady, installmentPlan, normalizeCardStatus, pixDiscountCents, resolvePaymentMethods } from "./payment-methods";
 
 describe("payment methods", () => {
   it("5% PIX discount on R$117 gives R$111,15", () => {
@@ -36,5 +36,15 @@ describe("cartão recusado", () => {
   it("status desconhecido ou pendente nunca vira recusa", () => {
     expect(_norm("blackcat", "PENDING")).not.toBe("refused");
     expect(_norm("none", "REFUSED")).not.toBe("refused");
+  });
+  it("FreePay: PAID approves, REFUSED/ERROR decline, unknown never declines", () => {
+    expect(normalizeCardStatus("freepay", "PAID")).toBe("paid");
+    expect(normalizeCardStatus("freepay", "REFUSED")).toBe("refused");
+    expect(normalizeCardStatus("freepay", "ERROR")).toBe("refused");
+    expect(normalizeCardStatus("freepay", "PENDING")).toBe("pending");
+    expect(normalizeCardStatus("freepay", "CHARGEBACK")).toBe("unknown");
+  });
+  it("FreePay is a ready card gateway", () => {
+    expect(cardProviderReady(resolvePaymentMethods({ card: { provider: "freepay" } }))).toBe(true);
   });
 });
