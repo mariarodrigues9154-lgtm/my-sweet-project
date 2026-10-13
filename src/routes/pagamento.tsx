@@ -567,7 +567,7 @@ function CheckoutRoute() {
             <PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />
             {!payCfg.pix.enabled && !showCard && <p className="py-3 text-[12.5px] text-muted-foreground">Nenhuma forma de pagamento disponível no momento.</p>}
             <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : "Efetuar pagamento"}</PrimaryButton></div>
-            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} onDone={() => setCardSheet(false)} />}
+            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} onDone={() => setCardSheet(false)} customerName={form.customer.name} onPayPix={() => { setPayMethod("pix"); setCardSheet(false); toast.success("PIX selecionado. Toque em finalizar para gerar seu código."); }} />}
           </section>
         )}
 

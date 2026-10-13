@@ -27,3 +27,14 @@ describe("payment methods", () => {
     expect(cardAvailable(resolvePaymentMethods({ card: { enabled: false } }))).toBe(false);
   });
 });
+
+import { fillDeclineMessage as _fill, normalizeCardStatus as _norm } from "./payment-methods";
+describe("cartão recusado", () => {
+  it("usa o primeiro nome do cliente", () => {
+    expect(_fill("{nome}, seu cartão não foi aprovado nesta tentativa.", "maria souza")).toBe("Maria, seu cartão não foi aprovado nesta tentativa.");
+  });
+  it("status desconhecido ou pendente nunca vira recusa", () => {
+    expect(_norm("blackcat", "PENDING")).not.toBe("refused");
+    expect(_norm("none", "REFUSED")).not.toBe("refused");
+  });
+});

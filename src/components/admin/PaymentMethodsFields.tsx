@@ -1,4 +1,4 @@
-import { CARD_PROVIDERS, cardProviderReady, installmentPlan, resolvePaymentMethods, type PaymentMethodsConfig } from "@/lib/payment-methods";
+import { CARD_PROVIDERS, DEFAULT_DECLINE, cardProviderReady, installmentPlan, resolvePaymentMethods, type PaymentMethodsConfig } from "@/lib/payment-methods";
 import { brl } from "@/lib/format";
 
 const input = "h-9 w-full rounded-md border border-border bg-card px-2 text-[13px]";
@@ -18,6 +18,7 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
   const cfg = resolvePaymentMethods(value);
   const pix = (p: Partial<PaymentMethodsConfig["pix"]>) => onChange({ ...cfg, pix: { ...cfg.pix, ...p } });
   const card = (p: Partial<PaymentMethodsConfig["card"]>) => onChange(resolvePaymentMethods({ ...cfg, card: { ...cfg.card, ...p } }));
+  const decline = (p: Partial<PaymentMethodsConfig["decline"]>) => onChange({ ...cfg, decline: { ...cfg.decline, ...p } });
   const ready = cardProviderReady(cfg);
   const example = installmentPlan(11700, cfg);
 
@@ -64,6 +65,17 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
         <Check label="Mostrar bandeiras" checked={cfg.card.show_brands} onChange={(v) => card({ show_brands: v })} />
         <Check label="Mostrar faixa promocional" checked={cfg.card.promo_enabled} onChange={(v) => card({ promo_enabled: v })} />
         {cfg.card.promo_enabled && <Field label="Texto da faixa"><input className={input} value={cfg.card.promo_text} onChange={(e) => card({ promo_text: e.target.value })} /></Field>}
+        <div className="space-y-2 rounded-md border border-border p-2.5">
+          <p className="text-[12px] font-extrabold">Mensagem de cartão recusado</p>
+          <p className="text-[11.5px] text-muted-foreground">Aparece só quando o gateway realmente recusar o cartão. Use {"{nome}"} para o primeiro nome do cliente e {"{desconto}"} para o desconto PIX.</p>
+          <Field label="Título"><input className={input} placeholder={DEFAULT_DECLINE.title} value={cfg.decline.title} onChange={(e) => decline({ title: e.target.value })} /></Field>
+          <Field label="Mensagem"><textarea rows={3} className={`${input} h-auto py-1.5`} placeholder={DEFAULT_DECLINE.message} value={cfg.decline.message} onChange={(e) => decline({ message: e.target.value })} /></Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Botão cartão"><input className={input} value={cfg.decline.retry_label} onChange={(e) => decline({ retry_label: e.target.value })} /></Field>
+            <Field label="Botão PIX"><input className={input} value={cfg.decline.pix_label} onChange={(e) => decline({ pix_label: e.target.value })} /></Field>
+          </div>
+          <Field label="Texto do benefício PIX (só aparece se houver desconto)"><input className={input} value={cfg.decline.pix_benefit} onChange={(e) => decline({ pix_benefit: e.target.value })} /></Field>
+        </div>
         <div>
           <p className="mb-1 text-[12px] font-bold text-muted-foreground">Juros total por parcela (%) — exemplo com R$ 117,00</p>
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
