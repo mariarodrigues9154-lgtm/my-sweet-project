@@ -1,0 +1,2 @@
+- PinPay entra como mais um provider em src/lib/payments (mesma interface da Wappi); webhook /api/public/webhooks/pinpay sempre reconfirma em GET /transactions/{id}; motivo: postback da PinPay não é assinado.
+- Blackcat entra como provider em src/lib/payments (X-API-Key, centavos); webhook /api/public/webhooks/blackcat reconfirma em GET /sales/{id}/status e a validade do PIX vem do expiresAt da Blackcat; motivo: postback não assinado e prazo real do gateway.
