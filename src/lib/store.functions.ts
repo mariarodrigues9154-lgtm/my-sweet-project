@@ -235,8 +235,10 @@ export const createOrder = createServerFn({ method: "POST" })
     // Oferta de saída: desconto real recalculado no servidor a partir da config da loja/produto.
     let unitCents = Math.round(Number(pricing.price) * 100);
     let exitOfferInfo: Record<string, unknown> | null = null;
+    const { data: storeRow } = product.store_id
+      ? await supabaseAdmin.from("store_settings").select("checkout").eq("id", product.store_id).maybeSingle()
+      : { data: null };
     if (data.exit_offer && product.store_id) {
-      const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", product.store_id).maybeSingle();
       const { resolveExitOffer, resolveProductExitOffer, discountedUnitCents } = await import("./exit-offer");
       const cfg = storeRow?.checkout as { exit_offer?: unknown; product_exit_offer?: unknown } | null;
       const offer = data.exit_offer === "product"
@@ -248,11 +250,18 @@ export const createOrder = createServerFn({ method: "POST" })
         exitOfferInfo = { source: data.exit_offer === "product" ? "product_page" : "checkout", original_unit_price: original / 100, discount_type: offer.discount_type, discount_value: offer.discount_value };
       }
     }
+    // Formas de pagamento da loja: hoje só PIX cobra; desconto PIX recalculado aqui.
+    const { resolvePaymentMethods, pixDiscountCents } = await import("./payment-methods");
+    const methods = resolvePaymentMethods((storeRow?.checkout as { payment_methods?: unknown } | null)?.payment_methods);
+    if (!methods.pix.enabled) return { ok: false as const, error: "Pagamento via PIX indisponível nesta loja." };
     const unitPrice = unitCents / 100;
     const shippingCents = Math.round(Number(option.price ?? 0) * 100);
+    const grossCents = unitCents * data.quantity + shippingCents;
+    const pixOffCents = pixDiscountCents(grossCents, methods);
     const subtotal = (unitCents * data.quantity) / 100;
     const shippingPrice = shippingCents / 100;
-    const total = (unitCents * data.quantity + shippingCents) / 100;
+    const total = (grossCents - pixOffCents) / 100;
+    const pixDiscountInfo = pixOffCents > 0 ? { amount: pixOffCents / 100, type: methods.pix.discount_type, value: methods.pix.discount_value } : null;
     const media = (product.media ?? []) as Array<{ type: string; url: string }>;
 
     let attribution: Record<string, string> = {};
