@@ -1,0 +1,235 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AlertTriangle, ChevronLeft, ChevronRight, CreditCard, Info, ShieldCheck, X } from "lucide-react";
+
+import { PixIcon } from "@/components/store/VerifiedBadge";
+import { brl } from "@/lib/format";
+import { cardProviderReady, installmentPlan, type PaymentMethodsConfig } from "@/lib/payment-methods";
+
+export type PayMethod = "pix" | "card";
+
+export function CardBrands({ small }: { small?: boolean }) {
+  const cls = `grid place-items-center rounded-[4px] border border-border bg-card font-black ${small ? "h-5 w-8 text-[7px]" : "h-6 w-10 text-[8px]"}`;
+  return (
+    <span className="flex items-center gap-1" aria-label="Mastercard, Visa, Elo, American Express">
+      <span className={cls}><span className="flex"><span className="size-2.5 rounded-full bg-[#eb001b]" /><span className="-ml-1 size-2.5 rounded-full bg-[#f79e1b] opacity-90" /></span></span>
+      <span className={`${cls} italic text-[#1a1f71]`}>VISA</span>
+      <span className={`${cls} text-foreground`}>elo</span>
+      <span className={`${cls} border-[#2e77bc] bg-[#2e77bc] text-[6px] leading-[7px] text-white`}>AMERICAN<br />EXPRESS</span>
+    </span>
+  );
+}
+
+function Radio({ on }: { on: boolean }) {
+  return on ? (
+    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary"><span className="size-2.5 rounded-full bg-primary-foreground" /></span>
+  ) : (
+    <span className="size-6 shrink-0 rounded-full border-2 border-border" />
+  );
+}
+
+/** Lista "Forma de pagamento" no resumo do pedido. */
+export function PaymentMethodList({ cfg, method, showCard, totalCents, onSelect, onOpenCard }: {
+  cfg: PaymentMethodsConfig;
+  method: PayMethod;
+  showCard: boolean;
+  totalCents: number;
+  onSelect: (m: PayMethod) => void;
+  onOpenCard: () => void;
+}) {
+  const [plans, setPlans] = useState(false);
+  return (
+    <div className="divide-y divide-border">
+      {showCard && (
+        <div className="py-3">
+          <button type="button" onClick={() => { onSelect("card"); onOpenCard(); }} className="flex w-full items-start gap-3 text-left">
+            <span className="grid size-6 shrink-0 place-items-center rounded bg-surface"><CreditCard size={14} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-semibold">{cfg.card.title}</span>
+              {cfg.card.show_brands && <span className="mt-1.5 block"><CardBrands /></span>}
+              {cfg.card.text && <span className="mt-1 block text-[12px] text-muted-foreground">{cfg.card.text}</span>}
+            </span>
+            <Radio on={method === "card"} />
+          </button>
+          {cfg.card.highlight && (
+            <button type="button" onClick={() => setPlans(true)} className="ml-9 mt-1 inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-bold text-primary">
+              {cfg.card.highlight} <ChevronRight size={12} />
+            </button>
+          )}
+        </div>
+      )}
+      {cfg.pix.enabled && (
+        <button type="button" onClick={() => onSelect("pix")} className="flex w-full items-start gap-3 py-3 text-left">
+          <PixIcon size={22} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold">Pix</span>
+            {cfg.pix.text && <span className="block text-[12px] text-muted-foreground">{cfg.pix.text}</span>}
+            {cfg.pix.discount_enabled && cfg.pix.discount_text && <span className="mt-1 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-bold text-primary">{cfg.pix.discount_text}</span>}
+          </span>
+          <Radio on={method === "pix"} />
+        </button>
+      )}
+      {plans && <InstallmentsSheet cfg={cfg} totalCents={totalCents} onClose={() => setPlans(false)} />}
+    </div>
+  );
+}
+
+function Sheet({ children, onClose, full }: { children: React.ReactNode; onClose: () => void; full?: boolean }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setShown(true));
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { cancelAnimationFrame(t); document.body.style.overflow = prev; };
+  }, []);
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-end justify-center">
+      <button type="button" aria-label="Fechar" onClick={onClose} className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${shown ? "opacity-100" : "opacity-0"}`} />
+      <div className={`relative flex w-full max-w-[520px] flex-col overflow-hidden rounded-t-2xl bg-card transition-transform duration-300 ease-out ${full ? "h-[94dvh]" : "max-h-[85dvh]"} ${shown ? "translate-y-0" : "translate-y-full"}`}>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+export function InstallmentsSheet({ cfg, totalCents, onClose }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void }) {
+  const plan = installmentPlan(totalCents, cfg);
+  return (
+    <Sheet onClose={onClose}>
+      <header className="relative border-b border-border px-4 py-4 text-center text-[16px] font-bold">
+        Opções de parcelamento
+        <button type="button" onClick={onClose} aria-label="Fechar" className="absolute right-3 top-3.5"><X size={20} /></button>
+      </header>
+      <ul className="overflow-y-auto px-4 pb-6">
+        {plan.map((p) => (
+          <li key={p.n} className="flex items-center justify-between border-b border-border py-3 text-[13.5px]">
+            <span><strong>{p.n}x</strong> de {brl(p.installmentCents / 100)}</span>
+            <span className="text-right">
+              {p.free ? <span className="font-bold text-primary">sem juros</span> : <span className="text-muted-foreground">juros {p.rate.toLocaleString("pt-BR")}%</span>}
+              <span className="block text-[11.5px] text-muted-foreground">Total {brl(p.totalCents / 100)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="px-4 pb-5 text-[11px] text-muted-foreground">Valores calculados com as condições da loja. O gateway confirma as condições finais no pagamento.</p>
+    </Sheet>
+  );
+}
+
+function brandOf(digits: string): string | null {
+  if (/^3[47]/.test(digits)) return "American Express";
+  if (/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/.test(digits)) return "Elo";
+  if (/^4/.test(digits)) return "Visa";
+  if (/^(5[1-5]|2[2-7])/.test(digits)) return "Mastercard";
+  return null;
+}
+function luhn(d: string) {
+  let s = 0;
+  for (let i = 0; i < d.length; i++) { let n = Number(d[d.length - 1 - i]); if (i % 2) { n *= 2; if (n > 9) n -= 9; } s += n; }
+  return s % 10 === 0;
+}
+
+/**
+ * Tela "Adicionar cartão". Os dados ficam só em memória deste componente e somem ao fechar;
+ * nada é salvo nem enviado ao nosso servidor. A tokenização acontecerá no SDK do gateway.
+ */
+export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; onDone: () => void }) {
+  const [number, setNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [holder, setHolder] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [plans, setPlans] = useState(false);
+  const [tip, setTip] = useState(false);
+  const ready = cardProviderReady(cfg);
+  const digits = number.replace(/\D/g, "");
+  const brand = brandOf(digits);
+
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!digits) e.number = "Número do cartão é obrigatório";
+    else if (!brand || digits.length < 14 || !luhn(digits)) e.number = "Número do cartão inválido";
+    const m = /^(\d{2})\/(\d{2})$/.exec(expiry);
+    if (!expiry) e.expiry = "Data de validade é obrigatória";
+    else if (!m || Number(m[1]) < 1 || Number(m[1]) > 12) e.expiry = "Data inválida";
+    else {
+      const end = new Date(2000 + Number(m[2]), Number(m[1]), 1);
+      if (end <= new Date()) e.expiry = "Cartão vencido";
+    }
+    const cvvLen = brand === "American Express" ? 4 : 3;
+    if (!cvv) e.cvv = "Código de segurança é obrigatório";
+    else if (cvv.length !== cvvLen) e.cvv = "Código inválido";
+    if (holder.trim().split(/\s+/).length < 2) e.holder = "Informe o nome como está no cartão";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function submit() {
+    if (!validate()) return;
+    if (!ready) { setErrors({ form: "O pagamento com cartão ainda não está disponível nesta loja. Escolha Pix para concluir." }); return; }
+    // Futuro: getCardProvider(cfg.card.provider).tokenizeCard(...) → backend recebe só o token.
+    onDone();
+  }
+
+  const field = (err?: string) => `h-14 w-full rounded-xl px-4 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
+  const Err = ({ k }: { k: string }) => (errors[k] ? <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
+
+  return (
+    <Sheet onClose={onClose} full>
+      <header className="relative border-b border-border px-4 py-4 text-center text-[17px] font-bold">
+        <button type="button" onClick={onClose} aria-label="Voltar" className="absolute left-3 top-3.5"><ChevronLeft size={24} /></button>
+        Adicionar cartão
+      </header>
+      {cfg.card.promo_enabled && cfg.card.promo_text && (
+        <div className="flex items-center gap-2 bg-primary/10 px-4 py-2.5 text-[13px]">
+          <CreditCard size={16} className="shrink-0 text-primary" />
+          <span className="min-w-0 flex-1 truncate">{cfg.card.promo_text}</span>
+          <button type="button" onClick={() => setPlans(true)} className="flex shrink-0 items-center text-[13px] font-semibold text-primary">Visualizar tudo ({cfg.card.max_installments}) <ChevronRight size={14} /></button>
+        </div>
+      )}
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
+        <div>
+          <div className="mb-2 flex items-center justify-between"><label htmlFor="cc-number" className="text-[15px] font-bold">Número do cartão</label><CardBrands small /></div>
+          <input id="cc-number" inputMode="numeric" autoComplete="cc-number" placeholder="Insira o número do cartão" value={number}
+            onChange={(e) => setNumber(e.target.value.replace(/\D/g, "").slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "))} className={field(errors.number)} />
+          {brand && !errors.number && <p className="mt-1 text-[12px] text-muted-foreground">{brand}</p>}
+          <Err k="number" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="cc-exp" className="mb-2 block text-[15px] font-bold">Data de validade</label>
+            <input id="cc-exp" inputMode="numeric" autoComplete="cc-exp" placeholder="MM/AA" value={expiry}
+              onChange={(e) => { const d = e.target.value.replace(/\D/g, "").slice(0, 4); setExpiry(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d); }} className={field(errors.expiry)} />
+            <Err k="expiry" />
+          </div>
+          <div>
+            <label htmlFor="cc-cvv" className="mb-2 flex items-center gap-1 text-[15px] font-bold">Código de segurança <button type="button" aria-label="O que é" onClick={() => setTip((v) => !v)}><Info size={15} className="text-muted-foreground" /></button></label>
+            <input id="cc-cvv" inputMode="numeric" autoComplete="cc-csc" placeholder="CVV/CVC" value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))} className={field(errors.cvv)} />
+            {tip && <p className="mt-1 text-[12px] text-muted-foreground">O código de segurança normalmente fica no verso do cartão.</p>}
+            <Err k="cvv" />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="cc-name" className="mb-2 block text-[15px] font-bold">Nome do titular do cartão</label>
+          <input id="cc-name" autoComplete="cc-name" placeholder="Nome completo" value={holder} onChange={(e) => setHolder(e.target.value.slice(0, 60))} className={field(errors.holder)} />
+          <Err k="holder" />
+        </div>
+        <div className="flex items-center justify-between opacity-60">
+          <div><p className="text-[15px] font-bold">Salvar cartão</p><p className="text-[12px] text-muted-foreground">Disponível após conectar um gateway compatível.</p></div>
+          <span className="h-7 w-12 rounded-full bg-muted p-0.5"><span className="block size-6 rounded-full bg-card" /></span>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl bg-warning/10 px-4 py-3 text-[13px] text-foreground/80">
+          <p className="flex-1">Suas informações de pagamento serão processadas de forma segura. O código de segurança (CVV/CVC) nunca será armazenado.</p>
+          <ShieldCheck size={28} className="shrink-0 text-warning" />
+        </div>
+        {errors.form && <p className="rounded-xl bg-destructive/10 px-4 py-3 text-[13px] font-semibold text-destructive">{errors.form}</p>}
+      </div>
+      <footer className="border-t border-border px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
+        <button type="button" onClick={submit} className="h-13 w-full rounded-full bg-primary py-3.5 text-[17px] font-bold text-primary-foreground active:scale-[0.99]">Continuar</button>
+      </footer>
+      {plans && <InstallmentsSheet cfg={cfg} totalCents={totalCents} onClose={() => setPlans(false)} />}
+    </Sheet>
+  );
+}
