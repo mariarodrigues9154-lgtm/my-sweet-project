@@ -80,7 +80,7 @@ export const saveWhatsappRecovery = createServerFn({ method: "POST" })
 /** Envia uma mensagem de teste para um número informado pelo administrador. */
 export const testWhatsappRecovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ store_id: z.string().uuid(), phone: z.string().max(30) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ store_id: z.string().uuid(), phone: z.string().max(30), kind: z.enum(["pending", "paid"]).default("pending") }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { normalizeBrPhone, sendWhatsApp, fillTemplate } = await import("./whatsapp-recovery.server");
@@ -91,16 +91,48 @@ export const testWhatsappRecovery = createServerFn({ method: "POST" })
     if (!row) return { ok: false, message: "Salve a configuração primeiro." };
     const vars = { nome: "Teste", pedido: "TESTE", produto: "Produto de teste", valor: "R$ 1,00", pix: "", link_pagamento: "https://www.achados-tik.shop", nome_loja: "Loja" };
     try {
-      await sendWhatsApp({ provider: row.provider as never, secrets: row.secret_data as never, pub: row.public_data as never, to, text: fillTemplate(row.message as string, vars), vars, token: "teste" });
+      await sendWhatsApp({ provider: row.provider as never, secrets: row.secret_data as never, pub: row.public_data as never, to, text: fillTemplate(templateFor(data.kind, false, (row.public_data ?? {}) as Record<string, string>, row.message as string), vars), vars, token: "teste" });
       return { ok: true, message: "Mensagem de teste enviada." };
     } catch (e) {
       return { ok: false, message: e instanceof Error ? e.message : "Falha no envio." };
     }
   });
 
+/** Verifica se a instância do WhatsApp da loja está conectada (somente servidor). */
+export const testWhatsappConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ store_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("store_whatsapp_settings").select("provider, public_data, secret_data").eq("store_id", data.store_id).maybeSingle();
+    if (!row) return { connected: false, message: "Salve a configuração primeiro." };
+    if (row.provider !== "zapi") return { connected: null, message: "Teste de conexão disponível para Z-API. Use o envio de teste." };
+    const pub = (row.public_data ?? {}) as Record<string, string>;
+    const sec = (row.secret_data ?? {}) as Record<string, string>;
+    const tok = sec["instance_token"] || pub["instance_token"];
+    if (!pub["instance_id"] || !tok) return { connected: false, message: "Instância ou token não preenchidos." };
+    try {
+      const res = await fetch(`https://api.z-api.io/instances/${encodeURIComponent(pub["instance_id"])}/token/${encodeURIComponent(tok)}/status`, { headers: sec["client_token"] ? { "Client-Token": sec["client_token"] } : {} });
+      const j = (await res.json().catch(() => ({}))) as { connected?: boolean; error?: string; smartphoneConnected?: boolean };
+      if (!res.ok) return { connected: false, message: `Z-API recusou (${res.status}). Confira instância, token e Client-Token.` };
+      return { connected: !!j.connected, message: j.connected ? "WhatsApp conectado." : "WhatsApp desconectado. Leia o QR Code na Z-API." };
+    } catch {
+      return { connected: false, message: "Não foi possível falar com a Z-API." };
+    }
+  });
+
+const DEFAULT_PAID = "Olá, {nome}! ✅\n\nRecebemos o pagamento do seu pedido #{pedido} com sucesso!\n\nValor: {valor}\n\nSeu pedido já está confirmado e seguirá normalmente para as próximas etapas.\n\nObrigado pela compra! 💚";
+const DEFAULT_EXPIRED = "Olá, {nome}! Seu PIX do pedido #{pedido} expirou.\n\nSe ainda deseja concluir a compra, acesse o link abaixo para continuar:\n{link_pagamento}";
+function templateFor(kind: "pending" | "paid", expired: boolean, pub: Record<string, string>, auto: string | null | undefined) {
+  if (kind === "paid") return pub["paid_message"] || DEFAULT_PAID;
+  if (expired) return pub["manual_message_expired"] || DEFAULT_EXPIRED;
+  return pub["manual_message"] || auto || DEFAULT_MANUAL;
+}
+
 const DEFAULT_MANUAL = "Olá, {nome}! 👋\n\nVi que o pagamento via PIX do seu pedido #{pedido} ainda está pendente.\n\nValor: {valor}\n\nSe precisar continuar o pagamento, acesse:\n{link_pagamento}";
 
-async function loadManualContext(orderId: string) {
+async function loadManualContext(orderId: string, kind: "pending" | "paid" = "pending") {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: o } = await supabaseAdmin
     .from("orders")
@@ -124,12 +156,11 @@ async function loadManualContext(orderId: string) {
     pedido: String(o.order_number),
     produto: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
     valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-    pix: expired ? "" : pay.copy_paste ?? "",
+    pix: expired || kind === "paid" ? "" : pay.copy_paste ?? "",
     link_pagamento: `${site}/pix/${o.access_token}`,
     nome_loja: (store?.name as string) ?? "",
   };
-  const DEFAULT_EXPIRED = "Olá, {nome}! Seu PIX do pedido #{pedido} expirou.\n\nSe ainda deseja concluir a compra, acesse o link abaixo para continuar:\n{link_pagamento}";
-  const tpl = expired ? (pub["manual_message_expired"] || DEFAULT_EXPIRED) : (pub["manual_message"] || (cfg?.message as string) || DEFAULT_MANUAL);
+  const tpl = templateFor(kind, expired && kind === "pending", pub, cfg?.message as string);
   const text = fillTemplate(tpl, vars);
   return { o, cfg, pub, vars, text, expired, phone: normalizeBrPhone((o.customer as { phone?: string })?.phone), supabaseAdmin };
 }
@@ -183,7 +214,7 @@ export const listPixRecoveryOrders = createServerFn({ method: "POST" })
         events: [...new Set(ev.map((e) => e.event_type as string))],
         recovered: paid && ev.length > 0,
         last_action: last ? { type: last.event_type as string, at: last.created_at as string } : null,
-        whatsapp: wa ? { status: wa.status as string, detail: (wa.detail as string | null) ?? null, at: wa.updated_at as string, manual: Number(wa.step) >= 100 } : null,
+        whatsapp: wa ? { status: wa.status as string, detail: (wa.detail as string | null) ?? null, at: wa.updated_at as string, manual: Number(wa.step) >= 100, kind: String(wa.detail ?? "").startsWith("manual_paid_confirmation") ? "paid" : "pending" } : null,
       };
     }).sort((a, b) => b.created_at.localeCompare(a.created_at));
   });
@@ -191,22 +222,26 @@ export const listPixRecoveryOrders = createServerFn({ method: "POST" })
 /** Prévia da mensagem manual com os dados reais do pedido. */
 export const previewManualPixMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid(), kind: z.enum(["pending", "paid"]).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const c = await loadManualContext(data.order_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: o } = await supabaseAdmin.from("orders").select("status").eq("id", data.order_id).maybeSingle();
+    const paid = o?.status === "pago" || o?.status === "aprovado";
+    const kind = data.kind ?? (paid ? "paid" : "pending");
+    const c = await loadManualContext(data.order_id, kind);
     if (!c) return { ok: false as const, error: "Pedido não encontrado." };
     if (!c.cfg) return { ok: false as const, error: "WhatsApp não configurado para esta loja." };
-    return { ok: true as const, text: c.text, name: c.vars.nome, expired: c.expired, has_phone: !!c.phone };
+    return { ok: true as const, kind, paid, text: c.text, name: c.vars.nome, expired: c.expired, has_phone: !!c.phone };
   });
 
 /** Envio manual (um pedido por vez) pelo WhatsApp da loja dona do pedido. Reconfirma o status antes. */
 export const sendManualPixRecoveryMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid(), kind: z.enum(["pending", "paid"]).default("pending"), force: z.boolean().default(false) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
-    const c = await loadManualContext(data.order_id);
+    const c = await loadManualContext(data.order_id, data.kind);
     if (!c) return { ok: false as const, error: "Pedido não encontrado." };
     if (!c.cfg) return { ok: false as const, error: "WhatsApp não configurado para esta loja." };
     let status = c.o.status as string;
@@ -214,24 +249,26 @@ export const sendManualPixRecoveryMessage = createServerFn({ method: "POST" })
       const { checkOrderPaymentStatus } = await import("@/lib/payments/order-status.server");
       status = (await checkOrderPaymentStatus(c.o.order_number as string)).status;
     } catch { /* mantém */ }
-    if (status === "pago" || status === "aprovado") return { ok: false as const, error: "Este pedido já foi pago. Mensagem de PIX pendente não enviada." };
-    if (status !== "aguardando_pagamento") return { ok: false as const, error: `Pedido com status ${status}. Mensagem não enviada.` };
+    const isPaid = status === "pago" || status === "aprovado";
+    if (data.kind === "paid" && !isPaid) return { ok: false as const, error: "Este pedido ainda não está pago. Confirmação não enviada." };
+    if (data.kind === "pending" && isPaid && !data.force) return { ok: false as const, error: "Este pedido já foi pago. Mensagem de PIX pendente não enviada." };
+    if (data.kind === "pending" && !isPaid && status !== "aguardando_pagamento") return { ok: false as const, error: `Pedido com status ${status}. Mensagem não enviada.` };
     if (!c.phone) return { ok: false as const, error: "Telefone do cliente inválido." };
     const { maskPhoneTail, sendWhatsApp } = await import("./whatsapp-recovery.server");
     const { data: prev } = await c.supabaseAdmin.from("whatsapp_pix_reminders").select("step").eq("order_id", c.o.id).gte("step", 100);
     const step = 100 + Math.max(0, ...(prev ?? []).map((p) => Number(p.step) - 99));
     const { data: row } = await c.supabaseAdmin.from("whatsapp_pix_reminders")
-      .insert({ store_id: c.o.store_id as string, order_id: c.o.id, step, phone_masked: maskPhoneTail(c.phone), detail: `manual_pix_recovery · admin ${context.userId}` })
+      .insert({ store_id: c.o.store_id as string, order_id: c.o.id, step, phone_masked: maskPhoneTail(c.phone), detail: `${data.kind === "paid" ? "manual_paid_confirmation" : "manual_pix_recovery"} · admin ${context.userId}` })
       .select("id").maybeSingle();
     if (!row) return { ok: false as const, error: "Envio já em andamento. Tente novamente." };
     const at = new Date().toISOString();
     try {
       const id = await sendWhatsApp({ provider: c.cfg.provider as never, secrets: (c.cfg.secret_data ?? {}) as Record<string, string>, pub: c.pub, to: c.phone, text: c.text, vars: c.vars, token: c.o.access_token as string });
-      await c.supabaseAdmin.from("whatsapp_pix_reminders").update({ status: "enviada", pix_status: c.expired ? "EXPIRED" : "PENDING", provider_message_id: id, updated_at: at }).eq("id", row.id);
+      await c.supabaseAdmin.from("whatsapp_pix_reminders").update({ status: "enviada", pix_status: isPaid ? "PAID" : c.expired ? "EXPIRED" : "PENDING", provider_message_id: id, updated_at: at }).eq("id", row.id);
       return { ok: true as const, at };
     } catch (e) {
       const msg = (e instanceof Error ? e.message : "Falha no envio").slice(0, 500);
-      await c.supabaseAdmin.from("whatsapp_pix_reminders").update({ status: "falha", detail: `manual_pix_recovery · ${msg}`, pix_status: "PENDING", updated_at: at }).eq("id", row.id);
+      await c.supabaseAdmin.from("whatsapp_pix_reminders").update({ status: "falha", detail: `${data.kind === "paid" ? "manual_paid_confirmation" : "manual_pix_recovery"} · ${msg}`, pix_status: isPaid ? "PAID" : "PENDING", updated_at: at }).eq("id", row.id);
       return { ok: false as const, error: "Falha no envio pelo WhatsApp. Tente novamente." };
     }
   });
