@@ -417,7 +417,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
       checkoutUrl = `${origin}/pagamento`;
-      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : `${origin}/api/public/pagamentos/webhook`;
+      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "freepay" ? `${origin}/api/public/webhooks/freepay` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : `${origin}/api/public/pagamentos/webhook`;
     } catch {
       postbackUrl = undefined;
     }

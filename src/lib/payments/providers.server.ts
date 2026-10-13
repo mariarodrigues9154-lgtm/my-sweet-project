@@ -278,12 +278,24 @@ function wappiError(status: number): string {
   return "O provedor de pagamento não respondeu. Tente novamente.";
 }
 
-const wappi: PaymentProvider = {
-  id: "wappi",
+/** Wappi e FreePay Brasil usam a mesma API (Basic Auth, /v1/payment-transaction, centavos). */
+function makeBasicPixProvider(id: "wappi" | "freepay", BASE: string): PaymentProvider {
+  const label = id === "freepay" ? "freepay" : "wappi";
+  return {
+  id,
   async testConnection(config) {
+    if (id === "freepay") {
+      // Validação segura pela rota documentada de consulta: 404 = credenciais aceitas.
+      const h = wappiHeaders(config);
+      if (!h) return { ok: false, error: "Informe a Public Key e a Secret Key." };
+      const r = await fetch(`${BASE}/v1/payment-transaction/info/teste-conexao`, { headers: h, signal: AbortSignal.timeout(10000) });
+      if (r.status === 401 || r.status === 403) return { ok: false, error: "Não foi possível autenticar. Verifique a Public Key e a Secret Key da FreePay." };
+      if (r.status === 404 || r.ok) return { ok: true, company: { fantasy_name: "FreePay Brasil" } };
+      return { ok: false, error: "A FreePay não respondeu. Tente novamente." };
+    }
     const headers = wappiHeaders(config);
     if (!headers) return { ok: false, error: "Informe PUBLIC_KEY e SECRET_KEY." };
-    const res = await fetch(`${WAPPI_BASE}/v1/company`, { headers });
+    const res = await fetch(`${BASE}/v1/company`, { headers });
     if (res.status === 200) {
       const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       const company = ((body["data"] as Record<string, unknown>) ?? body) as Record<string, unknown>;
@@ -322,10 +334,10 @@ const wappi: PaymentProvider = {
       pix: { expires_in_days: input.expiresInDays ?? 1 },
       metadata: { order_number: input.orderNumber, ...(input.metadata ?? {}) },
     };
-    const res = await fetch(`${WAPPI_BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body) });
+    const res = await fetch(`${BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body) });
     const json = await res.json().catch(() => null);
     if (res.status !== 200 && res.status !== 201) {
-      console.error("[wappi] create falhou", res.status, JSON.stringify((json as { message?: unknown; errors?: unknown } | null)?.message ?? (json as { errors?: unknown } | null)?.errors ?? null).slice(0, 400));
+      console.error(`[${label}] create falhou`, res.status, JSON.stringify((json as { message?: unknown; errors?: unknown } | null)?.message ?? (json as { errors?: unknown } | null)?.errors ?? null).slice(0, 400));
       return { ok: false, error: wappiError(res.status) };
     }
     const tx = firstTx(json);
@@ -359,15 +371,21 @@ const wappi: PaymentProvider = {
   async getStatus(config, transactionId) {
     const headers = wappiHeaders(config);
     if (!headers) return { paid: false, status: "unknown" };
-    const res = await fetch(`${WAPPI_BASE}/v1/payment-transaction/info/${encodeURIComponent(transactionId)}`, { headers });
+    const res = await fetch(`${BASE}/v1/payment-transaction/info/${encodeURIComponent(transactionId)}`, { headers });
     const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-    if (!res.ok) throw new Error(`wappi info ${res.status}`);
+    if (!res.ok) throw new Error(`${label} info ${res.status}`);
     const tx = firstTx(json) as (WappiTx & { Status?: string; E2E?: string; PaidAt?: string; paid_at?: string }) | null;
     const status = String(tx?.status ?? tx?.Status ?? "unknown").toUpperCase();
     const e2e = pixOf(tx)?.e2_e ?? tx?.E2E ?? null;
-    return { paid: status === "PAID", status, e2e, paid_at: tx?.PaidAt ?? tx?.paid_at ?? null };
+    return { paid: status === "PAID", status, e2e, paid_at: validDate(tx?.PaidAt ?? tx?.paid_at ?? null) };
   },
-};
+  };
+}
+
+const wappi = makeBasicPixProvider("wappi", WAPPI_BASE);
+// Doc: https://www.freepaybrasil.com/docs — Basic Base64(PUBLIC_KEY:SECRET_KEY), valores em centavos.
+export const FREEPAY_BASE = "https://api.freepaybrasil.com";
+const freepay = makeBasicPixProvider("freepay", FREEPAY_BASE);
 
 // ----------------------------------------------------------------------- PinPay
 // Doc: https://hub.usepinpay.com/documentacao — Bearer sk_, valores em centavos.
@@ -593,7 +611,7 @@ const blackcat: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, pinpay, blackcat, mercadopago, asaas };
+const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;
