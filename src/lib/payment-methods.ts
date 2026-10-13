@@ -20,6 +20,8 @@ export type PaymentMethodsConfig = {
     discount_type: "percent" | "fixed";
     discount_value: number;
     discount_text: string;
+    /** Ícone personalizado do PIX (vazio = ícone padrão). */
+    icon_url: string;
   };
   card: {
     enabled: boolean;
@@ -34,10 +36,24 @@ export type PaymentMethodsConfig = {
     promo_enabled: boolean;
     promo_text: string;
     show_brands: boolean;
+    /** Bandeiras enviadas pelo painel, na ordem de exibição. Vazio = bandeiras padrão. */
+    brands: CardBrandImage[];
   };
   decline: CardDeclineTexts;
   provider_error: CardProviderErrorTexts;
 };
+
+export type CardBrandImage = { id: string; name: string; url: string; enabled: boolean };
+
+function resolveBrands(v: unknown): CardBrandImage[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .filter((b: any) => b && typeof b === "object" && typeof b.url === "string" && b.url.trim())
+    .slice(0, 12)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((b: any, i: number) => ({ id: typeof b.id === "string" && b.id ? b.id.slice(0, 40) : `b${i}`, name: typeof b.name === "string" ? b.name.slice(0, 40) : "", url: b.url.slice(0, 600), enabled: b.enabled !== false }));
+}
 
 const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v.replace(",", "."))) ? Number(v.replace(",", ".")) : d);
 const str = (v: unknown, d: string, max = 120) => (typeof v === "string" ? v.slice(0, max) : d);
@@ -63,6 +79,7 @@ export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
       discount_type: p.discount_type === "fixed" ? "fixed" : "percent",
       discount_value: clamp(num(p.discount_value, 0), 0, p.discount_type === "fixed" ? 100000 : 90),
       discount_text: str(p.discount_text, ""),
+      icon_url: str(p.icon_url, "", 600),
     },
     card: {
       enabled: c.enabled !== false,
@@ -76,6 +93,7 @@ export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
       promo_enabled: c.promo_enabled === true,
       promo_text: str(c.promo_text, ""),
       show_brands: c.show_brands !== false,
+      brands: resolveBrands(c.brands),
     },
     decline: resolveDecline(r.decline),
     provider_error: resolveProviderError(r.provider_error),

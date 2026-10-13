@@ -6,12 +6,23 @@ import { PixIcon } from "@/components/store/VerifiedBadge";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { cardProviderReady, fillDeclineMessage, installmentPlan, pixDiscountLabel, type PaymentMethodsConfig } from "@/lib/payment-methods";
+import { stableMediaUrl } from "@/lib/media-url";
 import { useServerFn } from "@tanstack/react-start";
 import { payOrderWithCard } from "@/lib/store.functions";
 
 export type PayMethod = "pix" | "card";
 
-export function CardBrands({ small }: { small?: boolean }) {
+export function CardBrands({ small, cfg }: { small?: boolean; cfg?: PaymentMethodsConfig }) {
+  const custom = cfg?.card.brands.filter((b) => b.enabled) ?? [];
+  if (cfg && cfg.card.brands.length > 0) {
+    return (
+      <span className="flex flex-wrap items-center gap-1">
+        {custom.map((b) => (
+          <img key={b.id} src={stableMediaUrl(b.url)} alt={b.name || "Bandeira"} title={b.name} className={`${small ? "h-5" : "h-6"} w-auto max-w-[48px] rounded-[4px] object-contain`} loading="lazy" decoding="async" />
+        ))}
+      </span>
+    );
+  }
   const cls = `grid place-items-center rounded-[4px] border border-border bg-card font-black ${small ? "h-5 w-8 text-[7px]" : "h-6 w-10 text-[8px]"}`;
   return (
     <span className="flex items-center gap-1" aria-label="Mastercard, Visa, Elo, American Express">
@@ -43,13 +54,24 @@ export function PaymentMethodList({ cfg, method, showCard, totalCents, onSelect,
   const [plans, setPlans] = useState(false);
   return (
     <div className="divide-y divide-border">
+      {cfg.pix.enabled && (
+        <button type="button" onClick={() => onSelect("pix")} className="flex w-full items-start gap-3 py-3 text-left">
+          {cfg.pix.icon_url ? <img src={stableMediaUrl(cfg.pix.icon_url)} alt="Pix" className="size-[22px] shrink-0 object-contain" /> : <PixIcon size={22} />}
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold">Pix</span>
+            {cfg.pix.text && <span className="block text-[12px] text-muted-foreground">{cfg.pix.text}</span>}
+            {cfg.pix.discount_enabled && cfg.pix.discount_text && <span className="mt-1 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-bold text-primary">{cfg.pix.discount_text}</span>}
+          </span>
+          <Radio on={method === "pix"} />
+        </button>
+      )}
       {showCard && (
         <div className="py-3">
           <button type="button" onClick={() => { if (cardProviderReady(cfg)) onSelect("card"); onOpenCard(); }} className="flex w-full items-start gap-3 text-left">
             <span className="grid size-6 shrink-0 place-items-center rounded bg-surface"><CreditCard size={14} /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-[14px] font-semibold">{cfg.card.title}</span>
-              {cfg.card.show_brands && <span className="mt-1.5 block"><CardBrands /></span>}
+              {cfg.card.show_brands && <span className="mt-1.5 block"><CardBrands cfg={cfg} /></span>}
               {cfg.card.text && <span className="mt-1 block text-[12px] text-muted-foreground">{cfg.card.text}</span>}
             </span>
             <Radio on={method === "card"} />
@@ -60,17 +82,6 @@ export function PaymentMethodList({ cfg, method, showCard, totalCents, onSelect,
             </button>
           )}
         </div>
-      )}
-      {cfg.pix.enabled && (
-        <button type="button" onClick={() => onSelect("pix")} className="flex w-full items-start gap-3 py-3 text-left">
-          <PixIcon size={22} />
-          <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-semibold">Pix</span>
-            {cfg.pix.text && <span className="block text-[12px] text-muted-foreground">{cfg.pix.text}</span>}
-            {cfg.pix.discount_enabled && cfg.pix.discount_text && <span className="mt-1 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-bold text-primary">{cfg.pix.discount_text}</span>}
-          </span>
-          <Radio on={method === "pix"} />
-        </button>
       )}
       {plans && <InstallmentsSheet cfg={cfg} totalCents={totalCents} onClose={() => setPlans(false)} />}
     </div>
@@ -285,7 +296,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
       )}
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
         <div>
-          <div className="mb-2 flex items-center justify-between"><label htmlFor="cc-number" className="text-[15px] font-bold">Número do cartão</label><CardBrands small /></div>
+          <div className="mb-2 flex items-center justify-between"><label htmlFor="cc-number" className="text-[15px] font-bold">Número do cartão</label><CardBrands small cfg={cfg} /></div>
           <input id="cc-number" inputMode="numeric" autoComplete="cc-number" placeholder="Insira o número do cartão" value={number}
             onChange={(e) => setNumber(e.target.value.replace(/\D/g, "").slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "))} className={field(errors.number)} />
           {brand && !errors.number && <p className="mt-1 text-[12px] text-muted-foreground">{brand}</p>}

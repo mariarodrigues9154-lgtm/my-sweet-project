@@ -1,5 +1,39 @@
 import { CARD_PROVIDERS, DEFAULT_DECLINE, DEFAULT_PROVIDER_ERROR, cardProviderReady, installmentPlan, resolvePaymentMethods, type PaymentMethodsConfig } from "@/lib/payment-methods";
 import { brl } from "@/lib/format";
+import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { ArrowDown, ArrowUp, Loader2, Trash2, Upload } from "lucide-react";
+import { createMediaUpload, finalizeMediaUpload } from "@/lib/admin.functions";
+import { IMAGE_ACCEPT, uploadMedia } from "@/lib/media-upload";
+import { stableMediaUrl } from "@/lib/media-url";
+import { PixIcon } from "@/components/store/VerifiedBadge";
+
+function useImageUpload() {
+  const create = useServerFn(createMediaUpload);
+  const finalize = useServerFn(finalizeMediaUpload);
+  const [busy, setBusy] = useState(false);
+  async function run(file: File): Promise<string | null> {
+    if (!file.type.startsWith("image/")) { toast.error("Envie uma imagem (PNG, JPG, WebP ou SVG)."); return null; }
+    setBusy(true);
+    try { return await uploadMedia(file, create as never, finalize as never); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Falha no envio."); return null; }
+    finally { setBusy(false); }
+  }
+  return { busy, run };
+}
+
+function PickButton({ label, busy, onFile }: { label: string; busy: boolean; onFile: (f: File) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <button type="button" disabled={busy} onClick={() => ref.current?.click()} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[12px] font-bold disabled:opacity-60">
+        {busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />} {label}
+      </button>
+      <input ref={ref} type="file" accept={IMAGE_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onFile(f); }} />
+    </>
+  );
+}
 
 const input = "h-9 w-full rounded-md border border-border bg-card px-2 text-[13px]";
 
@@ -22,12 +56,30 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
   const decline = (p: Partial<PaymentMethodsConfig["decline"]>) => onChange({ ...cfg, decline: { ...cfg.decline, ...p } });
   const ready = cardProviderReady(cfg);
   const example = installmentPlan(11700, cfg);
+  const pixUp = useImageUpload();
+  const brandUp = useImageUpload();
+  const brands = cfg.card.brands;
+  const setBrands = (b: typeof brands) => card({ brands: b });
+  const moveBrand = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= brands.length) return; const n = [...brands]; const t = n[i]!; n[i] = n[j]!; n[j] = t; setBrands(n); };
 
   return (
     <div className="space-y-5">
       <div className="space-y-3 rounded-lg border border-border p-3">
         <p className="text-[13px] font-extrabold">PIX</p>
         <Check label="Ativar PIX" checked={cfg.pix.enabled} onChange={(v) => pix({ enabled: v })} />
+        <div className="flex items-center gap-3 rounded-md border border-border p-2.5">
+          <span className="grid size-14 shrink-0 place-items-center rounded-md bg-surface">
+            {cfg.pix.icon_url ? <img src={stableMediaUrl(cfg.pix.icon_url)} alt="Ícone Pix" className="size-11 object-contain" /> : <PixIcon size={30} />}
+          </span>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <p className="text-[12px] font-extrabold">Ícone do Pix</p>
+            <p className="text-[11px] text-muted-foreground">PNG/SVG quadrado, de preferência 256×256 ou maior.</p>
+            <div className="flex flex-wrap gap-1.5">
+              <PickButton label={cfg.pix.icon_url ? "Substituir" : "Enviar imagem"} busy={pixUp.busy} onFile={async (f) => { const url = await pixUp.run(f); if (url) pix({ icon_url: url }); }} />
+              {cfg.pix.icon_url && <button type="button" onClick={() => pix({ icon_url: "" })} className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2.5 text-[12px] font-bold text-destructive"><Trash2 size={13} /> Remover</button>}
+            </div>
+          </div>
+        </div>
         <Field label="Texto do PIX"><input className={input} value={cfg.pix.text} onChange={(e) => pix({ text: e.target.value })} /></Field>
         <Check label="Desconto no PIX" checked={cfg.pix.discount_enabled} onChange={(v) => pix({ discount_enabled: v })} />
         {cfg.pix.discount_enabled && (
@@ -64,6 +116,28 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
           <Field label="Parcelas sem juros"><input type="number" min={1} max={cfg.card.max_installments} className={input} value={cfg.card.free_installments} onChange={(e) => card({ free_installments: Number(e.target.value) })} /></Field>
         </div>
         <Check label="Mostrar bandeiras" checked={cfg.card.show_brands} onChange={(v) => card({ show_brands: v })} />
+        <div className="space-y-2 rounded-md border border-border p-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[12px] font-extrabold">Bandeiras do cartão</p>
+            <PickButton label="Adicionar bandeira" busy={brandUp.busy} onFile={async (f) => { const url = await brandUp.run(f); if (url) setBrands([...brands, { id: crypto.randomUUID().slice(0, 12), name: f.name.replace(/\.[^.]+$/, "").slice(0, 40), url, enabled: true }]); }} />
+          </div>
+          <p className="text-[11px] text-muted-foreground">Aparecem na lista de pagamento e na tela de dados do cartão. Use PNG/SVG em alta resolução (ex.: 200×128). Sem bandeiras enviadas, usamos as padrão.</p>
+          {brands.length > 0 && (
+            <ul className="space-y-1.5">
+              {brands.map((b, i) => (
+                <li key={b.id} className="flex items-center gap-2 rounded-md bg-surface p-1.5">
+                  <span className="grid h-9 w-14 shrink-0 place-items-center rounded bg-card"><img src={stableMediaUrl(b.url)} alt={b.name} className="max-h-7 max-w-12 object-contain" /></span>
+                  <input className={`${input} h-8 min-w-0 flex-1`} value={b.name} placeholder="Nome" onChange={(e) => setBrands(brands.map((x) => (x.id === b.id ? { ...x, name: e.target.value } : x)))} />
+                  <input type="checkbox" title="Exibir" checked={b.enabled} onChange={(e) => setBrands(brands.map((x) => (x.id === b.id ? { ...x, enabled: e.target.checked } : x)))} />
+                  <button type="button" aria-label="Subir" onClick={() => moveBrand(i, -1)} className="p-1"><ArrowUp size={14} /></button>
+                  <button type="button" aria-label="Descer" onClick={() => moveBrand(i, 1)} className="p-1"><ArrowDown size={14} /></button>
+                  <PickButton label="" busy={brandUp.busy} onFile={async (f) => { const url = await brandUp.run(f); if (url) setBrands(brands.map((x) => (x.id === b.id ? { ...x, url } : x))); }} />
+                  <button type="button" aria-label="Remover" onClick={() => setBrands(brands.filter((x) => x.id !== b.id))} className="p-1 text-destructive"><Trash2 size={14} /></button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <Check label="Mostrar faixa promocional" checked={cfg.card.promo_enabled} onChange={(v) => card({ promo_enabled: v })} />
         {cfg.card.promo_enabled && <Field label="Texto da faixa"><input className={input} value={cfg.card.promo_text} onChange={(e) => card({ promo_text: e.target.value })} /></Field>}
         <div className="space-y-2 rounded-md border border-border p-2.5">
