@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { Product, StoreSettings } from "./product-types";
 import { variantImage } from "./product-types";
+import { parseGatewayDate } from "./pix-time";
 
 function publicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;

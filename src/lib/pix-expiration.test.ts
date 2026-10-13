@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseGatewayDate } from "./store.functions";
+import { parseGatewayDate } from "./pix-time";
 
 describe("parseGatewayDate", () => {
   it("data sem fuso é horário de Brasília", () => {
