@@ -387,6 +387,63 @@ const wappi = makeBasicPixProvider("wappi", WAPPI_BASE);
 export const FREEPAY_BASE = "https://api.freepaybrasil.com";
 const freepay = makeBasicPixProvider("freepay", FREEPAY_BASE);
 
+export type CardChargeInput = {
+  orderNumber: string;
+  amountCents: number;
+  installments: number;
+  card: { number: string; holder_name: string; expiration_month: number; expiration_year: number; cvv: string };
+  customer: { name: string; email: string; document: string; phone?: string };
+  items: Array<{ title: string; unit_price: number; quantity: number; tangible: boolean; external_ref?: string }>;
+  shipping: Record<string, unknown>;
+  postbackUrl?: string;
+  ip?: string;
+};
+export type CardChargeResult = { ok: true; transaction_id: string; status: string } | { ok: false; error: string; status?: string | undefined };
+
+/**
+ * Cobrança de cartão na FreePay (POST /v1/payment-transaction/create, payment_method credit_card).
+ * Os dados do cartão só passam por aqui em memória até a FreePay: nunca são gravados nem logados.
+ */
+export async function createFreepayCardCharge(config: GatewayConfig, input: CardChargeInput): Promise<CardChargeResult> {
+  const headers = wappiHeaders(config);
+  if (!headers) return { ok: false, error: "Gateway sem credenciais." };
+  const doc = digits(input.customer.document);
+  let phone = digits(input.customer.phone ?? "");
+  if (phone && !phone.startsWith("55")) phone = `55${phone}`;
+  const body = {
+    amount: input.amountCents,
+    payment_method: "credit_card",
+    installments: input.installments,
+    ...(input.postbackUrl ? { postback_url: input.postbackUrl } : {}),
+    customer: {
+      name: input.customer.name.trim().slice(0, 120) || "Cliente",
+      email: input.customer.email.trim().slice(0, 160),
+      document: { number: doc, type: doc.length > 11 ? "cnpj" : "cpf" },
+      ...(phone ? { phone } : {}),
+    },
+    items: input.items,
+    shipping: input.shipping,
+    card: input.card,
+    metadata: { order_number: input.orderNumber },
+    ...(input.ip ? { ip: input.ip } : {}),
+  };
+  let res: Response;
+  try {
+    res = await fetch(`${FREEPAY_BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(45000) });
+  } catch {
+    return { ok: false, error: "A FreePay não respondeu. Tente novamente." };
+  }
+  const json = (await res.json().catch(() => null)) as { data?: { id?: unknown; status?: unknown }; error_messages?: unknown } | null;
+  const tx = json?.data;
+  if ((res.status === 200 || res.status === 201) && tx?.id) {
+    return { ok: true, transaction_id: String(tx.id), status: String(tx.status ?? "").toUpperCase() };
+  }
+  // Nunca registrar o corpo enviado (contém o cartão); só o status e a mensagem do gateway.
+  console.error("[freepay] cartão falhou", res.status, JSON.stringify(json?.error_messages ?? null).slice(0, 300));
+  if (res.status === 400) return { ok: false, error: "Alguns dados do pagamento não foram aceitos. Confira o cartão e o CPF.", status: tx?.status ? String(tx.status).toUpperCase() : undefined };
+  return { ok: false, error: wappiError(res.status) };
+}
+
 // ----------------------------------------------------------------------- PinPay
 // Doc: https://hub.usepinpay.com/documentacao — Bearer sk_, valores em centavos.
 

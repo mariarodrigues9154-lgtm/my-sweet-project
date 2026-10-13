@@ -162,6 +162,7 @@ export const listActiveProducts = createServerFn({ method: "GET" })
 const orderInput = z.object({
   slug: z.string().min(1),
   exit_offer: z.union([z.boolean(), z.literal("product")]).optional(),
+  method: z.enum(["pix", "card"]).optional(),
   quantity: z.number().int().min(1).max(20),
   variant: z.record(z.string(), z.string()),
   shipping_id: z.string().min(1),
@@ -251,13 +252,16 @@ export const createOrder = createServerFn({ method: "POST" })
       }
     }
     // Formas de pagamento da loja: hoje só PIX cobra; desconto PIX recalculado aqui.
-    const { resolvePaymentMethods, pixDiscountCents } = await import("./payment-methods");
+    const { resolvePaymentMethods, pixDiscountCents, cardProviderReady } = await import("./payment-methods");
     const methods = resolvePaymentMethods((storeRow?.checkout as { payment_methods?: unknown } | null)?.payment_methods);
-    if (!methods.pix.enabled) return { ok: false as const, error: "Pagamento via PIX indisponível nesta loja." };
+    const isCard = data.method === "card";
+    if (isCard ? !(methods.card.enabled && cardProviderReady(methods)) : !methods.pix.enabled) {
+      return { ok: false as const, error: isCard ? "Pagamento com cartão indisponível nesta loja." : "Pagamento via PIX indisponível nesta loja." };
+    }
     const unitPrice = unitCents / 100;
     const shippingCents = Math.round(Number(option.price ?? 0) * 100);
     const grossCents = unitCents * data.quantity + shippingCents;
-    const pixOffCents = pixDiscountCents(grossCents, methods);
+    const pixOffCents = isCard ? 0 : pixDiscountCents(grossCents, methods);
     const subtotal = (unitCents * data.quantity) / 100;
     const shippingPrice = shippingCents / 100;
     const total = (grossCents - pixOffCents) / 100;
@@ -296,7 +300,7 @@ export const createOrder = createServerFn({ method: "POST" })
         customer: data.customer,
         address: data.address,
         status: "aguardando_pagamento",
-        payment: { provider: null, status: "pendente" },
+        payment: { provider: null, status: "pendente", ...(isCard ? { method: "card" } : {}) },
         meta_attribution: attribution,
       } as never)
       .select("order_number, total, access_token")
@@ -544,4 +548,125 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
     const { checkOrderPaymentStatus } = await import("@/lib/payments/order-status.server");
     const result = await checkOrderPaymentStatus(data.order_number);
     return { status: result.status };
+  });
+
+const cardPayInput = z.object({
+  order_number: z.string().min(4).max(64),
+  installments: z.number().int().min(1).max(12),
+  card: z.object({
+    number: z.string().regex(/^\d{13,19}$/),
+    holder_name: z.string().trim().min(3).max(60),
+    expiration_month: z.number().int().min(1).max(12),
+    expiration_year: z.number().int().min(2024).max(2100),
+    cvv: z.string().regex(/^\d{3,4}$/),
+  }),
+});
+
+/**
+ * Cartão de crédito pelo gateway da loja (hoje FreePay). Valor e parcelas recalculados no servidor;
+ * os dados do cartão só seguem em memória para o gateway — nunca são gravados nem logados.
+ * Pago/recusado vêm somente do status real devolvido pelo gateway.
+ */
+export const payOrderWithCard = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => cardPayInput.parse(data))
+  .handler(async ({ data }) => {
+    const fail = (error: string) => ({ status: "error" as const, error });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, status, store_id, product_id, quantity, unit_price, shipping_price, total, customer, address, payment, provider_status")
+      .eq("order_number", data.order_number)
+      .maybeSingle();
+    if (!order || !order.store_id) return fail("Pedido não encontrado.");
+    if (order.status === "pago") return { status: "paid" as const, error: null };
+    const savedPayment = (order.payment ?? {}) as Record<string, unknown>;
+    if (savedPayment["method"] !== "card") return fail("Este pedido não foi criado para cartão.");
+
+    const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", order.store_id).maybeSingle();
+    const { resolvePaymentMethods, cardProviderReady, installmentPlan, normalizeCardStatus } = await import("./payment-methods");
+    const methods = resolvePaymentMethods((storeRow?.checkout as { payment_methods?: unknown } | null)?.payment_methods);
+    if (!methods.card.enabled || !cardProviderReady(methods)) return fail("Pagamento com cartão indisponível nesta loja.");
+    if (data.installments > methods.card.max_installments) return fail("Parcelamento indisponível.");
+
+    const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+    const row = await loadStorePayment(order.store_id as string);
+    if (!row || !row.enabled || row.provider !== methods.card.provider) return fail("Pagamento com cartão indisponível nesta loja.");
+
+    const { data: product } = await supabaseAdmin.from("products").select("id, title, store_id").eq("id", order.product_id as string).maybeSingle();
+    if (!product || product.store_id !== order.store_id) return fail("Produto indisponível.");
+
+    const cents = (v: unknown) => Math.round(Number(String(v ?? 0)) * 100);
+    const quantity = Math.max(1, Number(order.quantity ?? 1));
+    const unitCents = cents(order.unit_price);
+    const feeCents = cents(order.shipping_price);
+    const grossCents = unitCents * quantity + feeCents;
+    if (grossCents !== cents(order.total) || grossCents <= 0) return fail("Não foi possível confirmar o valor do pedido.");
+    const plan = installmentPlan(grossCents, methods).find((p) => p.n === data.installments);
+    if (!plan) return fail("Parcelamento indisponível.");
+    const amountCents = plan.totalCents;
+
+    // Trava contra clique duplo; uma nova tentativa só é aceita depois de uma recusa real.
+    const staleIso = new Date(Date.now() - 90000).toISOString();
+    const { data: locked } = await supabaseAdmin
+      .from("orders")
+      .update({ provider_status: "creating", updated_at: new Date().toISOString() } as never)
+      .eq("id", order.id)
+      .neq("status", "pago")
+      .or(`provider_status.is.null,provider_status.in.(refused,failed,error),and(provider_status.eq.creating,updated_at.lt.${staleIso})`)
+      .select("id");
+    if (!locked || locked.length === 0) return fail("Seu pagamento já está sendo processado. Aguarde alguns segundos.");
+
+    const customer = (order.customer ?? {}) as { name?: string; email?: string; document?: string; phone?: string };
+    const address = (order.address ?? {}) as { cep?: string; street?: string; number?: string; complement?: string; district?: string; city?: string; state?: string };
+    let postbackUrl: string | undefined;
+    let ip: string | undefined;
+    try {
+      const { getRequest, getRequestHeader } = await import("@tanstack/react-start/server");
+      const origin = new URL(getRequest().url).origin;
+      if (origin.startsWith("https://")) postbackUrl = `${origin}/api/public/webhooks/freepay`;
+      ip = (getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "").split(",")[0]?.trim() || undefined;
+    } catch { /* sem request */ }
+
+    const { createFreepayCardCharge } = await import("@/lib/payments/providers.server");
+    const charge = await createFreepayCardCharge(toGatewayConfig(row), {
+      orderNumber: order.order_number as string,
+      amountCents,
+      installments: data.installments,
+      card: data.card,
+      customer: { name: customer.name ?? "Cliente", email: customer.email ?? "", document: customer.document ?? "", ...(customer.phone ? { phone: customer.phone } : {}) },
+      items: [{ title: product.title, unit_price: Math.round(amountCents / quantity), quantity, tangible: true, external_ref: product.id }],
+      shipping: {
+        fee: 0,
+        address: { street: address.street ?? "", street_number: address.number ?? "", complement: address.complement ?? "", zip_code: (address.cep ?? "").replace(/\D/g, ""), neighborhood: address.district ?? "", city: address.city ?? "", state: (address.state ?? "").toUpperCase(), country: "BR" },
+      },
+      ...(postbackUrl ? { postbackUrl } : {}),
+      ...(ip ? { ip } : {}),
+    });
+
+    if (!charge.ok) {
+      const refused = normalizeCardStatus("freepay", charge.status) === "refused";
+      await supabaseAdmin.from("orders").update({ provider_status: refused ? "refused" : null } as never).eq("id", order.id);
+      return refused ? { status: "refused" as const, error: null } : fail(charge.error);
+    }
+
+    const result = normalizeCardStatus("freepay", charge.status);
+    const internal = charge.status.toLowerCase() || "pending";
+    const update: Record<string, unknown> = {
+      transaction_id: charge.transaction_id,
+      payment_provider: row.provider,
+      payment_method: "credit_card",
+      provider_status: internal,
+      total_amount_cents: amountCents,
+      payment: { ...savedPayment, provider: row.provider, method: "card", installments: data.installments, charged: amountCents / 100, gateway_status: charge.status, status: result === "paid" ? "pago" : result === "refused" ? "recusado" : "pendente" },
+    };
+    if (result === "paid") {
+      update["status"] = "pago";
+      update["paid_at"] = new Date().toISOString();
+    }
+    await supabaseAdmin.from("orders").update(update as never).eq("id", order.id);
+    if (result === "paid") {
+      const { sendPurchaseForOrder } = await import("@/lib/meta.server");
+      await sendPurchaseForOrder(order.id as string).catch(() => undefined);
+    }
+    return { status: result === "paid" ? ("paid" as const) : result === "refused" ? ("refused" as const) : ("pending" as const), error: null };
   });
