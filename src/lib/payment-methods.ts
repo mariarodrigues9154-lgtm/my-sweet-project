@@ -36,6 +36,7 @@ export type PaymentMethodsConfig = {
     show_brands: boolean;
   };
   decline: CardDeclineTexts;
+  provider_error: CardProviderErrorTexts;
 };
 
 const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v.replace(",", "."))) ? Number(v.replace(",", ".")) : d);
@@ -77,6 +78,7 @@ export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
       show_brands: c.show_brands !== false,
     },
     decline: resolveDecline(r.decline),
+    provider_error: resolveProviderError(r.provider_error),
   };
 }
 
@@ -162,4 +164,22 @@ export function normalizeCardStatus(provider: CardProviderId, status: string | n
   if (m.pending.includes(s)) return "pending";
   if (m.refused.includes(s)) return "refused";
   return "unknown";
+}
+
+/* ---------- Falha técnica do provedor de cartão (timeout, rede, 5xx, resposta inválida) ---------- */
+
+export type CardProviderErrorTexts = { title: string; message: string; retry_label: string; pix_label: string };
+
+export const DEFAULT_PROVIDER_ERROR: CardProviderErrorTexts = {
+  title: "Não foi possível concluir sua transação",
+  message: "Tivemos uma instabilidade ao processar o pagamento com cartão. Você pode tentar novamente ou finalizar sua compra via PIX.",
+  retry_label: "Tentar novamente",
+  pix_label: "Finalizar pagamento no PIX",
+};
+
+export function resolveProviderError(raw: unknown): CardProviderErrorTexts {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r: any = raw && typeof raw === "object" ? raw : {};
+  const s = (k: keyof CardProviderErrorTexts, max = 120) => (typeof r[k] === "string" && r[k].trim() ? String(r[k]).slice(0, max) : DEFAULT_PROVIDER_ERROR[k]);
+  return { title: s("title"), message: s("message", 300), retry_label: s("retry_label", 40), pix_label: s("pix_label", 40) };
 }

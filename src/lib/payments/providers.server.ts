@@ -398,7 +398,7 @@ export type CardChargeInput = {
   postbackUrl?: string;
   ip?: string;
 };
-export type CardChargeResult = { ok: true; transaction_id: string; status: string } | { ok: false; error: string; status?: string | undefined };
+export type CardChargeResult = { ok: true; transaction_id: string; status: string } | { ok: false; error: string; status?: string | undefined; unavailable?: boolean };
 
 /**
  * Cobrança de cartão na FreePay (POST /v1/payment-transaction/create, payment_method credit_card).
@@ -431,7 +431,7 @@ export async function createFreepayCardCharge(config: GatewayConfig, input: Card
   try {
     res = await fetch(`${FREEPAY_BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(45000) });
   } catch {
-    return { ok: false, error: "A FreePay não respondeu. Tente novamente." };
+    return { ok: false, error: "A FreePay não respondeu.", unavailable: true };
   }
   const json = (await res.json().catch(() => null)) as { data?: { id?: unknown; status?: unknown }; error_messages?: unknown } | null;
   const tx = json?.data;
@@ -441,7 +441,9 @@ export async function createFreepayCardCharge(config: GatewayConfig, input: Card
   // Nunca registrar o corpo enviado (contém o cartão); só o status e a mensagem do gateway.
   console.error("[freepay] cartão falhou", res.status, JSON.stringify(json?.error_messages ?? null).slice(0, 300));
   if (res.status === 400) return { ok: false, error: "Alguns dados do pagamento não foram aceitos. Confira o cartão e o CPF.", status: tx?.status ? String(tx.status).toUpperCase() : undefined };
-  return { ok: false, error: wappiError(res.status) };
+  // 5xx, 2xx sem transação ou corpo inválido = instabilidade (não é recusa).
+  const unavailable = res.status >= 500 || res.status === 429 || res.status === 408 || !json || ((res.status === 200 || res.status === 201) && !tx?.id);
+  return { ok: false, error: wappiError(res.status), ...(unavailable ? { unavailable: true } : {}) };
 }
 
 // ----------------------------------------------------------------------- PinPay
