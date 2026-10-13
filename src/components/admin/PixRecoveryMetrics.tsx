@@ -155,7 +155,8 @@ function OrdersList({ storeId, metric, onClearMetric, onClose }: { storeId: stri
 function Actions({ r, onSend }: { r: Row; onSend: () => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {(r.state === "pendente" || r.state === "expirado") && <Button size="sm" onClick={onSend}>{r.whatsapp?.status === "falha" ? "Tentar novamente" : "Enviar WhatsApp"}</Button>}
+      {(r.state === "pendente" || r.state === "expirado") && <Button size="sm" onClick={onSend}>{r.whatsapp?.status === "falha" ? "Tentar novamente" : "Recuperar PIX"}</Button>}
+      {r.state === "pago" && <Button size="sm" onClick={onSend}>Enviar confirmação</Button>}
       <Button size="sm" variant="outline" asChild><Link to="/admin/pedidos">Ver pedido</Link></Button>
     </div>
   );
@@ -164,7 +165,7 @@ function Actions({ r, onSend }: { r: Row; onSend: () => void }) {
 function WaStatus({ r }: { r: Row }) {
   if (!r.whatsapp) return <span className="text-muted-foreground">Sem mensagem</span>;
   const w = r.whatsapp;
-  if (w.status === "enviada") return <span className="text-success">✅ Enviado {w.manual ? "(manual) " : ""}{ago(w.at)}</span>;
+  if (w.status === "enviada") return <span className="text-success">✅ {w.kind === "paid" ? "Confirmação de pagamento enviada" : "PIX pendente enviado"} {w.manual ? "(manual) " : ""}{ago(w.at)}</span>;
   if (w.status === "falha") return <span className="text-destructive">❌ Falha no envio</span>;
   return <span className="text-muted-foreground">{w.status === "nao_enviada" ? "Não enviada" : w.status}</span>;
 }
@@ -177,12 +178,15 @@ function StateBadge({ s }: { s: string }) {
 function SendDialog({ row, onClose, onSent }: { row: Row; onClose: () => void; onSent: () => void }) {
   const preview = useServerFn(previewManualPixMessage);
   const send = useServerFn(sendManualPixRecoveryMessage);
-  const { data, isLoading } = useQuery({ queryKey: ["pix-manual-preview", row.id], queryFn: () => preview({ data: { order_id: row.id } }), staleTime: 0 });
+  const [kind, setKind] = useState<"pending" | "paid">(row.state === "pago" ? "paid" : "pending");
+  const { data, isLoading } = useQuery({ queryKey: ["pix-manual-preview", row.id, kind], queryFn: () => preview({ data: { order_id: row.id, kind } }), staleTime: 0 });
+  const wrongPending = kind === "pending" && row.state === "pago";
+  const wrongPaid = kind === "paid" && row.state !== "pago";
   const [busy, setBusy] = useState(false);
   async function go() {
     setBusy(true);
     try {
-      const r = await send({ data: { order_id: row.id } });
+      const r = await send({ data: { order_id: row.id, kind, force: wrongPending } });
       if (r.ok) { toast.success("✅ Mensagem enviada com sucesso"); onSent(); } else toast.error(r.error);
     } catch { toast.error("Não foi possível enviar. Tente novamente."); }
     finally { setBusy(false); }
@@ -193,6 +197,11 @@ function SendDialog({ row, onClose, onSent }: { row: Row; onClose: () => void; o
         <DialogHeader><DialogTitle>Enviar WhatsApp para:</DialogTitle></DialogHeader>
         <div className="text-[12.5px]"><p className="font-bold">{row.customer || "—"}</p><p>Pedido #{row.order_number}</p><p>Telefone: ****{row.phone_digits_tail}</p><p>Valor: {brl(row.total)}</p></div>
         {row.whatsapp?.status === "enviada" && <p className="rounded-lg bg-surface p-2 text-[12px]">⚠️ Última mensagem enviada {ago(row.whatsapp.at)}. Confirme para enviar novamente.</p>}
+        <label className="grid gap-1 text-[11.5px] font-semibold">Mensagem
+          <select value={kind} onChange={(e) => setKind(e.target.value as never)} className="rounded-lg border border-input bg-card px-3 py-2 text-[12px] font-normal"><option value="pending">PIX pendente</option><option value="paid">Pedido pago</option></select>
+        </label>
+        {wrongPending && <p className="rounded-lg bg-destructive/10 p-2 text-[12px] text-destructive">Este pedido já está pago. Confirme se realmente deseja utilizar esta mensagem.</p>}
+        {wrongPaid && <p className="rounded-lg bg-destructive/10 p-2 text-[12px] text-destructive">Este pedido ainda não está pago. A confirmação não será enviada.</p>}
         {isLoading ? <div className="grid place-items-center py-6"><Loader2 className="animate-spin text-muted-foreground" /></div>
           : data && !data.ok ? <p className="text-[12.5px] text-destructive">{data.error}</p>
           : data?.ok && (
@@ -200,12 +209,12 @@ function SendDialog({ row, onClose, onSent }: { row: Row; onClose: () => void; o
               <p className="text-[11.5px] font-semibold text-muted-foreground">Mensagem que será enviada:</p>
               <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-surface p-3 font-sans text-[12.5px]">{data.text}</pre>
               {!data.has_phone && <p className="mt-2 text-[12px] text-destructive">Telefone do cliente inválido.</p>}
-              {data.expired && <p className="mt-2 text-[12px] text-destructive">Este PIX está expirado. A mensagem não inclui o código antigo; o cliente poderá gerar uma nova cobrança pelo link.</p>}
+              {data.expired && kind === "pending" && <p className="mt-2 text-[12px] text-destructive">Este PIX está expirado. A mensagem não inclui o código antigo; o cliente poderá gerar uma nova cobrança pelo link.</p>}
             </div>
           )}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={busy}>Cancelar</Button>
-          <Button onClick={go} disabled={busy || !data?.ok || !data.has_phone}>{busy ? <Loader2 className="animate-spin" /> : "Enviar agora"}</Button>
+          <Button onClick={go} disabled={busy || !data?.ok || !data.has_phone || wrongPaid}>{busy ? <Loader2 className="animate-spin" /> : "Enviar agora"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

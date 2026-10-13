@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { getWhatsappRecovery, saveWhatsappRecovery, testWhatsappRecovery } from "@/lib/whatsapp-recovery.functions";
+import { getWhatsappRecovery, saveWhatsappRecovery, testWhatsappConnection, testWhatsappRecovery } from "@/lib/whatsapp-recovery.functions";
 
 type Provider = "meta" | "zapi" | "evolution";
 const VARS = ["{nome}", "{pedido}", "{produto}", "{valor}", "{pix}", "{link_pagamento}", "{nome_loja}"];
@@ -25,6 +25,9 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   const [pub, setPub] = useState<Record<string, string>>({});
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [testPhone, setTestPhone] = useState("");
+  const [testKind, setTestKind] = useState<"pending" | "paid">("pending");
+  const checkConn = useServerFn(testWhatsappConnection);
+  const [conn, setConn] = useState<{ connected: boolean | null; message: string } | null>(null);
   const [busy, setBusy] = useState("");
 
   useEffect(() => {
@@ -52,7 +55,13 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   }
   async function onTest() {
     setBusy("test");
-    try { const r = await test({ data: { store_id: storeId, phone: testPhone } }); r.ok ? toast.success(r.message) : toast.error(r.message); }
+    try { const r = await test({ data: { store_id: storeId, phone: testPhone, kind: testKind } }); r.ok ? toast.success(r.message) : toast.error(r.message); }
+    finally { setBusy(""); }
+  }
+
+  async function onConn() {
+    setBusy("conn");
+    try { setConn(await checkConn({ data: { store_id: storeId } })); } catch { setConn({ connected: false, message: "Falha ao testar." }); }
     finally { setBusy(""); }
   }
 
@@ -106,19 +115,31 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
           {S("api_key", "API key")}
         </>}
       </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+        <span className="font-bold">Status do WhatsApp:</span>
+        <span>{!conn ? "não verificado" : conn.connected === true ? "🟢 Conectado" : conn.connected === false ? "🔴 Desconectado" : "—"}</span>
+        <Button size="sm" variant="outline" onClick={onConn} disabled={!!busy}>{busy === "conn" ? <Loader2 className="animate-spin" /> : "Testar conexão"}</Button>
+        {conn && <span className="text-muted-foreground">{conn.message}</span>}
+      </div>
       {provider === "meta" && <p className="mt-2 text-[11px] text-muted-foreground">Na API oficial a mensagem enviada é o modelo aprovado pela Meta; o texto abaixo é usado nas APIs Z-API/Evolution e como referência.</p>}
 
       <label className="mt-4 grid gap-1 text-[11.5px] font-semibold">Mensagem automática
         <textarea rows={6} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={message} onChange={(e) => setMessage(e.target.value)} />
       </label>
       <p className="mt-1 text-[11px] text-muted-foreground">Variáveis: {VARS.join("  ")}</p>
-      <label className="mt-4 grid gap-1 text-[11.5px] font-semibold">Mensagem para envio manual (aba Recuperação PIX)
+      <h3 className="mt-5 text-[13px] font-extrabold">Mensagens do WhatsApp (envio manual)</h3>
+      <label className="mt-2 grid gap-1 text-[11.5px] font-semibold">Mensagem 1 — PIX pendente
         <textarea rows={6} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={P("manual_message")} placeholder="Vazio = usa a mensagem automática" onChange={(e) => setP("manual_message")(e.target.value)} />
       </label>
+      <label className="mt-3 grid gap-1 text-[11.5px] font-semibold">Mensagem 2 — Pagamento confirmado
+        <textarea rows={6} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={P("paid_message")} placeholder={"Olá, {nome}! ✅\nRecebemos o pagamento do seu pedido #{pedido} com sucesso!\nValor: {valor}\nObrigado pela compra! 💚"} onChange={(e) => setP("paid_message")(e.target.value)} />
+      </label>
+      <p className="mt-1 text-[11px] text-muted-foreground">Variáveis: {VARS.join("  ")}</p>
 
       <div className="mt-4 flex flex-wrap items-end gap-2">
         <Button onClick={onSave} disabled={!!busy}>{busy === "save" ? <Loader2 className="animate-spin" /> : "Salvar"}</Button>
         <div className="flex-1 min-w-[180px]"><Field label="Testar envio para o número" value={testPhone} placeholder="(85) 99999-9999" onChange={setTestPhone} /></div>
+        <select className="rounded-lg border border-border bg-background px-3 py-2 text-[12px]" value={testKind} onChange={(e) => setTestKind(e.target.value as never)}><option value="pending">PIX pendente</option><option value="paid">Pedido pago</option></select>
         <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone}>{busy === "test" ? <Loader2 className="animate-spin" /> : "Enviar teste"}</Button>
       </div>
 
