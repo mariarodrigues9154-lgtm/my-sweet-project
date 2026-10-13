@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AlertTriangle, ChevronLeft, ChevronRight, CreditCard, Info, ShieldCheck, X } from "lucide-react";
 
 import { PixIcon } from "@/components/store/VerifiedBadge";
+import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { cardProviderReady, installmentPlan, type PaymentMethodsConfig } from "@/lib/payment-methods";
 
@@ -177,6 +178,22 @@ export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: Paymen
 
   const field = (err?: string) => `h-14 w-full rounded-xl px-4 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
   const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
+
+  if (!ready) {
+    return (
+      <Sheet onClose={onClose}>
+        <header className="flex items-center justify-between border-b border-border px-4 py-4">
+          <h2 className="text-[17px] font-bold">{cfg.card.title}</h2>
+          <Button type="button" variant="ghost" size="icon" aria-label="Fechar" onClick={onClose}><X size={20} /></Button>
+        </header>
+        <div className="space-y-4 px-4 py-5">
+          <CreditCard size={28} className="text-muted-foreground" />
+          <p className="text-[14px] text-muted-foreground">O pagamento com cartão está temporariamente indisponível nesta loja.{cfg.pix.enabled ? " Você pode concluir seu pedido com PIX." : " Tente novamente mais tarde."}</p>
+          <Button type="button" className="w-full" onClick={onClose}>{cfg.pix.enabled ? "Voltar para pagar com PIX" : "Voltar ao pedido"}</Button>
+        </div>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet onClose={onClose} full>
