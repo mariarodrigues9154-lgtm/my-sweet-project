@@ -40,6 +40,7 @@ import {
   getPaymentStatus,
   getProductBySlug,
   getStoreSettings,
+  switchOrderToPix,
 } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento")({
@@ -79,6 +80,7 @@ function CheckoutRoute() {
   const fetchFeatured = useServerFn(getFeaturedProduct);
   const submitOrder = useServerFn(createOrder);
   const openPix = useServerFn(createPixCharge);
+  const toPix = useServerFn(switchOrderToPix);
   const readStatus = useServerFn(getPaymentStatus);
 
   const slug = draft?.slug ?? "";
@@ -277,12 +279,34 @@ function CheckoutRoute() {
     return result.order_number;
   }
 
-  async function placeOrder() {
+  /** Função única de PIX: início normal ou fallback do cartão (reaproveita o pedido do cartão). */
+  async function placeOrder(fromCardOrder: string | null = null) {
     if (!product || !selectedShipping) return;
     if (!validateStep1() || !validateStep2()) return;
+    if (placing) return;
     setPlacing(true);
     void trackAddPaymentInfo(store.id, product, quantity, Number((unitPrice * quantity + selectedShipping.price).toFixed(2)));
     try {
+      if (fromCardOrder) {
+        const sw = await toPix({ data: { order_number: fromCardOrder } });
+        if (sw.ok) {
+          const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
+          if (isPixCharge(charge)) {
+            const total = Number((charge as { total?: number }).total ?? 0);
+            setOrder({ number: sw.order_number, total });
+            applyCharge(charge);
+            window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento", search: { pedido: sw.order_number }, replace: true }); rememberPixOrder(sw.access_token, store.id);
+            void trackPaymentPending(store.id, sw.order_number, total, product.id);
+          } else {
+            toast.error((charge as { error?: string } | null)?.error ?? "Não foi possível gerar o PIX neste momento. Tente novamente.");
+          }
+          return;
+        }
+        if (sw.reason === "paid") { clearDraft(); void navigate({ to: "/pedido-confirmado", search: { pedido: fromCardOrder } }); return; }
+        if (sw.reason === "card_pending") { toast.error("Seu pagamento com cartão ainda está em processamento. Aguarde a confirmação antes de pagar com PIX."); return; }
+        if (sw.reason === "pix_disabled") { toast.error("Pagamento via PIX indisponível nesta loja."); return; }
+        // Pedido do cartão não encontrado: segue criando um pedido PIX normal.
+      }
       const result = await submitOrder({
         data: {
           slug: product.slug,
@@ -576,7 +600,7 @@ function CheckoutRoute() {
             <PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />
             {!payCfg.pix.enabled && !showCard && <p className="py-3 text-[12.5px] text-muted-foreground">Nenhuma forma de pagamento disponível no momento.</p>}
             <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : "Efetuar pagamento"}</PrimaryButton></div>
-            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => void navigate({ to: "/pedido-confirmado", search: { pedido: no } })} customerName={form.customer.name} onPayPix={() => { setPayMethod("pix"); setCardSheet(false); toast.success("PIX selecionado. Toque em finalizar para gerar seu código."); }} />}
+            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => void navigate({ to: "/pedido-confirmado", search: { pedido: no } })} customerName={form.customer.name} onPayPix={(no) => { setPayMethod("pix"); setCardSheet(false); void placeOrder(no); }} />}
           </section>
         )}
 

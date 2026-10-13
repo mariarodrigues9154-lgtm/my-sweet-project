@@ -20,7 +20,7 @@ import { brl, digits } from "@/lib/format";
 import { checkoutRating, discountPercent, variantPricing, variantImage } from "@/lib/product-types";
 import { AddCardSheet, PaymentMethodList, type PayMethod } from "@/components/checkout/PaymentMethods";
 import { cardAvailable, pixDiscountCents, resolvePaymentMethods } from "@/lib/payment-methods";
-import { createOrder, createPixCharge, getFeaturedProduct, getPaymentStatus, getProductBySlug, getStoreSettings } from "@/lib/store.functions";
+import { createOrder, createPixCharge, switchOrderToPix, getFeaturedProduct, getPaymentStatus, getProductBySlug, getStoreSettings } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento-2")({
   validateSearch: (s: Record<string, unknown>): { pedido?: string } => (typeof s["pedido"] === "string" && s["pedido"] ? { pedido: s["pedido"] } : {}),
@@ -53,6 +53,7 @@ function CheckoutTwo() {
   const fetchStore = useServerFn(getStoreSettings);
   const submitOrder = useServerFn(createOrder);
   const openPix = useServerFn(createPixCharge);
+  const toPix = useServerFn(switchOrderToPix);
   const readStatus = useServerFn(getPaymentStatus);
   const slug = draft?.slug ?? "";
   const productQuery = useQuery({ queryKey: ["checkout-product", slug], enabled: ready, staleTime: 60_000, queryFn: () => slug ? fetchProduct({ data: { slug } }) : fetchFeatured() });
@@ -142,12 +143,30 @@ function CheckoutTwo() {
     return result.order_number;
   }
 
-  async function placeOrder() {
+  /** Função única de PIX: início normal ou fallback do cartão (reaproveita o pedido do cartão). */
+  async function placeOrder(fromCardOrder: string | null = null) {
     if (!product || !shipping) { toast.error("Selecione uma forma de entrega válida."); return; }
     if (!hasAddress) { toast.error("Adicione o endereço de entrega para continuar."); void navigate({ to: "/pagamento-2-endereco" }); return; }
+    if (placing) return;
     setPlacing(true);
     void trackAddPaymentInfo(store.id, product, quantity, total);
     try {
+      if (fromCardOrder) {
+        const sw = await toPix({ data: { order_number: fromCardOrder } });
+        if (sw.ok) {
+          const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
+          if (isPixCharge(charge)) {
+            const pixTotal = Number((charge as { total?: number }).total ?? 0);
+            setOrder({ number: sw.order_number, total: pixTotal }); applyCharge(charge);
+            window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento-2", search: { pedido: sw.order_number }, replace: true }); rememberPixOrder(sw.access_token, store.id);
+            void trackPaymentPending(store.id, sw.order_number, pixTotal, product.id);
+          } else toast.error((charge as { error?: string } | null)?.error ?? "Não foi possível gerar o PIX neste momento. Tente novamente.");
+          return;
+        }
+        if (sw.reason === "paid") { clearDraft(); void navigate({ to: "/pedido-confirmado", search: { pedido: fromCardOrder } }); return; }
+        if (sw.reason === "card_pending") { toast.error("Seu pagamento com cartão ainda está em processamento. Aguarde a confirmação antes de pagar com PIX."); return; }
+        if (sw.reason === "pix_disabled") { toast.error("Pagamento via PIX indisponível nesta loja."); return; }
+      }
       const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
@@ -194,7 +213,7 @@ function CheckoutTwo() {
       </section>
       {savings > 0 && store.checkout?.show_discount !== false && <section className="flex items-center justify-between gap-3 bg-card px-4 py-3 text-[13px]"><strong className="flex min-w-0 items-center gap-2 font-semibold"><Ticket size={16} className="shrink-0 text-primary" /><span className="truncate">{store.checkout?.discount_title?.trim() || `Desconto da ${store.name}`}</span></strong><span className="flex shrink-0 items-center gap-1"><span className="text-right">{shippingDiscount > 0 && <span className="block rounded bg-success-soft px-2 py-0.5 text-[10px] font-medium text-success">Frete grátis</span>}<span className="mt-1 block rounded bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary">- {brl(savings)}</span></span><ChevronRight size={16} className="text-muted-foreground" /></span></section>}
       <section className="bg-card px-4 py-4"><h2 className="text-[14px] font-semibold">Resumo do pedido</h2><dl className="mt-3 space-y-2 text-[12.5px]"><SummaryRow label="Subtotal do produto" value={brl(subtotal)} strong /><SummaryRow label="Preço original" value={brl(originalSubtotal)} muted /><SummaryRow label="Desconto no produto" value={`- ${brl(productDiscount)}`} muted discount /><SummaryRow label="Subtotal do envio" value={brl(shippingPrice)} strong /><SummaryRow label="Taxa de envio" value={brl(shippingOriginal)} muted /><SummaryRow label="Desconto de envio" value={`- ${brl(shippingDiscount)}`} muted discount /><div className="mt-3 flex items-end justify-between border-t border-border pt-3"><dt className="text-[17px] font-semibold">Total</dt><dd className="text-right"><strong className="block text-[21px] font-semibold tnum">{brl(total)}</strong><span className="text-[10px] font-normal text-muted-foreground">Impostos inclusos</span></dd></div></dl></section>
-      <section className="bg-card px-4 py-4"><h2 className="text-[14px] font-semibold">Forma de pagamento</h2><PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />{pixOff > 0 && <p className="mt-1 text-[12px] font-semibold text-primary">Desconto Pix: - {brl(pixOff)}</p>}{cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => { clearDraft(); void navigate({ to: "/pedido-confirmado", search: { pedido: no } }); }} customerName={form.customer.name} onPayPix={() => { setPayMethod("pix"); setCardSheet(false); toast.success("PIX selecionado. Toque em finalizar para gerar seu código."); }} />}
+      <section className="bg-card px-4 py-4"><h2 className="text-[14px] font-semibold">Forma de pagamento</h2><PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />{pixOff > 0 && <p className="mt-1 text-[12px] font-semibold text-primary">Desconto Pix: - {brl(pixOff)}</p>}{cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => { clearDraft(); void navigate({ to: "/pedido-confirmado", search: { pedido: no } }); }} customerName={form.customer.name} onPayPix={(no) => { setPayMethod("pix"); setCardSheet(false); void placeOrder(no); }} />}
         {store.checkout?.show_legal !== false && <p className="mt-5 whitespace-pre-line text-[10.5px] font-normal leading-relaxed text-muted-foreground">{store.checkout?.legal_text?.trim() ? <LegalText text={store.checkout.legal_text.trim()} slug={store.slug} /> : <>Ao fazer um pedido, você concorda com os <Link to="/termos-de-uso" search={{ loja: store.slug }} className="font-medium text-foreground">Termos de uso e venda</Link> e reconhece que leu a <Link to="/politica-de-privacidade" search={{ loja: store.slug }} className="font-medium text-foreground">Política de privacidade</Link> da {store.name}.</>}</p>}
       </section>
       {savings > 0 && <p className="flex items-center gap-1.5 bg-primary-soft px-4 py-2 text-[11px] font-medium text-primary"><Smile size={14} className="shrink-0" />Você está economizando {brl(savings)} nesse pedido.</p>}
