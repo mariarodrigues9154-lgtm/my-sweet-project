@@ -42,9 +42,12 @@ const str = (v: unknown, d: string, max = 120) => (typeof v === "string" ? v.sli
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n));
 
 export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, any>;
-  const p = (r.pix ?? {}) as Record<string, unknown>;
-  const c = (r.card ?? {}) as Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r: any = raw && typeof raw === "object" ? raw : {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p: any = r.pix ?? {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c: any = r.card ?? {};
   const max = Math.round(clamp(num(c.max_installments, 12), 1, 12));
   const free = Math.round(clamp(num(c.free_installments, max), 1, max));
   const rawRates = Array.isArray(c.rates) ? c.rates : [];

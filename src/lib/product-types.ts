@@ -242,7 +242,7 @@ export type Product = {
 
 export type CheckoutSettings = {
   /** Formas de pagamento (ver lib/payment-methods). */
-  payment_methods?: unknown;
+  payment_methods?: import("./payment-methods").PaymentMethodsConfig;
   /** Espelho público de ai_support.enabled (ausente = ligado). */
   ai_enabled?: boolean;
   checkout_model?: "v1" | "v2";
