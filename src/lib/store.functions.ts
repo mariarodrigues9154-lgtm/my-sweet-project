@@ -288,6 +288,7 @@ export const createOrder = createServerFn({ method: "POST" })
           variant_labels: Object.fromEntries(groups.filter((g) => data.variant[g.name]).map((g) => [g.label || g.name, g.options.find((o) => o.value === data.variant[g.name])?.label ?? data.variant[g.name]])),
           sku: pricing.sku,
           ...(exitOfferInfo ? { exit_offer: exitOfferInfo } : {}),
+          ...(pixDiscountInfo ? { pix_discount: pixDiscountInfo } : {}),
         },
 
         variant: data.variant,
@@ -412,10 +413,21 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const quantity = Math.max(1, Number(order.quantity ?? 1));
     const unitCents = cents(order.unit_price);
     const feeCents = cents(order.shipping_price);
-    const amountCents = unitCents * quantity + feeCents;
-    if (amountCents !== cents(order.total) || amountCents <= 0) {
+    const grossCents = unitCents * quantity + feeCents;
+    // Total do pedido (calculado no servidor) já inclui o desconto PIX da loja.
+    const amountCents = cents(order.total);
+    const savedOff = (order.product_snapshot as { pix_discount?: { amount?: number } } | null)?.pix_discount?.amount;
+    const offOk = savedOff == null ? amountCents <= grossCents : grossCents - amountCents === cents(savedOff);
+    if (amountCents <= 0 || !offOk) {
+      console.error("[pix] valor inconsistente", { order: order.order_number, grossCents, amountCents, savedOff });
       return { ...notConfigured, configured: true as const, error: "Não foi possível confirmar o valor do pedido." };
     }
+    // Itens somam exatamente o valor cobrado (desconto PIX distribuído no item).
+    const itemsCents = amountCents - feeCents;
+    const pixItems = itemsCents % quantity === 0
+      ? [{ title: product.title, unit_price: itemsCents / quantity, quantity, tangible: true, external_ref: product.id }]
+      : [{ title: `${quantity}x ${product.title}`, unit_price: itemsCents, quantity: 1, tangible: true, external_ref: product.id }];
+    console.info("[pix] create_started", { order: order.order_number, store: order.store_id, provider: row.provider, amountCents, previous_method: (order.payment as { method?: string } | null)?.method ?? "pix" });
 
     // Trava contra clique duplo: só uma geração por vez para o mesmo pedido.
     const staleIso = new Date(Date.now() - 60000).toISOString();
@@ -456,7 +468,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
           document: customer.document ?? "",
           ...(customer.phone ? { phone: customer.phone } : {}),
         },
-        items: [{ title: product.title, unit_price: unitCents, quantity, tangible: true, external_ref: product.id }],
+        items: pixItems,
         shipping: {
           fee: feeCents,
           address: {
@@ -526,6 +538,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       } as never)
       .eq("id", order.id);
 
+    console.info("[pix] create_result", { order: order.order_number, provider: row.provider, amountCents, status: charge.provider_status ?? "PENDING" });
     return {
       ok: true as const,
       configured: true as const,
@@ -673,4 +686,60 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
       await sendPurchaseForOrder(order.id as string).catch(() => undefined);
     }
     return { status: result === "paid" ? ("paid" as const) : result === "refused" ? ("refused" as const) : ("pending" as const), error: null };
+  });
+
+/**
+ * Fallback cartão → PIX no MESMO pedido: só quando a tentativa de cartão não deixou cobrança
+ * (sem transaction_id) e o pedido não está pago. Recalcula o total com o desconto PIX da loja.
+ * Depois o cliente segue o fluxo normal de createPixCharge.
+ */
+export const switchOrderToPix = createServerFn({ method: "POST" })
+  .inputValidator((data: { order_number: string }) => z.object({ order_number: z.string().min(4).max(64) }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, status, store_id, quantity, unit_price, shipping_price, payment, transaction_id, provider_status, updated_at, product_snapshot, access_token")
+      .eq("order_number", data.order_number)
+      .maybeSingle();
+    if (!order || !order.store_id) return { ok: false as const, reason: "not_found" as const };
+    if (order.status === "pago") return { ok: false as const, reason: "paid" as const };
+    const payment = (order.payment ?? {}) as Record<string, unknown>;
+    if (payment["method"] !== "card") {
+      // Já é PIX (ex.: segundo toque): segue o fluxo PIX normal sem alterar nada.
+      return { ok: true as const, order_number: order.order_number as string, access_token: order.access_token as string };
+    }
+    // Cobrança de cartão existente ou em processamento: não gera PIX para evitar cobrança dupla.
+    if (order.transaction_id || order.provider_status === "creating") return { ok: false as const, reason: "card_pending" as const };
+
+    const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", order.store_id).maybeSingle();
+    const { resolvePaymentMethods, pixDiscountCents } = await import("./payment-methods");
+    const methods = resolvePaymentMethods((storeRow?.checkout as { payment_methods?: unknown } | null)?.payment_methods);
+    if (!methods.pix.enabled) return { ok: false as const, reason: "pix_disabled" as const };
+
+    const cents = (v: unknown) => Math.round(Number(String(v ?? 0)) * 100);
+    const grossCents = cents(order.unit_price) * Math.max(1, Number(order.quantity ?? 1)) + cents(order.shipping_price);
+    const offCents = pixDiscountCents(grossCents, methods);
+    const snapshot = { ...((order.product_snapshot ?? {}) as Record<string, unknown>) };
+    delete snapshot["pix_discount"];
+    if (offCents > 0) snapshot["pix_discount"] = { amount: offCents / 100, type: methods.pix.discount_type, value: methods.pix.discount_value };
+
+    const { data: updated } = await supabaseAdmin
+      .from("orders")
+      .update({
+        total: (grossCents - offCents) / 100,
+        product_snapshot: snapshot,
+        provider_status: null,
+        payment: { provider: null, status: "pendente", previous_method: "card" },
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("id", order.id)
+      .is("transaction_id", null)
+      .neq("status", "pago")
+      .or("provider_status.is.null,provider_status.neq.creating")
+      .select("order_number, total, access_token");
+    const row = updated?.[0];
+    if (!row) return { ok: false as const, reason: "card_pending" as const };
+    console.info("[pix] fallback_from_card", { order: order.order_number, store: order.store_id, previous_method: "card", new_method: "pix", amountCents: grossCents - offCents });
+    return { ok: true as const, order_number: row.order_number as string, access_token: row.access_token as string };
   });
