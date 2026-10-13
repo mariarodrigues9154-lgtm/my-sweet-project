@@ -6,30 +6,69 @@ import { PixIcon } from "@/components/store/VerifiedBadge";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { cardProviderReady, fillDeclineMessage, installmentPlan, pixDiscountLabel, type PaymentMethodsConfig } from "@/lib/payment-methods";
-import { stableMediaUrl } from "@/lib/media-url";
+import { sizedImage, stableMediaUrl } from "@/lib/media-url";
 import { useServerFn } from "@tanstack/react-start";
 import { payOrderWithCard } from "@/lib/store.functions";
 
 export type PayMethod = "pix" | "card";
+
+/** Versão pequena (240px WebP) e cacheável da imagem enviada no painel. */
+function iconSrc(url: string) {
+  return sizedImage(stableMediaUrl(url), 240);
+}
+
+/** Bandeira padrão local (desenhada no próprio código, aparece na hora). */
+function LocalBrand({ name, small }: { name: string; small?: boolean | undefined }) {
+  const cls = `grid place-items-center rounded-[4px] border border-border bg-card font-black ${small ? "h-5 w-8 text-[7px]" : "h-6 w-10 text-[8px]"}`;
+  const n = name.toLowerCase();
+  if (n.includes("master")) return <span className={cls}><span className="flex"><span className="size-2.5 rounded-full bg-[#eb001b]" /><span className="-ml-1 size-2.5 rounded-full bg-[#f79e1b] opacity-90" /></span></span>;
+  if (n.includes("visa")) return <span className={`${cls} italic text-[#1a1f71]`}>VISA</span>;
+  if (n.includes("elo")) return <span className={`${cls} text-foreground`}>elo</span>;
+  if (n.includes("amex") || n.includes("american")) return <span className={`${cls} border-[#2e77bc] bg-[#2e77bc] text-[6px] leading-[7px] text-white`}>AMERICAN<br />EXPRESS</span>;
+  return <span className={cls}><CreditCard size={small ? 11 : 13} /></span>;
+}
+
+function BrandImg({ url, name, small }: { url: string; name: string; small?: boolean | undefined }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <LocalBrand name={name} small={small} />;
+  const h = small ? 20 : 24;
+  return <img src={iconSrc(url)} alt={name || "Bandeira"} title={name} width={Math.round(h * 1.6)} height={h} style={{ height: h }} className="w-auto max-w-[48px] rounded-[4px] object-contain" loading="eager" fetchPriority="high" decoding="async" onError={() => setFailed(true)} />;
+}
+
+function PixLogo({ url }: { url: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!url || failed) return <PixIcon size={22} />;
+  return <img src={iconSrc(url)} alt="Pix" width={22} height={22} className="size-[22px] shrink-0 object-contain" loading="eager" fetchPriority="high" decoding="async" onError={() => setFailed(true)} />;
+}
+
+/** Baixa os ícones de pagamento assim que o checkout abre (mesmo endereço = cache reaproveitado). */
+export function usePreloadPaymentIcons(cfg: PaymentMethodsConfig | null | undefined) {
+  const key = cfg ? [cfg.pix.icon_url, ...cfg.card.brands.filter((b) => b.enabled).map((b) => b.url)].filter(Boolean).join("|") : "";
+  useEffect(() => {
+    if (!key) return;
+    for (const u of key.split("|")) {
+      const href = iconSrc(u);
+      if (document.head.querySelector(`link[rel="preload"][href="${CSS.escape(href)}"]`)) continue;
+      const l = document.createElement("link");
+      l.rel = "preload"; l.as = "image"; l.href = href;
+      l.setAttribute("fetchpriority", "high");
+      document.head.appendChild(l);
+    }
+  }, [key]);
+}
 
 export function CardBrands({ small, cfg }: { small?: boolean; cfg?: PaymentMethodsConfig }) {
   const custom = cfg?.card.brands.filter((b) => b.enabled) ?? [];
   if (cfg && cfg.card.brands.length > 0) {
     return (
       <span className="flex flex-wrap items-center gap-1">
-        {custom.map((b) => (
-          <img key={b.id} src={stableMediaUrl(b.url)} alt={b.name || "Bandeira"} title={b.name} className={`${small ? "h-5" : "h-6"} w-auto max-w-[48px] rounded-[4px] object-contain`} loading="lazy" decoding="async" />
-        ))}
+        {custom.map((b) => <BrandImg key={b.id} url={b.url} name={b.name} small={small} />)}
       </span>
     );
   }
-  const cls = `grid place-items-center rounded-[4px] border border-border bg-card font-black ${small ? "h-5 w-8 text-[7px]" : "h-6 w-10 text-[8px]"}`;
   return (
     <span className="flex items-center gap-1" aria-label="Mastercard, Visa, Elo, American Express">
-      <span className={cls}><span className="flex"><span className="size-2.5 rounded-full bg-[#eb001b]" /><span className="-ml-1 size-2.5 rounded-full bg-[#f79e1b] opacity-90" /></span></span>
-      <span className={`${cls} italic text-[#1a1f71]`}>VISA</span>
-      <span className={`${cls} text-foreground`}>elo</span>
-      <span className={`${cls} border-[#2e77bc] bg-[#2e77bc] text-[6px] leading-[7px] text-white`}>AMERICAN<br />EXPRESS</span>
+      {["Mastercard", "Visa", "Elo", "American Express"].map((n) => <LocalBrand key={n} name={n} small={small} />)}
     </span>
   );
 }
@@ -52,11 +91,12 @@ export function PaymentMethodList({ cfg, method, showCard, totalCents, onSelect,
   onOpenCard: () => void;
 }) {
   const [plans, setPlans] = useState(false);
+  usePreloadPaymentIcons(cfg);
   return (
     <div className="divide-y divide-border">
       {cfg.pix.enabled && (
         <button type="button" onClick={() => onSelect("pix")} className="flex w-full items-start gap-3 py-3 text-left">
-          {cfg.pix.icon_url ? <img src={stableMediaUrl(cfg.pix.icon_url)} alt="Pix" className="size-[22px] shrink-0 object-contain" /> : <PixIcon size={22} />}
+          <PixLogo url={cfg.pix.icon_url} />
           <span className="min-w-0 flex-1">
             <span className="block text-[14px] font-semibold">Pix</span>
             {cfg.pix.text && <span className="block text-[12px] text-muted-foreground">{cfg.pix.text}</span>}
