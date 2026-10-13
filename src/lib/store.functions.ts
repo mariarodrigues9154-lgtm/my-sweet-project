@@ -288,6 +288,7 @@ export const createOrder = createServerFn({ method: "POST" })
           variant_labels: Object.fromEntries(groups.filter((g) => data.variant[g.name]).map((g) => [g.label || g.name, g.options.find((o) => o.value === data.variant[g.name])?.label ?? data.variant[g.name]])),
           sku: pricing.sku,
           ...(exitOfferInfo ? { exit_offer: exitOfferInfo } : {}),
+          ...(pixDiscountInfo ? { pix_discount: pixDiscountInfo } : {}),
         },
 
         variant: data.variant,
@@ -412,10 +413,21 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const quantity = Math.max(1, Number(order.quantity ?? 1));
     const unitCents = cents(order.unit_price);
     const feeCents = cents(order.shipping_price);
-    const amountCents = unitCents * quantity + feeCents;
-    if (amountCents !== cents(order.total) || amountCents <= 0) {
+    const grossCents = unitCents * quantity + feeCents;
+    // Total do pedido (calculado no servidor) já inclui o desconto PIX da loja.
+    const amountCents = cents(order.total);
+    const savedOff = (order.product_snapshot as { pix_discount?: { amount?: number } } | null)?.pix_discount?.amount;
+    const offOk = savedOff == null ? amountCents <= grossCents : grossCents - amountCents === cents(savedOff);
+    if (amountCents <= 0 || !offOk) {
+      console.error("[pix] valor inconsistente", { order: order.order_number, grossCents, amountCents, savedOff });
       return { ...notConfigured, configured: true as const, error: "Não foi possível confirmar o valor do pedido." };
     }
+    // Itens somam exatamente o valor cobrado (desconto PIX distribuído no item).
+    const itemsCents = amountCents - feeCents;
+    const pixItems = itemsCents % quantity === 0
+      ? [{ title: product.title, unit_price: itemsCents / quantity, quantity, tangible: true, external_ref: product.id }]
+      : [{ title: `${quantity}x ${product.title}`, unit_price: itemsCents, quantity: 1, tangible: true, external_ref: product.id }];
+    console.info("[pix] create_started", { order: order.order_number, store: order.store_id, provider: row.provider, amountCents, previous_method: (order.payment as { method?: string } | null)?.method ?? "pix" });
 
     // Trava contra clique duplo: só uma geração por vez para o mesmo pedido.
     const staleIso = new Date(Date.now() - 60000).toISOString();
@@ -456,7 +468,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
           document: customer.document ?? "",
           ...(customer.phone ? { phone: customer.phone } : {}),
         },
-        items: [{ title: product.title, unit_price: unitCents, quantity, tangible: true, external_ref: product.id }],
+        items: pixItems,
         shipping: {
           fee: feeCents,
           address: {
