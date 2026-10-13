@@ -8,7 +8,7 @@ export type CardProviderId = "none" | "blackcat" | "freepay" | "pinpay";
 export const CARD_PROVIDERS: Array<{ id: CardProviderId; name: string; ready: boolean }> = [
   { id: "none", name: "Nenhum", ready: false },
   { id: "blackcat", name: "Blackcat", ready: false },
-  { id: "freepay", name: "FreePay", ready: false },
+  { id: "freepay", name: "FreePay", ready: true },
   { id: "pinpay", name: "PinPay", ready: false },
 ];
 
@@ -149,7 +149,8 @@ export type CardResult = "paid" | "pending" | "refused" | "unknown";
 export const CARD_STATUS_MAP: Record<CardProviderId, { paid: string[]; pending: string[]; refused: string[] }> = {
   none: { paid: [], pending: [], refused: [] },
   blackcat: { paid: [], pending: [], refused: [] },
-  freepay: { paid: [], pending: [], refused: [] },
+  // Status oficiais da FreePay (docs: criar/buscar transação).
+  freepay: { paid: ["paid"], pending: ["pending"], refused: ["refused", "failed", "error"] },
   pinpay: { paid: [], pending: [], refused: [] },
 };
 
