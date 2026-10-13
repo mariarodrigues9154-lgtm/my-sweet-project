@@ -156,7 +156,7 @@ function Actions({ r, onSend }: { r: Row; onSend: () => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {r.state === "pendente" && <Button size="sm" onClick={onSend}>{r.whatsapp?.status === "falha" ? "Tentar novamente" : "Enviar WhatsApp"}</Button>}
-      <Button size="sm" variant="outline" asChild><Link to="/admin/pedidos" search={{ q: r.order_number } as never}>Ver pedido</Link></Button>
+      <Button size="sm" variant="outline" asChild><Link to="/admin/pedidos">Ver pedido</Link></Button>
     </div>
   );
 }

@@ -218,7 +218,7 @@ export const sendManualPixRecoveryMessage = createServerFn({ method: "POST" })
     const { data: prev } = await c.supabaseAdmin.from("whatsapp_pix_reminders").select("step").eq("order_id", c.o.id).gte("step", 100);
     const step = 100 + Math.max(0, ...(prev ?? []).map((p) => Number(p.step) - 99));
     const { data: row } = await c.supabaseAdmin.from("whatsapp_pix_reminders")
-      .insert({ store_id: c.o.store_id, order_id: c.o.id, step, phone_masked: maskPhoneTail(c.phone), detail: `manual_pix_recovery · admin ${context.userId}` })
+      .insert({ store_id: c.o.store_id as string, order_id: c.o.id, step, phone_masked: maskPhoneTail(c.phone), detail: `manual_pix_recovery · admin ${context.userId}` })
       .select("id").maybeSingle();
     if (!row) return { ok: false as const, error: "Envio já em andamento. Tente novamente." };
     const at = new Date().toISOString();
