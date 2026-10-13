@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, ChevronLeft, ChevronRight, CreditCard, Info, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Loader2, XCircle, ChevronLeft, ChevronRight, CreditCard, Info, ShieldCheck, X } from "lucide-react";
 
 import { PixIcon } from "@/components/store/VerifiedBadge";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
-import { cardProviderReady, installmentPlan, type PaymentMethodsConfig } from "@/lib/payment-methods";
+import { cardProviderReady, fillDeclineMessage, installmentPlan, normalizeCardStatus, pixDiscountLabel, type PaymentMethodsConfig } from "@/lib/payment-methods";
+import { getCardProvider } from "@/lib/payments/card-provider";
 
 export type PayMethod = "pix" | "card";
 
@@ -138,7 +139,9 @@ function luhn(d: string) {
  * Tela "Adicionar cartão". Os dados ficam só em memória deste componente e somem ao fechar;
  * nada é salvo nem enviado ao nosso servidor. A tokenização acontecerá no SDK do gateway.
  */
-export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; onDone: () => void }) {
+export function AddCardSheet({ cfg, totalCents, onClose, onDone, customerName = "", orderNumber, onPayPix }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; onDone: () => void; customerName?: string; orderNumber?: string; onPayPix?: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [declined, setDeclined] = useState(false);
   const [number, setNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
@@ -169,15 +172,54 @@ export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: Paymen
     return Object.keys(e).length === 0;
   }
 
-  function submit() {
-    if (!validate()) return;
+  async function submit() {
+    if (busy || !validate()) return;
     if (!ready) { setErrors({ form: "O pagamento com cartão ainda não está disponível nesta loja. Escolha Pix para concluir." }); return; }
-    // Futuro: getCardProvider(cfg.card.provider).tokenizeCard(...) → backend recebe só o token.
-    onDone();
+    const provider = getCardProvider(cfg.card.provider);
+    if (!provider.createPayment || !orderNumber) { setErrors({ form: "Não foi possível iniciar o pagamento com cartão agora." }); return; }
+    setBusy(true);
+    try {
+      // Número e CVV vão só ao SDK do gateway; nosso backend recebe apenas o token.
+      const tk = await provider.tokenizeCard({ number: digits, expiry, cvv, holder });
+      const res = await provider.createPayment({ orderNumber, token: tk.token, installments: 1 });
+      const result = normalizeCardStatus(cfg.card.provider, res.status);
+      if (result === "paid") { onDone(); return; }
+      if (result === "refused") {
+        // Recusa real do gateway: limpa os dados sensíveis e mostra a escolha.
+        setNumber(""); setExpiry(""); setCvv(""); setErrors({}); setDeclined(true);
+        return;
+      }
+      setErrors({ form: "Pagamento em processamento. Aguarde a confirmação antes de tentar novamente." });
+    } catch {
+      setErrors({ form: "Não foi possível processar o cartão. Confira os dados ou tente outra forma de pagamento." });
+    } finally {
+      setBusy(false);
+    }
   }
 
   const field = (err?: string) => `h-14 w-full rounded-xl px-4 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
   const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
+
+  if (declined) {
+    const d = cfg.decline;
+    const off = pixDiscountLabel(cfg);
+    return (
+      <Sheet onClose={onClose}>
+        <div className="space-y-4 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-6 text-center">
+          <XCircle size={44} className="mx-auto text-destructive" />
+          <h2 className="text-[18px] font-bold">{d.title}</h2>
+          <p className="text-[14px] text-muted-foreground">{fillDeclineMessage(d.message, customerName)}</p>
+          <div className="space-y-2.5 pt-1">
+            {cfg.pix.enabled && onPayPix && (
+              <Button type="button" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={onPayPix}>{d.pix_label}</Button>
+            )}
+            {cfg.pix.enabled && off && <p className="text-[12.5px] font-semibold text-primary">{d.pix_benefit.replace(/\{desconto\}/g, off)}</p>}
+            <Button type="button" variant="outline" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={() => setDeclined(false)}>{d.retry_label}</Button>
+          </div>
+        </div>
+      </Sheet>
+    );
+  }
 
   if (!ready) {
     return (
@@ -246,7 +288,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: Paymen
         {errors.form && <p className="rounded-xl bg-destructive/10 px-4 py-3 text-[13px] font-semibold text-destructive">{errors.form}</p>}
       </div>
       <footer className="border-t border-border px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
-        <button type="button" onClick={submit} className="h-13 w-full rounded-full bg-primary py-3.5 text-[17px] font-bold text-primary-foreground active:scale-[0.99]">Continuar</button>
+        <button type="button" onClick={submit} disabled={busy} className="flex h-13 w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-[17px] font-bold text-primary-foreground active:scale-[0.99] disabled:opacity-70">{busy && <Loader2 size={18} className="animate-spin" />}{busy ? "Processando..." : "Continuar"}</button>
       </footer>
       {plans && <InstallmentsSheet cfg={cfg} totalCents={totalCents} onClose={() => setPlans(false)} />}
     </Sheet>

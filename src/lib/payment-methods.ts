@@ -35,6 +35,7 @@ export type PaymentMethodsConfig = {
     promo_text: string;
     show_brands: boolean;
   };
+  decline: CardDeclineTexts;
 };
 
 const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v.replace(",", "."))) ? Number(v.replace(",", ".")) : d);
@@ -75,6 +76,7 @@ export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
       promo_text: str(c.promo_text, ""),
       show_brands: c.show_brands !== false,
     },
+    decline: resolveDecline(r.decline),
   };
 }
 
@@ -103,4 +105,60 @@ export function installmentPlan(totalCents: number, cfg: PaymentMethodsConfig): 
     const finalCents = Math.round(totalCents * (1 + rate / 100));
     return { n, rate, installmentCents: Math.ceil(finalCents / n), totalCents: finalCents, free: rate === 0 };
   });
+}
+
+/* ---------- Cartão recusado (somente com retorno real do gateway) ---------- */
+
+export type CardDeclineTexts = { title: string; message: string; retry_label: string; pix_label: string; pix_benefit: string };
+
+export const DEFAULT_DECLINE: CardDeclineTexts = {
+  title: "Não foi possível concluir o pagamento",
+  message: "{nome}, seu cartão não foi aprovado nesta tentativa. Você pode tentar novamente ou finalizar seu pedido via PIX.",
+  retry_label: "Tentar outro cartão",
+  pix_label: "Finalizar pagamento no PIX",
+  pix_benefit: "Finalize via PIX e economize {desconto}",
+};
+
+export function resolveDecline(raw: unknown): CardDeclineTexts {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r: any = raw && typeof raw === "object" ? raw : {};
+  const s = (k: keyof CardDeclineTexts, max = 120) => (typeof r[k] === "string" && r[k].trim() ? String(r[k]).slice(0, max) : DEFAULT_DECLINE[k]);
+  return { title: s("title"), message: s("message", 300), retry_label: s("retry_label", 40), pix_label: s("pix_label", 40), pix_benefit: s("pix_benefit") };
+}
+
+/** Troca {nome} pelo primeiro nome do checkout; sem nome, remove o vocativo. */
+export function fillDeclineMessage(text: string, fullName: string): string {
+  const first = (fullName ?? "").trim().split(/\s+/)[0] ?? "";
+  if (first) return text.replace(/\{nome\}/g, first.charAt(0).toUpperCase() + first.slice(1).toLowerCase());
+  const out = text.replace(/\{nome\},?\s*/g, "");
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
+export function pixDiscountLabel(cfg: PaymentMethodsConfig): string | null {
+  const p = cfg.pix;
+  if (!p.enabled || !p.discount_enabled || p.discount_value <= 0) return null;
+  return p.discount_type === "percent" ? `${p.discount_value.toLocaleString("pt-BR")}%` : `R$ ${p.discount_value.toFixed(2).replace(".", ",")}`;
+}
+
+export type CardResult = "paid" | "pending" | "refused" | "unknown";
+
+/**
+ * Status oficiais de cartão por gateway, preenchidos SOMENTE a partir da documentação de cada
+ * provider quando o cartão dele for integrado. Status fora da tabela viram "unknown" (nunca recusa).
+ */
+export const CARD_STATUS_MAP: Record<CardProviderId, { paid: string[]; pending: string[]; refused: string[] }> = {
+  none: { paid: [], pending: [], refused: [] },
+  blackcat: { paid: [], pending: [], refused: [] },
+  freepay: { paid: [], pending: [], refused: [] },
+  pinpay: { paid: [], pending: [], refused: [] },
+};
+
+export function normalizeCardStatus(provider: CardProviderId, status: string | null | undefined): CardResult {
+  const s = String(status ?? "").trim().toLowerCase();
+  const m = CARD_STATUS_MAP[provider];
+  if (!m || !s) return "unknown";
+  if (m.paid.includes(s)) return "paid";
+  if (m.pending.includes(s)) return "pending";
+  if (m.refused.includes(s)) return "refused";
+  return "unknown";
 }
