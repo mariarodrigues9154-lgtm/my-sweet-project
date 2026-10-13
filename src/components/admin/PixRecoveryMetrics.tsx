@@ -21,8 +21,8 @@ const COLS = [
 type MetricKey = (typeof COLS)[number][0];
 const EVENT_OF: Record<Exclude<MetricKey, "recovered">, string> = { notices: "notice_shown", copies: "code_copied", chats: "chat_opened", renewed: "renewed" };
 const ACTION: Record<string, string> = { notice_shown: "Viu o aviso", code_copied: "Copiou o código", chat_opened: "Abriu o chat", renewed: "Gerou nova cobrança" };
-const STATE: Record<string, string> = { pendente: "PIX pendente", pago: "Pago", expirado: "Expirado", outro: "Outro" };
-const FILTERS = [["todos", "Todos"], ["pendente", "PIX pendente"], ["pago", "Pago"], ["expirado", "Expirado"], ["enviada", "Mensagem enviada"], ["sem", "Sem mensagem"]] as const;
+const STATE: Record<string, string> = { pendente: "PIX pendente", pago: "Pago", expirado: "Expirado", cancelado: "Cancelado", outro: "Outro" };
+const FILTERS = [["todos", "Todos"], ["pendente", "PIX pendente"], ["pago", "Pago"], ["expirado", "Expirado"], ["cancelado", "Cancelado"], ["enviada", "Mensagem enviada"], ["sem", "Sem mensagem"]] as const;
 
 /** Métricas da recuperação de PIX pendente, separadas por loja. */
 export function PixRecoveryMetricsPanel() {
@@ -54,7 +54,7 @@ export function PixRecoveryMetricsPanel() {
           {open?.store === s.store_id ? (
             <OrdersList storeId={s.store_id} metric={open.metric} onClearMetric={() => setOpen({ store: s.store_id, metric: null })} onClose={() => setOpen(null)} />
           ) : (
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => setOpen({ store: s.store_id, metric: null })}>Ver clientes / PIX pendentes</Button>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => setOpen({ store: s.store_id, metric: null })}>Todos os pedidos PIX</Button>
           )}
         </div>
       ))}
@@ -77,15 +77,15 @@ function OrdersList({ storeId, metric, onClearMetric, onClose }: { storeId: stri
     if (metric === "recovered" ? !r.recovered : metric ? !r.events.includes(EVENT_OF[metric]) : false) return false;
     if (filter === "enviada" && r.whatsapp?.status !== "enviada") return false;
     if (filter === "sem" && r.whatsapp) return false;
-    if ((filter === "pendente" || filter === "pago" || filter === "expirado") && r.state !== filter) return false;
-    if (term && !(r.customer.toLowerCase().includes(term) || r.order_number.toLowerCase().includes(term) || r.phone_digits_tail.includes(term.replace(/\D/g, "") || "§"))) return false;
+    if ((filter === "pendente" || filter === "pago" || filter === "expirado" || filter === "cancelado") && r.state !== filter) return false;
+    if (term && !(r.customer.toLowerCase().includes(term) || r.order_number.toLowerCase().includes(term) || r.product.toLowerCase().includes(term) || r.phone_digits.includes(term.replace(/\D/g, "") || "§"))) return false;
     return true;
   });
 
   return (
     <div className="mt-4 border-t border-border pt-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-extrabold">Clientes / PIX pendentes{metric && <span className="ml-1 font-semibold text-muted-foreground">· {COLS.find((c) => c[0] === metric)?.[1]}</span>}</h3>
+        <h3 className="text-[13px] font-extrabold">Todos os pedidos PIX{metric && <span className="ml-1 font-semibold text-muted-foreground">· {COLS.find((c) => c[0] === metric)?.[1]}</span>}</h3>
         <div className="flex gap-1">
           {metric && <Button variant="ghost" size="sm" onClick={onClearMetric}>Limpar card</Button>}
           <Button variant="ghost" size="sm" onClick={onClose}>Fechar</Button>
@@ -95,7 +95,7 @@ function OrdersList({ storeId, metric, onClearMetric, onClose }: { storeId: stri
         <select value={filter} onChange={(e) => setFilter(e.target.value as never)} className="rounded-lg border border-input bg-card px-3 py-2 text-[12px]">
           {FILTERS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, pedido ou telefone" className="min-w-[180px] flex-1 rounded-lg border border-input bg-card px-3 py-2 text-[12px]" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar pedido PIX: nome, pedido, telefone ou produto" className="min-w-[180px] flex-1 rounded-lg border border-input bg-card px-3 py-2 text-[12px]" />
       </div>
 
       {isLoading ? <div className="grid place-items-center py-6"><Loader2 className="animate-spin text-muted-foreground" /></div>
@@ -155,7 +155,7 @@ function OrdersList({ storeId, metric, onClearMetric, onClose }: { storeId: stri
 function Actions({ r, onSend }: { r: Row; onSend: () => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {r.state === "pendente" && <Button size="sm" onClick={onSend}>{r.whatsapp?.status === "falha" ? "Tentar novamente" : "Enviar WhatsApp"}</Button>}
+      {(r.state === "pendente" || r.state === "expirado") && <Button size="sm" onClick={onSend}>{r.whatsapp?.status === "falha" ? "Tentar novamente" : "Enviar WhatsApp"}</Button>}
       <Button size="sm" variant="outline" asChild><Link to="/admin/pedidos">Ver pedido</Link></Button>
     </div>
   );
@@ -190,8 +190,9 @@ function SendDialog({ row, onClose, onSent }: { row: Row; onClose: () => void; o
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Enviar mensagem para {row.customer.split(" ")[0] || "o cliente"} no WhatsApp?</DialogTitle></DialogHeader>
-        {row.whatsapp?.status === "enviada" && <p className="rounded-lg bg-surface p-2 text-[12px]">Última mensagem: enviada {ago(row.whatsapp.at)}.</p>}
+        <DialogHeader><DialogTitle>Enviar WhatsApp para:</DialogTitle></DialogHeader>
+        <div className="text-[12.5px]"><p className="font-bold">{row.customer || "—"}</p><p>Pedido #{row.order_number}</p><p>Telefone: ****{row.phone_digits_tail}</p><p>Valor: {brl(row.total)}</p></div>
+        {row.whatsapp?.status === "enviada" && <p className="rounded-lg bg-surface p-2 text-[12px]">⚠️ Última mensagem enviada {ago(row.whatsapp.at)}. Confirme para enviar novamente.</p>}
         {isLoading ? <div className="grid place-items-center py-6"><Loader2 className="animate-spin text-muted-foreground" /></div>
           : data && !data.ok ? <p className="text-[12.5px] text-destructive">{data.error}</p>
           : data?.ok && (
@@ -199,12 +200,12 @@ function SendDialog({ row, onClose, onSent }: { row: Row; onClose: () => void; o
               <p className="text-[11.5px] font-semibold text-muted-foreground">Mensagem que será enviada:</p>
               <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-surface p-3 font-sans text-[12.5px]">{data.text}</pre>
               {!data.has_phone && <p className="mt-2 text-[12px] text-destructive">Telefone do cliente inválido.</p>}
-              {data.expired && <p className="mt-2 text-[12px] text-destructive">Este PIX expirou.</p>}
+              {data.expired && <p className="mt-2 text-[12px] text-destructive">Este PIX está expirado. A mensagem não inclui o código antigo; o cliente poderá gerar uma nova cobrança pelo link.</p>}
             </div>
           )}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={busy}>Cancelar</Button>
-          <Button onClick={go} disabled={busy || !data?.ok || !data.has_phone || data.expired}>{busy ? <Loader2 className="animate-spin" /> : "Enviar agora"}</Button>
+          <Button onClick={go} disabled={busy || !data?.ok || !data.has_phone}>{busy ? <Loader2 className="animate-spin" /> : "Enviar agora"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

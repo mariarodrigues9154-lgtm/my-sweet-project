@@ -128,7 +128,9 @@ async function loadManualContext(orderId: string) {
     link_pagamento: `${site}/pix/${o.access_token}`,
     nome_loja: (store?.name as string) ?? "",
   };
-  const text = fillTemplate(pub["manual_message"] || (cfg?.message as string) || DEFAULT_MANUAL, vars);
+  const DEFAULT_EXPIRED = "Olá, {nome}! Seu PIX do pedido #{pedido} expirou.\n\nSe ainda deseja concluir a compra, acesse o link abaixo para continuar:\n{link_pagamento}";
+  const tpl = expired ? (pub["manual_message_expired"] || DEFAULT_EXPIRED) : (pub["manual_message"] || (cfg?.message as string) || DEFAULT_MANUAL);
+  const text = fillTemplate(tpl, vars);
   return { o, cfg, pub, vars, text, expired, phone: normalizeBrPhone((o.customer as { phone?: string })?.phone), supabaseAdmin };
 }
 
@@ -139,11 +141,11 @@ export const listPixRecoveryOrders = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const since = new Date(Date.now() - 60 * 86400000).toISOString();
     const { data: events } = await supabaseAdmin.from("pix_recovery_events").select("order_id, event_type, created_at").eq("store_id", data.store_id).limit(20000);
     const evIds = [...new Set((events ?? []).map((e) => e.order_id as string))];
     const cols = "id, order_number, status, customer, product_snapshot, total, payment, pix_expiration_date, created_at, paid_at, transaction_id";
-    const { data: pending } = await supabaseAdmin.from("orders").select(cols).eq("store_id", data.store_id).eq("status", "aguardando_pagamento").not("transaction_id", "is", null).gte("created_at", since).order("created_at", { ascending: false }).limit(200);
+    const { data: pending } = await supabaseAdmin.from("orders").select(cols).eq("store_id", data.store_id).not("transaction_id", "is", null).gte("created_at", since).order("created_at", { ascending: false }).limit(1000);
     const map = new Map<string, any>((pending ?? []).map((o) => [o.id as string, o]));
     const missing = evIds.filter((id) => !map.has(id));
     for (let i = 0; i < missing.length; i += 200) {
@@ -164,7 +166,8 @@ export const listPixRecoveryOrders = createServerFn({ method: "POST" })
       const pay = (o.payment ?? {}) as { expiration_date?: string };
       const exp = o.pix_expiration_date ?? pay.expiration_date ?? null;
       const paid = o.status === "pago" || o.status === "aprovado";
-      const state = paid ? "pago" : o.status === "aguardando_pagamento" ? (exp && new Date(exp).getTime() <= now ? "expirado" : "pendente") : "outro";
+      const cancelled = ["cancelado", "cancelada", "estornado", "reembolsado", "recusado", "falhou"].includes(String(o.status));
+      const state = paid ? "pago" : cancelled ? "cancelado" : o.status === "aguardando_pagamento" ? (exp && new Date(exp).getTime() <= now ? "expirado" : "pendente") : "outro";
       const phone = String((o.customer as { phone?: string })?.phone ?? "").replace(/\D/g, "");
       return {
         id: o.id as string,
@@ -172,6 +175,7 @@ export const listPixRecoveryOrders = createServerFn({ method: "POST" })
         customer: String((o.customer as { name?: string })?.name ?? ""),
         phone: phone ? `(${phone.slice(-11, -9) || "--"}) *****-${phone.slice(-4)}` : "—",
         phone_digits_tail: phone.slice(-4),
+        phone_digits: phone,
         total: Number(o.total),
         product: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
         created_at: o.created_at as string,
@@ -212,7 +216,6 @@ export const sendManualPixRecoveryMessage = createServerFn({ method: "POST" })
     } catch { /* mantém */ }
     if (status === "pago" || status === "aprovado") return { ok: false as const, error: "Este pedido já foi pago. Mensagem de PIX pendente não enviada." };
     if (status !== "aguardando_pagamento") return { ok: false as const, error: `Pedido com status ${status}. Mensagem não enviada.` };
-    if (c.expired) return { ok: false as const, error: "Este PIX expirou." };
     if (!c.phone) return { ok: false as const, error: "Telefone do cliente inválido." };
     const { maskPhoneTail, sendWhatsApp } = await import("./whatsapp-recovery.server");
     const { data: prev } = await c.supabaseAdmin.from("whatsapp_pix_reminders").select("step").eq("order_id", c.o.id).gte("step", 100);
@@ -224,7 +227,7 @@ export const sendManualPixRecoveryMessage = createServerFn({ method: "POST" })
     const at = new Date().toISOString();
     try {
       const id = await sendWhatsApp({ provider: c.cfg.provider as never, secrets: (c.cfg.secret_data ?? {}) as Record<string, string>, pub: c.pub, to: c.phone, text: c.text, vars: c.vars, token: c.o.access_token as string });
-      await c.supabaseAdmin.from("whatsapp_pix_reminders").update({ status: "enviada", pix_status: "PENDING", provider_message_id: id, updated_at: at }).eq("id", row.id);
+      await c.supabaseAdmin.from("whatsapp_pix_reminders").update({ status: "enviada", pix_status: c.expired ? "EXPIRED" : "PENDING", provider_message_id: id, updated_at: at }).eq("id", row.id);
       return { ok: true as const, at };
     } catch (e) {
       const msg = (e instanceof Error ? e.message : "Falha no envio").slice(0, 500);
