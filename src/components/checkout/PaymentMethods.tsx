@@ -18,7 +18,7 @@ function iconSrc(url: string) {
 }
 
 /** Bandeira padrão local (desenhada no próprio código, aparece na hora). */
-function LocalBrand({ name, small }: { name: string; small?: boolean }) {
+function LocalBrand({ name, small }: { name: string; small?: boolean | undefined }) {
   const cls = `grid place-items-center rounded-[4px] border border-border bg-card font-black ${small ? "h-5 w-8 text-[7px]" : "h-6 w-10 text-[8px]"}`;
   const n = name.toLowerCase();
   if (n.includes("master")) return <span className={cls}><span className="flex"><span className="size-2.5 rounded-full bg-[#eb001b]" /><span className="-ml-1 size-2.5 rounded-full bg-[#f79e1b] opacity-90" /></span></span>;
@@ -28,7 +28,7 @@ function LocalBrand({ name, small }: { name: string; small?: boolean }) {
   return <span className={cls}><CreditCard size={small ? 11 : 13} /></span>;
 }
 
-function BrandImg({ url, name, small }: { url: string; name: string; small?: boolean }) {
+function BrandImg({ url, name, small }: { url: string; name: string; small?: boolean | undefined }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <LocalBrand name={name} small={small} />;
   const h = small ? 20 : 24;
