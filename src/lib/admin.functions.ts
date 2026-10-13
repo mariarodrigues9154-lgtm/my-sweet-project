@@ -184,6 +184,7 @@ const storeInput = z.object({
     rating_text: z.string().trim().max(60).nullish(),
     rating_value: z.number().min(0).max(5).nullish(),
     rating_max: z.string().trim().max(10).nullish(),
+    payment_methods: z.unknown().optional().transform((v) => (v === undefined ? undefined : resolvePaymentMethods(v))),
     pix_recovery: z.object({
       enabled: z.boolean().optional(),
       show_notice: z.boolean().optional(),
