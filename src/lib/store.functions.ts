@@ -538,6 +538,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       } as never)
       .eq("id", order.id);
 
+    console.info("[pix] create_result", { order: order.order_number, provider: row.provider, amountCents, status: charge.provider_status ?? "PENDING" });
     return {
       ok: true as const,
       configured: true as const,
