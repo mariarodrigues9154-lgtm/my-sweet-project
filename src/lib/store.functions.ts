@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { Product, StoreSettings } from "./product-types";
 import { variantImage } from "./product-types";
+import { parseGatewayDate } from "./pix-time";
 
 function publicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
@@ -361,8 +362,14 @@ export const createPixCharge = createServerFn({ method: "POST" })
         total: Number(order.total),
         qr_code: saved.qr_code ?? null,
         copy_paste: saved.copy_paste ?? null,
-        expires_in: saved.expires_in ?? 1800,
-        expires_at: ((order as { pix_expiration_date?: string | null }).pix_expiration_date ?? (saved as { expiration_date?: string }).expiration_date ?? null) as string | null,
+        ...(() => {
+          // Tempo restante calculado AGORA pelo relógio do servidor (não o valor salvo na criação).
+          const exp = ((order as { pix_expiration_date?: string | null }).pix_expiration_date ?? (saved as { expiration_date?: string }).expiration_date ?? null) as string | null;
+          const ms = exp ? parseGatewayDate(exp) : NaN;
+          return Number.isFinite(ms)
+            ? { expires_in: Math.max(0, Math.floor((ms - Date.now()) / 1000)), expires_at: new Date(ms).toISOString() }
+            : { expires_in: saved.expires_in ?? 900, expires_at: null };
+        })(),
       };
     }
 
@@ -472,11 +479,17 @@ export const createPixCharge = createServerFn({ method: "POST" })
     // após 15 min o site trata o PIX como expirado (esconde o código e oferece "Gerar novo PIX").
     // Se o cliente pagar mesmo assim, o webhook/consulta continua confirmando o pedido normalmente.
     const PIX_WINDOW_MS = 15 * 60 * 1000;
-    const gatewayExpMs = charge.expiration_date ? Date.parse(charge.expiration_date) : NaN;
+    const nowMs = Date.now();
+    // Data do gateway: datas sem fuso são lidas como horário de Brasília. Uma data que já passou
+    // ou vence em menos de 2 min para uma cobrança recém-criada é inconsistente (fuso/unidade
+    // errados) e é ignorada — nunca pode fazer um PIX novo nascer expirado.
+    const rawGw = charge.expiration_date ? parseGatewayDate(charge.expiration_date) : NaN;
+    const gatewayExpMs = Number.isFinite(rawGw) && rawGw > nowMs + 2 * 60 * 1000 ? rawGw : NaN;
+    if (charge.expiration_date && !Number.isFinite(gatewayExpMs)) console.warn("[pix] validade do gateway ignorada", row.provider, charge.expiration_date);
     // Blackcat: a validade devolvida pelo gateway é a fonte de verdade (sem janela de 15 min).
-    const expMs = row.provider === "blackcat" && Number.isFinite(gatewayExpMs) ? gatewayExpMs : Math.min(Date.now() + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
+    const expMs = row.provider === "blackcat" && Number.isFinite(gatewayExpMs) ? gatewayExpMs : Math.min(nowMs + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
     const expIso = new Date(expMs).toISOString();
-    charge = { ...charge, expiration_date: expIso, expires_in: Math.max(0, Math.floor((expMs - Date.now()) / 1000)) };
+    charge = { ...charge, expiration_date: expIso, expires_in: Math.max(0, Math.floor((expMs - nowMs) / 1000)) };
 
     await supabaseAdmin
       .from("orders")
