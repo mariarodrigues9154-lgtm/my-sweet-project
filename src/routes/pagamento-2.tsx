@@ -100,7 +100,7 @@ function CheckoutTwo() {
   const patch = (next: Partial<CheckoutDraft>) => { setForm((current) => { const merged = { ...current, ...next }; update(merged); return merged; }); };
 
   function applyCharge(charge: { qr_code?: string; copy_paste?: string; expires_in?: number; expires_at?: string | null }) {
-    setPix({ configured: true, ...(charge.qr_code ? { qr_code: charge.qr_code } : {}), ...(charge.copy_paste ? { copy_paste: charge.copy_paste } : {}), ...(charge.expires_in ? { expires_in: charge.expires_in } : {}), expires_at: charge.expires_at ?? (charge.expires_in ? new Date(Date.now() + charge.expires_in * 1000).toISOString() : null) });
+    setPix({ configured: true, ...(charge.qr_code ? { qr_code: charge.qr_code } : {}), ...(charge.copy_paste ? { copy_paste: charge.copy_paste } : {}), ...(charge.expires_in ? { expires_in: charge.expires_in } : {}), expires_at: typeof charge.expires_in === "number" ? new Date(Date.now() + charge.expires_in * 1000).toISOString() : charge.expires_at ?? null /* prazo relativo do servidor: imune ao relógio do celular */ });
   }
   useEffect(() => {
     // Só reabre o PIX do pedido indicado no endereço (refresh da própria tela PIX).
