@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "pinpay" | "blackcat" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -35,6 +35,17 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
     fields: [
       { key: "public_key", label: "PUBLIC_KEY", secret: false, required: true },
       { key: "secret_key", label: "SECRET_KEY", secret: true, required: true },
+    ],
+  },
+  {
+    id: "freepay",
+    name: "FreePay Brasil",
+    supportsPix: true,
+    singleEnvironment: true,
+    docs: "Painel da FreePay > Credenciais API",
+    fields: [
+      { key: "public_key", label: "Public Key", secret: false, required: true },
+      { key: "secret_key", label: "Secret Key", secret: true, required: true },
     ],
   },
   {
