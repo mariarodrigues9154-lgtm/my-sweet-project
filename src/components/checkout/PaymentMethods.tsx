@@ -118,6 +118,8 @@ export function InstallmentsSheet({ cfg, totalCents, onClose }: { cfg: PaymentMe
   );
 }
 
+type Errs = Partial<Record<"number" | "expiry" | "cvv" | "holder" | "form", string>>;
+
 function brandOf(digits: string): string | null {
   if (/^3[47]/.test(digits)) return "American Express";
   if (/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/.test(digits)) return "Elo";
@@ -140,7 +142,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: Paymen
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
   const [holder, setHolder] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Errs>({});
   const [plans, setPlans] = useState(false);
   const [tip, setTip] = useState(false);
   const ready = cardProviderReady(cfg);
@@ -148,7 +150,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: Paymen
   const brand = brandOf(digits);
 
   function validate() {
-    const e: Record<string, string> = {};
+    const e: Errs = {};
     if (!digits) e.number = "Número do cartão é obrigatório";
     else if (!brand || digits.length < 14 || !luhn(digits)) e.number = "Número do cartão inválido";
     const m = /^(\d{2})\/(\d{2})$/.exec(expiry);
@@ -174,7 +176,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, onDone }: { cfg: Paymen
   }
 
   const field = (err?: string) => `h-14 w-full rounded-xl px-4 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
-  const Err = ({ k }: { k: string }) => (errors[k] ? <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
+  const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
 
   return (
     <Sheet onClose={onClose} full>
