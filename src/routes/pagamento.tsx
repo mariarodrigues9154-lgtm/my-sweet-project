@@ -4,6 +4,8 @@ import { PixQr } from "@/components/checkout/PixQr";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
 import { useEffect, useMemo, useState } from "react";
+import { AddCardSheet, PaymentMethodList, type PayMethod } from "@/components/checkout/PaymentMethods";
+import { cardAvailable, pixDiscountCents, resolvePaymentMethods } from "@/lib/payment-methods";
 import { checkoutTheme } from "@/lib/checkout-theme";
 import { variantPricing, variantImage } from "@/lib/product-types";
 import { trackAddPaymentInfo, trackPaymentPending, useMetaPageView } from "@/lib/meta-pixel";
@@ -111,6 +113,12 @@ function CheckoutRoute() {
   const [pixLeft, setPixLeft] = useState(600);
   const [cartOpen, setCartOpen] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const payCfg = useMemo(() => resolvePaymentMethods(store.checkout?.payment_methods), [store.checkout?.payment_methods]);
+  const [cardPreview, setCardPreview] = useState(false);
+  useEffect(() => { setCardPreview(new URLSearchParams(window.location.search).get("preview_cartao") === "1"); }, []);
+  const showCard = (cardAvailable(payCfg) || (cardPreview && payCfg.card.enabled));
+  const [payMethod, setPayMethod] = useState<PayMethod>("pix");
+  const [cardSheet, setCardSheet] = useState(false);
 
   useEffect(() => {
     if (ready && draft) setForm({ ...emptyDraft, ...draft });
@@ -131,7 +139,9 @@ function CheckoutRoute() {
   const unitPrice = productOfferCfg ? discountedUnit(baseUnitPrice, productOfferCfg) : offerAccepted ? discountedUnit(baseUnitPrice, exitOfferCfg) : baseUnitPrice;
   const subtotal = Number((unitPrice * quantity).toFixed(2));
   const shippingPrice = Number((selectedShipping?.price ?? 0).toFixed(2));
-  const total = Number((subtotal + shippingPrice).toFixed(2));
+  const grossCents = Math.round((subtotal + shippingPrice) * 100);
+  const pixOff = payMethod === "pix" ? pixDiscountCents(grossCents, payCfg) / 100 : 0;
+  const total = Number((subtotal + shippingPrice - pixOff).toFixed(2));
 
   const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !productOfferCfg && !offerAccepted && !order, product?.id ?? "");
   const exitOld = Number((baseUnitPrice * quantity).toFixed(2));
@@ -379,6 +389,7 @@ function CheckoutRoute() {
           <dl className="mt-3 space-y-1.5 border-t border-border pt-2.5 text-[12.5px]">
             <Row label="Subtotal" value={brl(subtotal)} />
             <Row label={`Frete${selectedShipping ? ` (${selectedShipping.label})` : ""}`} value={shippingPrice > 0 ? brl(shippingPrice) : "Grátis"} />
+            {pixOff > 0 && <Row label="Desconto Pix" value={`- ${brl(pixOff)}`} />}
             <div className="flex items-baseline justify-between border-t border-border pt-2">
               <dt className="text-[13px] font-extrabold">Total</dt>
               <dd className="font-display text-[18px] font-extrabold tnum">{brl(total)}</dd>
@@ -552,8 +563,11 @@ function CheckoutRoute() {
 
         {step === 3 && !order && (
           <section className="rounded-2xl bg-card p-4 shadow-card-soft">
-            <p className="flex items-center gap-2 border-b border-border pb-3 text-[13px] font-extrabold"><PixIcon size={18} /> Pagamento via Pix</p>
-            <div className="pt-3"><PrimaryButton onClick={placeOrder} disabled={placing}>{placing ? "Gerando seu Pix..." : "Efetuar pagamento"}</PrimaryButton></div>
+            <p className="border-b border-border pb-2 text-[14px] font-extrabold">Forma de pagamento</p>
+            <PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />
+            {!payCfg.pix.enabled && !showCard && <p className="py-3 text-[12.5px] text-muted-foreground">Nenhuma forma de pagamento disponível no momento.</p>}
+            <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : "Efetuar pagamento"}</PrimaryButton></div>
+            {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} onDone={() => setCardSheet(false)} />}
           </section>
         )}
 
