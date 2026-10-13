@@ -18,6 +18,8 @@ import { trackAddPaymentInfo, trackPaymentPending, useMetaPageView } from "@/lib
 import { clearDraft, emptyDraft, useCheckoutDraft, type CheckoutDraft } from "@/lib/checkout-store";
 import { brl, digits } from "@/lib/format";
 import { checkoutRating, discountPercent, variantPricing, variantImage } from "@/lib/product-types";
+import { AddCardSheet, PaymentMethodList, type PayMethod } from "@/components/checkout/PaymentMethods";
+import { cardAvailable, pixDiscountCents, resolvePaymentMethods } from "@/lib/payment-methods";
 import { createOrder, createPixCharge, getFeaturedProduct, getPaymentStatus, getProductBySlug, getStoreSettings } from "@/lib/store.functions";
 
 export const Route = createFileRoute("/pagamento-2")({
@@ -63,6 +65,12 @@ function CheckoutTwo() {
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixLeft, setPixLeft] = useState(0);
+  const payCfg = useMemo(() => resolvePaymentMethods(store.checkout?.payment_methods), [store.checkout?.payment_methods]);
+  const [cardPreview, setCardPreview] = useState(false);
+  useEffect(() => { setCardPreview(new URLSearchParams(window.location.search).get("preview_cartao") === "1"); }, []);
+  const showCard = cardAvailable(payCfg) || (cardPreview && payCfg.card.enabled);
+  const [payMethod, setPayMethod] = useState<PayMethod>("pix");
+  const [cardSheet, setCardSheet] = useState(false);
 
   useEffect(() => { if (ready && draft) setForm({ ...emptyDraft, ...draft }); }, [ready, draft]);
   const shippingOptions = useMemo(() => (product ? sharedShippingOptions() : []), [product]);
@@ -85,7 +93,9 @@ function CheckoutTwo() {
   const productDiscount = Number(Math.max(0, originalSubtotal - subtotal).toFixed(2));
   const shippingDiscount = Number(Math.max(0, shippingOriginal - shippingPrice).toFixed(2));
   const savings = Number((productDiscount + shippingDiscount).toFixed(2));
-  const total = Number((subtotal + shippingPrice).toFixed(2));
+  const grossCents = Math.round((subtotal + shippingPrice) * 100);
+  const pixOff = payMethod === "pix" ? pixDiscountCents(grossCents, payCfg) / 100 : 0;
+  const total = Number((subtotal + shippingPrice - pixOff).toFixed(2));
 
   const exitIntent = useExitIntent(Boolean(exitOfferCfg) && !productOfferCfg && !offerAccepted && !order, product?.id ?? "");
   const exitOld = Number((baseUnit * quantity).toFixed(2));
@@ -175,12 +185,12 @@ function CheckoutTwo() {
       </section>
       {savings > 0 && store.checkout?.show_discount !== false && <section className="flex items-center justify-between gap-3 bg-card px-4 py-3 text-[13px]"><strong className="flex min-w-0 items-center gap-2 font-semibold"><Ticket size={16} className="shrink-0 text-primary" /><span className="truncate">{store.checkout?.discount_title?.trim() || `Desconto da ${store.name}`}</span></strong><span className="flex shrink-0 items-center gap-1"><span className="text-right">{shippingDiscount > 0 && <span className="block rounded bg-success-soft px-2 py-0.5 text-[10px] font-medium text-success">Frete grátis</span>}<span className="mt-1 block rounded bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary">- {brl(savings)}</span></span><ChevronRight size={16} className="text-muted-foreground" /></span></section>}
       <section className="bg-card px-4 py-4"><h2 className="text-[14px] font-semibold">Resumo do pedido</h2><dl className="mt-3 space-y-2 text-[12.5px]"><SummaryRow label="Subtotal do produto" value={brl(subtotal)} strong /><SummaryRow label="Preço original" value={brl(originalSubtotal)} muted /><SummaryRow label="Desconto no produto" value={`- ${brl(productDiscount)}`} muted discount /><SummaryRow label="Subtotal do envio" value={brl(shippingPrice)} strong /><SummaryRow label="Taxa de envio" value={brl(shippingOriginal)} muted /><SummaryRow label="Desconto de envio" value={`- ${brl(shippingDiscount)}`} muted discount /><div className="mt-3 flex items-end justify-between border-t border-border pt-3"><dt className="text-[17px] font-semibold">Total</dt><dd className="text-right"><strong className="block text-[21px] font-semibold tnum">{brl(total)}</strong><span className="text-[10px] font-normal text-muted-foreground">Impostos inclusos</span></dd></div></dl></section>
-      <section className="bg-card px-4 py-4"><h2 className="text-[14px] font-semibold">Forma de pagamento</h2><div className="mt-3 flex items-center gap-3"><PixIcon size={22} /><div className="min-w-0 flex-1"><strong className="text-[13px] font-semibold">Pix</strong><p className="text-[11px] font-normal text-muted-foreground">Pagamento instantâneo · Aprovação em segundos</p></div><span className="grid size-5 place-items-center rounded-full bg-primary"><span className="size-2 rounded-full bg-primary-foreground" /></span></div>
+      <section className="bg-card px-4 py-4"><h2 className="text-[14px] font-semibold">Forma de pagamento</h2><PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />{pixOff > 0 && <p className="mt-1 text-[12px] font-semibold text-primary">Desconto Pix: - {brl(pixOff)}</p>}{cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} onDone={() => setCardSheet(false)} />}
         {store.checkout?.show_legal !== false && <p className="mt-5 whitespace-pre-line text-[10.5px] font-normal leading-relaxed text-muted-foreground">{store.checkout?.legal_text?.trim() ? <LegalText text={store.checkout.legal_text.trim()} slug={store.slug} /> : <>Ao fazer um pedido, você concorda com os <Link to="/termos-de-uso" search={{ loja: store.slug }} className="font-medium text-foreground">Termos de uso e venda</Link> e reconhece que leu a <Link to="/politica-de-privacidade" search={{ loja: store.slug }} className="font-medium text-foreground">Política de privacidade</Link> da {store.name}.</>}</p>}
       </section>
       {savings > 0 && <p className="flex items-center gap-1.5 bg-primary-soft px-4 py-2 text-[11px] font-medium text-primary"><Smile size={14} className="shrink-0" />Você está economizando {brl(savings)} nesse pedido.</p>}
     </main>
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-4 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-buybar"><div className="mx-auto max-w-[488px]"><div className="flex items-end justify-between"><span className="text-[13px] font-medium">Total ({quantity} {quantity === 1 ? "item" : "itens"})</span><strong className="text-[20px] font-semibold text-primary tnum">{brl(total)}</strong></div><Button onClick={() => void placeOrder()} disabled={placing} className="mt-2 h-auto min-h-12 w-full rounded-full py-2 text-[16px] font-semibold"><span className="flex flex-col leading-tight"><span>{placing ? "Gerando pagamento..." : "Fazer pedido"}</span>{countdown > 0 && !placing && <span className="text-[11px] font-medium tnum">O cupom expira em <Countdown seconds={countdown} /></span>}</span></Button></div></div>
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-4 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-buybar"><div className="mx-auto max-w-[488px]"><div className="flex items-end justify-between"><span className="text-[13px] font-medium">Total ({quantity} {quantity === 1 ? "item" : "itens"})</span><strong className="text-[20px] font-semibold text-primary tnum">{brl(total)}</strong></div><Button onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)} className="mt-2 h-auto min-h-12 w-full rounded-full py-2 text-[16px] font-semibold"><span className="flex flex-col leading-tight"><span>{placing ? "Gerando pagamento..." : "Fazer pedido"}</span>{countdown > 0 && !placing && <span className="text-[11px] font-medium tnum">O cupom expira em <Countdown seconds={countdown} /></span>}</span></Button></div></div>
   </div>;
 }
 
