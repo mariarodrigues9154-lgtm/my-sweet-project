@@ -43,7 +43,7 @@ export function PaymentMethodList({ cfg, method, showCard, totalCents, onSelect,
     <div className="divide-y divide-border">
       {showCard && (
         <div className="py-3">
-          <button type="button" onClick={() => { onSelect("card"); onOpenCard(); }} className="flex w-full items-start gap-3 text-left">
+          <button type="button" onClick={() => { if (cardProviderReady(cfg)) onSelect("card"); onOpenCard(); }} className="flex w-full items-start gap-3 text-left">
             <span className="grid size-6 shrink-0 place-items-center rounded bg-surface"><CreditCard size={14} /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-[14px] font-semibold">{cfg.card.title}</span>
