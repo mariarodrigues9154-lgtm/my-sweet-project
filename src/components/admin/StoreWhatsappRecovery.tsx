@@ -112,6 +112,9 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
         <textarea rows={6} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={message} onChange={(e) => setMessage(e.target.value)} />
       </label>
       <p className="mt-1 text-[11px] text-muted-foreground">Variáveis: {VARS.join("  ")}</p>
+      <label className="mt-4 grid gap-1 text-[11.5px] font-semibold">Mensagem para envio manual (aba Recuperação PIX)
+        <textarea rows={6} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={P("manual_message")} placeholder="Vazio = usa a mensagem automática" onChange={(e) => setP("manual_message")(e.target.value)} />
+      </label>
 
       <div className="mt-4 flex flex-wrap items-end gap-2">
         <Button onClick={onSave} disabled={!!busy}>{busy === "save" ? <Loader2 className="animate-spin" /> : "Salvar"}</Button>
