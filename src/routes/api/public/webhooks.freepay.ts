@@ -1,6 +1,6 @@
 /**
- * Webhook da FreePay (transaction.created / paid / failed). O corpo não é assinado,
- * então o status sempre é reconfirmado em GET /sales/{id}/status com a API Key da loja
+ * Webhook da FreePay (Id, Status em maiúsculo). O corpo não é assinado,
+ * então o status sempre é reconfirmado em GET /v1/payment-transaction/info/{id} com as credenciais da loja
  * dona do pedido. Idempotente pelo transactionId + status já gravado.
  */
 import { createFileRoute } from "@tanstack/react-router";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/webhooks/freepay")({
           return new Response("payload inválido", { status: 400 });
         }
         const data = (body["data"] && typeof body["data"] === "object" ? body["data"] : body) as Record<string, unknown>;
-        const idRaw = data["transactionId"];
+        const idRaw = data["Id"] ?? data["id"];
         const transactionId = typeof idRaw === "string" || typeof idRaw === "number" ? String(idRaw).trim().slice(0, 200) : "";
         if (!transactionId) return new Response("ok");
 
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/webhooks/freepay")({
           if (confirmed.e2e && !order.e2e) update["e2e"] = confirmed.e2e;
         } else if (internal === "refunded") {
           update["status"] = "reembolsado";
-        } else if (internal === "cancelled") {
+        } else if (["expired", "refused", "failed", "error", "cancelled"].includes(internal)) {
           // PIX cancelado/expirado: o código antigo deixa de valer na tela.
           update["pix_expiration_date"] = new Date().toISOString();
         }

@@ -33,6 +33,7 @@ import { Route as ApiPublicHooksPixWhatsappRouteImport } from './routes/api/publ
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 import { Route as ApiPublicPagamentosWebhookRouteImport } from './routes/api/public/pagamentos.webhook'
 import { Route as ApiPublicWebhooksBlackcatRouteImport } from './routes/api/public/webhooks.blackcat'
+import { Route as ApiPublicWebhooksFreepayRouteImport } from './routes/api/public/webhooks.freepay'
 import { Route as ApiPublicWebhooksPinpayRouteImport } from './routes/api/public/webhooks.pinpay'
 import { Route as ApiPublicWebhooksWappiRouteImport } from './routes/api/public/webhooks.wappi'
 import { Route as ApiPublicPedidosOrderNumberStatusRouteImport } from './routes/api/public/pedidos.$orderNumber.status'
@@ -161,6 +162,12 @@ const ApiPublicWebhooksBlackcatRoute =
     path: '/api/public/webhooks/blackcat',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksFreepayRoute =
+  ApiPublicWebhooksFreepayRouteImport.update({
+    id: '/api/public/webhooks/freepay',
+    path: '/api/public/webhooks/freepay',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksPinpayRoute = ApiPublicWebhooksPinpayRouteImport.update({
   id: '/api/public/webhooks/pinpay',
   path: '/api/public/webhooks/pinpay',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
+  '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
@@ -229,6 +237,7 @@ export interface FileRoutesByTo {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
+  '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
+  '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
+    | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
+    | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
@@ -345,6 +357,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
+    | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
@@ -371,6 +384,7 @@ export interface RootRouteChildren {
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPagamentosWebhookRoute: typeof ApiPublicPagamentosWebhookRoute
   ApiPublicWebhooksBlackcatRoute: typeof ApiPublicWebhooksBlackcatRoute
+  ApiPublicWebhooksFreepayRoute: typeof ApiPublicWebhooksFreepayRoute
   ApiPublicWebhooksPinpayRoute: typeof ApiPublicWebhooksPinpayRoute
   ApiPublicWebhooksWappiRoute: typeof ApiPublicWebhooksWappiRoute
   ApiPublicPedidosOrderNumberStatusRoute: typeof ApiPublicPedidosOrderNumberStatusRoute
@@ -546,6 +560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksBlackcatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/freepay': {
+      id: '/api/public/webhooks/freepay'
+      path: '/api/public/webhooks/freepay'
+      fullPath: '/api/public/webhooks/freepay'
+      preLoaderRoute: typeof ApiPublicWebhooksFreepayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/pinpay': {
       id: '/api/public/webhooks/pinpay'
       path: '/api/public/webhooks/pinpay'
@@ -617,6 +638,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPagamentosWebhookRoute: ApiPublicPagamentosWebhookRoute,
   ApiPublicWebhooksBlackcatRoute: ApiPublicWebhooksBlackcatRoute,
+  ApiPublicWebhooksFreepayRoute: ApiPublicWebhooksFreepayRoute,
   ApiPublicWebhooksPinpayRoute: ApiPublicWebhooksPinpayRoute,
   ApiPublicWebhooksWappiRoute: ApiPublicWebhooksWappiRoute,
   ApiPublicPedidosOrderNumberStatusRoute:

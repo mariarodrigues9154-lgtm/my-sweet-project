@@ -15,6 +15,13 @@
       "when": 1791643829175,
       "tag": "0001_whatsapp_pix_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791855092482,
+      "tag": "0002_migration",
+      "breakpoints": true
     }
   ]
 }
