@@ -140,7 +140,7 @@ function luhn(d: string) {
  * Tela "Adicionar cartão". Os dados ficam só em memória deste componente e somem ao fechar;
  * nada é salvo nem enviado ao nosso servidor. A tokenização acontecerá no SDK do gateway.
  */
-export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPayPix, prepareOrder, onPaid }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; customerName?: string; onPayPix?: () => void; prepareOrder?: () => Promise<string | null>; onPaid?: (orderNumber: string) => void }) {
+export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPayPix, prepareOrder, onPaid }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; customerName?: string; onPayPix?: (orderNo: string | null) => void; prepareOrder?: () => Promise<string | null>; onPaid?: (orderNumber: string) => void }) {
   const payCard = useServerFn(payOrderWithCard);
   const [busy, setBusy] = useState(false);
   const [installments, setInstallments] = useState(1);
@@ -220,7 +220,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
           <p className="text-[14px] text-muted-foreground">{fillDeclineMessage(d.message, customerName)}</p>
           <div className="space-y-2.5 pt-1">
             {cfg.pix.enabled && onPayPix && (
-              <Button type="button" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={onPayPix}>{d.pix_label}</Button>
+              <Button type="button" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={() => { setNumber(""); setExpiry(""); setCvv(""); setErrors({}); onPayPix(orderNo); }}>{d.pix_label}</Button>
             )}
             {cfg.pix.enabled && off && <p className="text-[12.5px] font-semibold text-primary">{d.pix_benefit.replace(/\{desconto\}/g, off)}</p>}
             <Button type="button" variant="outline" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={() => setDeclined(false)}>{d.retry_label}</Button>
@@ -242,7 +242,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
           </div>
           <div className="space-y-2.5">
             {cfg.pix.enabled && onPayPix && (
-              <Button type="button" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={onPayPix}>{t.pix_label}</Button>
+              <Button type="button" className="h-12 w-full rounded-full text-[15px] font-bold" onClick={() => { setNumber(""); setExpiry(""); setCvv(""); setErrors({}); onPayPix(orderNo); }}>{t.pix_label}</Button>
             )}
             {cfg.pix.enabled && pixDiscountLabel(cfg) && <p className="text-center text-[12.5px] font-semibold text-primary">{cfg.decline.pix_benefit.replace(/\{desconto\}/g, pixDiscountLabel(cfg) ?? "")}</p>}
             <Button type="button" variant="ghost" disabled={busy} className="h-11 w-full rounded-full text-[14px] font-semibold text-muted-foreground" onClick={() => { setUnavailable(false); void submit(); }}>
