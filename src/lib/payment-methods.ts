@@ -63,7 +63,7 @@ export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
       discount_text: str(p.discount_text, ""),
     },
     card: {
-      enabled: c.enabled === true,
+      enabled: c.enabled !== false,
       provider,
       title: str(c.title, "Cartão de crédito"),
       text: str(c.text, `Pague em até ${max} parcelas`),
@@ -83,9 +83,9 @@ export function cardProviderReady(cfg: PaymentMethodsConfig): boolean {
   return CARD_PROVIDERS.find((p) => p.id === cfg.card.provider)?.ready === true;
 }
 
-/** Cartão visível para clientes: ligado E gateway pronto. */
+/** Visibilidade independente do gateway; cobrança continua exigindo provider pronto. */
 export function cardAvailable(cfg: PaymentMethodsConfig): boolean {
-  return cfg.card.enabled && cardProviderReady(cfg);
+  return cfg.card.enabled;
 }
 
 export function pixDiscountCents(totalCents: number, cfg: PaymentMethodsConfig): number {

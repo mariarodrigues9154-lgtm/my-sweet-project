@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardAvailable, installmentPlan, pixDiscountCents, resolvePaymentMethods } from "./payment-methods";
+import { cardAvailable, cardProviderReady, installmentPlan, pixDiscountCents, resolvePaymentMethods } from "./payment-methods";
 
 describe("payment methods", () => {
   it("5% PIX discount on R$117 gives R$111,15", () => {
@@ -11,11 +11,19 @@ describe("payment methods", () => {
     const plan = installmentPlan(12000, cfg);
     expect(plan).toHaveLength(7);
     expect(plan[2]).toMatchObject({ installmentCents: 4000, totalCents: 12000, free: true });
-    expect(plan[3]!.totalCents).toBe(13200);
+    expect(plan[3]?.totalCents).toBe(13200);
     expect(cfg.card.text).toBe("Pague em até 7 parcelas");
     expect(cfg.card.highlight).toBe("Sem juros em até 3 parcelas");
   });
-  it("card stays hidden while provider is none", () => {
-    expect(cardAvailable(resolvePaymentMethods({ card: { enabled: true } }))).toBe(false);
+  it("enabled card is visible without a connected provider", () => {
+    const cfg = resolvePaymentMethods({ card: { enabled: true, provider: "none" } });
+    expect(cardAvailable(cfg)).toBe(true);
+    expect(cardProviderReady(cfg)).toBe(false);
+  });
+  it("card is visible by default for stores without payment method configuration", () => {
+    expect(cardAvailable(resolvePaymentMethods(undefined))).toBe(true);
+  });
+  it("explicit store switch still hides card", () => {
+    expect(cardAvailable(resolvePaymentMethods({ card: { enabled: false } }))).toBe(false);
   });
 });
