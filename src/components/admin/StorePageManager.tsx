@@ -1,4 +1,5 @@
 import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
+import { PaymentMethodsFields } from "@/components/admin/PaymentMethodsFields";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronUp, ImagePlus, Trash2 } from "lucide-react";
@@ -185,6 +186,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
           </div>
         );
       })()}
+    </Group>
+
+    <Group title="Formas de pagamento">
+      <PaymentMethodsFields value={draft.checkout?.payment_methods} onChange={(v) => set("checkout", { ...draft.checkout, payment_methods: v })} />
     </Group>
 
     <Group title="Oferta de saída do checkout">
