@@ -310,6 +310,7 @@ function CheckoutRoute() {
       }
       const result = await submitOrder({
         data: {
+          tracking: readTracking(),
           slug: product.slug,
           quantity,
           variant: form.variant,
