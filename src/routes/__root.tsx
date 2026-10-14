@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { PendingPixLayer } from "@/components/store/PendingPixLayer";
+import { useCaptureTracking } from "@/lib/utm-tracking";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -121,6 +122,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useCaptureTracking();
 
   return (
     <QueryClientProvider client={queryClient}>

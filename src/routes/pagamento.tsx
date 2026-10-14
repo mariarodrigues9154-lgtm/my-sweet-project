@@ -1,3 +1,4 @@
+import { readTracking } from "@/lib/utm-tracking";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { PixQr } from "@/components/checkout/PixQr";
@@ -274,7 +275,7 @@ function CheckoutRoute() {
     if (!product || !selectedShipping) return null;
     if (!validateStep1() || !validateStep2()) { setCardSheet(false); return null; }
     void trackAddPaymentInfo(store.id, product, quantity, Number((unitPrice * quantity + selectedShipping.price).toFixed(2)));
-    const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: selectedShipping.id, customer: form.customer, address: form.address, method: "card" as const, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
+    const result = await submitOrder({ data: { tracking: readTracking(), slug: product.slug, quantity, variant: form.variant, shipping_id: selectedShipping.id, customer: form.customer, address: form.address, method: "card" as const, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
     if (!result.ok) { toast.error(result.error); return null; }
     return result.order_number;
   }

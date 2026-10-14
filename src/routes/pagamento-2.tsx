@@ -1,3 +1,4 @@
+import { readTracking } from "@/lib/utm-tracking";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { rememberPixOrder } from "@/lib/pix-orders";
@@ -138,7 +139,7 @@ function CheckoutTwo() {
     if (!product || !shipping) { toast.error("Selecione uma forma de entrega válida."); return null; }
     if (!hasAddress) { toast.error("Adicione o endereço de entrega para continuar."); setCardSheet(false); void navigate({ to: "/pagamento-2-endereco" }); return null; }
     void trackAddPaymentInfo(store.id, product, quantity, total);
-    const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, method: "card" as const, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
+    const result = await submitOrder({ data: { tracking: readTracking(), slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, method: "card" as const, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
     if (!result.ok) { toast.error(result.error); return null; }
     return result.order_number;
   }
@@ -167,7 +168,7 @@ function CheckoutTwo() {
         if (sw.reason === "card_pending") { toast.error("Seu pagamento com cartão ainda está em processamento. Aguarde a confirmação antes de pagar com PIX."); return; }
         if (sw.reason === "pix_disabled") { toast.error("Pagamento via PIX indisponível nesta loja."); return; }
       }
-      const result = await submitOrder({ data: { slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
+      const result = await submitOrder({ data: { tracking: readTracking(), slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
