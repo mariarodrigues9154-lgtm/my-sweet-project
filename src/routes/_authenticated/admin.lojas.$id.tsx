@@ -9,6 +9,7 @@ import { StorePageManager, type StoreDraft } from "@/components/admin/StorePageM
 import { StoreMetaManager } from "@/components/admin/StoreMetaManager";
 import { StorePaymentsManager } from "@/components/admin/StorePaymentsManager";
 import { StoreWhatsappRecovery } from "@/components/admin/StoreWhatsappRecovery";
+import { StoreUtmifyManager } from "@/components/admin/StoreUtmifyManager";
 
 export const Route = createFileRoute("/_authenticated/admin/lojas/$id")({
   head: () => ({
@@ -58,6 +59,7 @@ function EditStore() {
             }}
           />
           <StoreMetaManager storeId={id} />
+          <StoreUtmifyManager storeId={id} />
           <StorePaymentsManager storeId={id} />
           <StoreWhatsappRecovery storeId={id} />
         </>

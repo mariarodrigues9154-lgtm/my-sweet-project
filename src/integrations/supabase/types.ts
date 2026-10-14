@@ -170,9 +170,12 @@ export type Database = {
           subtotal: number
           total: number
           total_amount_cents: number | null
+          tracking_params: Json
           transaction_id: string | null
           unit_price: number
           updated_at: string
+          utmify_sent_at: string | null
+          utmify_sent_status: string | null
           variant: Json
         }
         Insert: {
@@ -202,9 +205,12 @@ export type Database = {
           subtotal: number
           total: number
           total_amount_cents?: number | null
+          tracking_params?: Json
           transaction_id?: string | null
           unit_price: number
           updated_at?: string
+          utmify_sent_at?: string | null
+          utmify_sent_status?: string | null
           variant?: Json
         }
         Update: {
@@ -234,9 +240,12 @@ export type Database = {
           subtotal?: number
           total?: number
           total_amount_cents?: number | null
+          tracking_params?: Json
           transaction_id?: string | null
           unit_price?: number
           updated_at?: string
+          utmify_sent_at?: string | null
+          utmify_sent_status?: string | null
           variant?: Json
         }
         Relationships: [
@@ -598,6 +607,42 @@ export type Database = {
         }
         Relationships: []
       }
+      store_utmify_settings: {
+        Row: {
+          api_token: string | null
+          enabled: boolean
+          pixel_enabled: boolean
+          pixel_id: string | null
+          pixel_script_src: string | null
+          store_id: string
+          updated_at: string
+          utm_script_enabled: boolean
+          utm_script_src: string | null
+        }
+        Insert: {
+          api_token?: string | null
+          enabled?: boolean
+          pixel_enabled?: boolean
+          pixel_id?: string | null
+          pixel_script_src?: string | null
+          store_id: string
+          updated_at?: string
+          utm_script_enabled?: boolean
+          utm_script_src?: string | null
+        }
+        Update: {
+          api_token?: string | null
+          enabled?: boolean
+          pixel_enabled?: boolean
+          pixel_id?: string | null
+          pixel_script_src?: string | null
+          store_id?: string
+          updated_at?: string
+          utm_script_enabled?: boolean
+          utm_script_src?: string | null
+        }
+        Relationships: []
+      }
       store_whatsapp_settings: {
         Row: {
           created_at: string
@@ -669,6 +714,42 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      utmify_logs: {
+        Row: {
+          created_at: string
+          error: string | null
+          http_status: number | null
+          id: string
+          ok: boolean
+          order_number: string | null
+          status: string
+          store_id: string
+          test_mode: boolean
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          ok: boolean
+          order_number?: string | null
+          status: string
+          store_id: string
+          test_mode?: boolean
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          ok?: boolean
+          order_number?: string | null
+          status?: string
+          store_id?: string
+          test_mode?: boolean
         }
         Relationships: []
       }

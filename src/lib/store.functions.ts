@@ -166,6 +166,7 @@ const orderInput = z.object({
   quantity: z.number().int().min(1).max(20),
   variant: z.record(z.string(), z.string()),
   shipping_id: z.string().min(1),
+  tracking: z.object(Object.fromEntries(["src", "sck", "utm_source", "utm_campaign", "utm_medium", "utm_content", "utm_term"].map((k) => [k, z.string().max(500).optional()]))).partial().optional(),
   customer: z.object({
     name: z.string().min(3),
     email: z.string().email(),
@@ -303,6 +304,7 @@ export const createOrder = createServerFn({ method: "POST" })
         status: "aguardando_pagamento",
         payment: { provider: null, status: "pendente", ...(isCard ? { method: "card" } : {}) },
         meta_attribution: attribution,
+        tracking_params: data.tracking ?? {},
       } as never)
       .select("order_number, total, access_token")
       .single();
@@ -539,6 +541,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       .eq("id", order.id);
 
     console.info("[pix] create_result", { order: order.order_number, provider: row.provider, amountCents, status: charge.provider_status ?? "PENDING" });
+    try { const { syncUtmifyOrder } = await import("./utmify.server"); await syncUtmifyOrder(order.id as string); } catch { /* nunca bloqueia o PIX */ }
     return {
       ok: true as const,
       configured: true as const,
