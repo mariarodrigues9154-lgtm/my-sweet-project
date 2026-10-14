@@ -87,6 +87,8 @@ async function sendCapiRaw(row: MetaRow, event: Record<string, unknown>): Promis
  * uma nova tentativa na próxima confirmação.
  */
 export async function sendPurchaseForOrder(orderId: string): Promise<void> {
+  // Todo pagamento confirmado passa por aqui: atualiza a UTMify para "paid" (uma vez).
+  try { const { syncUtmifyOrder } = await import("./utmify.server"); await syncUtmifyOrder(orderId); } catch { /* nunca bloqueia */ }
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: base } = await supabaseAdmin.from("orders").select("order_number, store_id").eq("id", orderId).maybeSingle();
