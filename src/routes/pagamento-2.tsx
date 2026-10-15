@@ -1,4 +1,4 @@
-import { readTracking } from "@/lib/utm-tracking";
+import { readTracking, useUtmifyScripts } from "@/lib/utm-tracking";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { rememberPixOrder } from "@/lib/pix-orders";
@@ -62,6 +62,7 @@ function CheckoutTwo() {
   const storeQuery = useQuery({ queryKey: ["checkout-store", product?.slug ?? ""], enabled: Boolean(product?.slug), staleTime: 60_000, queryFn: async () => product ? (await fetchStore({ data: { productSlug: product.slug } })) ?? fallbackStore : fallbackStore });
   const store = storeQuery.data ?? fallbackStore;
   useMetaPageView(store.id || null);
+  useUtmifyScripts(store.id || null);
   const [form, setForm] = useState<CheckoutDraft>(emptyDraft);
   const [placing, setPlacing] = useState(false);
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
