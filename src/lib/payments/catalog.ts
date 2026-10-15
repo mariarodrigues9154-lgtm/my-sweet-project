@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -68,6 +68,14 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
     fields: [{ key: "api_key", label: "API Key", secret: true, required: true }],
   },
   {
+    id: "invictuspay",
+    name: "InvictusPay",
+    supportsPix: true,
+    singleEnvironment: true,
+    docs: "Painel da InvictusPay > Integração > Chave de API",
+    fields: [{ key: "api_key", label: "API Key", secret: true, required: true, hint: "Começa com sk_" }],
+  },
+  {
     id: "mercadopago",
     name: "Mercado Pago",
     supportsPix: true,
@@ -99,6 +107,9 @@ export function providerName(id: string): string {
 }
 
 /** Credencial salva nunca é exibida, nem parcialmente. */
-export function maskSecret(_value: string): string {
+export function maskSecret(value: string): string {
+  // Apenas o prefixo público "sk_" e os 4 últimos caracteres, como pedido no painel.
+  const v = String(value ?? "");
+  if (v.startsWith("sk_") && v.length >= 16) return `sk_••••••••••••${v.slice(-4)}`;
   return "••••••••••••••••";
 }

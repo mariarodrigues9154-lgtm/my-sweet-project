@@ -1,2 +1,3 @@
 - PinPay entra como mais um provider em src/lib/payments (mesma interface da Wappi); webhook /api/public/webhooks/pinpay sempre reconfirma em GET /transactions/{id}; motivo: postback da PinPay não é assinado.
 - Blackcat entra como provider em src/lib/payments (X-API-Key, centavos); webhook /api/public/webhooks/blackcat reconfirma em GET /sales/{id}/status e a validade do PIX vem do expiresAt da Blackcat; motivo: postback não assinado e prazo real do gateway.
+- InvictusPay entra como provider em src/lib/payments (X-Api-Key, centavos, PIX 900s); webhook /api/public/webhooks/invictuspay reconfirma em GET /transactions/{id}; campos do PIX localizados pelo conteúdo (EMV 000201) porque a doc não os nomeia; motivo: postback não assinado e resposta não documentada.
