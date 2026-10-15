@@ -39,7 +39,7 @@ export function useExitIntent(active: boolean, key: string) {
 
 export type ExitOfferProduct = { name: string; image?: string | undefined; variant?: string | undefined; quantity: number; rating?: number | null | undefined; warranty?: string | null | undefined };
 
-export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = "", store, onAccept, onDecline }: { store?: { id?: string | null; checkout?: unknown } | null; offer: ResolvedExitOffer; oldPrice: number; newPrice: number; product?: ExitOfferProduct; offerKey?: string; onAccept: () => void; onDecline: () => void }) {
+export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = "", store, onAccept, onDecline }: { store?: { id?: string | null; checkout?: unknown } | null | undefined; offer: ResolvedExitOffer; oldPrice: number; newPrice: number; product?: ExitOfferProduct; offerKey?: string; onAccept: () => void; onDecline: () => void }) {
   const left = useStoreCountdown(store);
   void offerKey;
   const timerText = offer.timer_text.includes("{MM:SS}") ? offer.timer_text.split("{MM:SS}") : [offer.timer_text + " ", ""];

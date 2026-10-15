@@ -5,11 +5,11 @@ import { brl, clock } from "@/lib/format";
 import { discountPercent, promoBadges, savings, variantPriceRange, type Product } from "@/lib/product-types";
 
 /** Cronômetro isolado: lê a duração única da loja e o prazo salvo, só este texto atualiza. */
-export function Countdown({ store }: { store?: { id?: string | null; checkout?: unknown } | null }) {
+export function Countdown({ store }: { store?: { id?: string | null; checkout?: unknown } | null | undefined }) {
   return <>{clock(useStoreCountdown(store))}</>;
 }
 
-export function OfferBlock({ product, store }: { product: Product; store?: { id?: string | null; checkout?: unknown } | null }) {
+export function OfferBlock({ product, store }: { product: Product; store?: { id?: string | null; checkout?: unknown } | null | undefined }) {
   const range = variantPriceRange(product);
   const min = range.min;
   const varies = range.multiple;
