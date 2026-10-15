@@ -164,7 +164,7 @@ function Preview({ video }: { video: CreatorVideo }) {
       {useThumb ? (
         <img src={sizedImage(video.thumb, 480)} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
       ) : video.video && near && !previewFailed ? (
-        <video src={`${video.video}#t=0.5`} preload="metadata" muted playsInline onError={() => setPreviewFailed(true)} className="pointer-events-none size-full object-cover" />
+        <video src={`${video.video}#t=0.1`} preload="auto" muted playsInline onError={() => setPreviewFailed(true)} className="pointer-events-none size-full object-cover" />
       ) : null}
     </span>
   );
@@ -203,6 +203,7 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
   const [near, setNear] = useState(false);
   const [visible, setVisible] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const el = wrap.current;
@@ -230,16 +231,22 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
       {near && (
         <video
           ref={ref}
-          src={video.video}
+          src={`${video.video}#t=0.1`}
           poster={video.thumb ? sizedImage(video.thumb, 480) : undefined}
           muted
           loop
           playsInline
           autoPlay
-          preload="metadata"
+          preload="auto"
+          onLoadedData={() => setReady(true)}
           onError={() => setFailed(true)}
           className="pointer-events-none absolute inset-0 size-full object-cover"
         />
+      )}
+      {!ready && !video.thumb && (
+        <span className="absolute inset-0 grid place-items-center">
+          <span className="size-7 animate-spin rounded-full border-2 border-background/40 border-t-background" />
+        </span>
       )}
     </span>
   );
