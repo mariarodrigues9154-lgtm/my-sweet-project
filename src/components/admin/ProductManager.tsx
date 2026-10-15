@@ -436,6 +436,13 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const [autoSave, setAutoSave] = useState(false);
+  useEffect(() => {
+    if (!autoSave) return;
+    setAutoSave(false);
+    formRef.current?.requestSubmit();
+  }, [autoSave, d]);
 
   useEffect(() => {
     let alive = true;
@@ -508,6 +515,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
 
   return (
     <form
+      ref={formRef}
       className="space-y-5 px-1 pb-8 pt-4"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -996,6 +1004,20 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           </label>
           <p className="text-[11.5px] text-muted-foreground">A página mostra {size} avaliações de início e mais {size} a cada "Ver mais". Adicione apenas avaliações reais.</p>
         </>); })()}
+        {d.reviews.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {([true, false] as const).map((on) => (
+              <button key={String(on)} type="button" disabled={saving} className={btnCls} onClick={() => {
+                const msg = on ? "Deseja marcar todas as avaliações deste produto como Compra confirmada?" : "Deseja desmarcar Compra confirmada em todas as avaliações deste produto?";
+                if (!window.confirm(msg)) return;
+                setD((cur) => (cur ? { ...cur, reviews: cur.reviews.map((r) => ({ ...r, confirmed: on })) } : cur));
+                setAutoSave(true);
+              }}>
+                {on ? "Marcar todas como Compra confirmada" : "Desmarcar todas como Compra confirmada"}
+              </button>
+            ))}
+          </div>
+        )}
         <ReviewsCsvImport existing={d.reviews} onImport={(add) => setD((cur) => { if (!cur) return cur; const list = [...cur.reviews]; for (const { review, order } of add) { if (order != null && order >= 1 && order <= list.length) list.splice(order - 1, 0, review); else list.push(review); } return { ...cur, reviews: list }; })} />
         {d.reviews.map((review, i) => {
           const upd = (patch: Partial<Review>) => set("reviews", d.reviews.map((x, k) => (k === i ? { ...x, ...patch } : x)));
