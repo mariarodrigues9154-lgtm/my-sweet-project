@@ -5,17 +5,29 @@ import { Check, ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { compactBR } from "@/lib/format";
-import { ratingDot, reviewsPageSize, reviewsSectionHeader, type Product } from "@/lib/product-types";
+import { ratingDot, reviewsPageSize, reviewsSectionHeader, type Product, type Review } from "@/lib/product-types";
+import { getMoreReviews } from "@/lib/store.functions";
 
 export function ReviewsSection({ product }: { product: Product }) {
   const PAGE = reviewsPageSize(product);
-  const [count, setCount] = useState(PAGE);
   const [viewer, setViewer] = useState<{ items: ViewerItem[]; index: number } | null>(null);
-  const reviews = (product.reviews ?? []).filter((r) => !r.hidden);
-  if (!reviews.length) return null;
+  const [extra, setExtra] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(false);
+  const base = (product.reviews ?? []).filter((r) => !r.hidden);
+  const total = product.reviews_meta?.total ?? base.length;
+  const shown = [...base, ...extra];
+  const count = shown.length;
+  if (!base.length) return null;
   const head = reviewsSectionHeader(product);
-  const shown = reviews.slice(0, count);
-  const more = () => setCount((c) => c + PAGE);
+  const more = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const r = await getMoreReviews({ data: { slug: product.slug, offset: count, limit: PAGE } });
+      setExtra((e) => [...e, ...r.reviews]);
+    } finally { setLoading(false); }
+  };
+  const reviews = { length: total };
 
   return (
     <section className="mt-2 bg-card px-4 py-4">
@@ -96,7 +108,7 @@ export function ReviewsSection({ product }: { product: Product }) {
       </ul>
       {reviews.length > count && (
         <button type="button" onClick={more} className="mt-1 w-full rounded-full border border-border py-2 text-[12.5px] font-semibold text-muted-foreground">
-          Ver mais avaliações ({reviews.length - count})
+          {loading ? "Carregando…" : `Ver mais avaliações (${reviews.length - count})`}
         </button>
       )}
       {viewer && typeof document !== "undefined" && createPortal(

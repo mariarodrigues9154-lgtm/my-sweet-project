@@ -170,11 +170,13 @@ export type ProductDisplay = {
 export function reviewsSectionHeader(product: Product): { title: string; count: number; rating: number; max: string } {
   const d = product.display ?? {};
   const visible = (product.reviews ?? []).filter((r) => !r.hidden);
+  const meta = product.reviews_meta;
   const countManual = (d.rs_count_source ?? d.rs_source) === "manual";
   const ratingManual = (d.rs_rating_source ?? d.rs_source) === "manual";
-  const real = visible.filter((r) => Number.isFinite(Number(r.rating)));
-  const avg = real.length ? real.reduce((a, r) => a + Number(r.rating), 0) / real.length : 0;
-  const count = countManual && d.rs_count != null ? Math.max(0, Math.round(Number(d.rs_count))) : visible.length || product.reviews_count || 0;
+  const realList = visible.filter((r) => Number.isFinite(Number(r.rating)));
+  const real = { length: meta ? meta.rated : realList.length };
+  const avg = meta ? meta.avg : realList.length ? realList.reduce((a, r) => a + Number(r.rating), 0) / realList.length : 0;
+  const count = countManual && d.rs_count != null ? Math.max(0, Math.round(Number(d.rs_count))) : (meta ? meta.total : visible.length) || product.reviews_count || 0;
   const rating = ratingManual && d.rs_rating != null ? Math.min(5, Math.max(0, Number(d.rs_rating))) : real.length ? Math.round(avg * 10) / 10 : Number(product.rating) || 0;
   return {
     title: d.rs_title?.trim() || "Avaliações dos clientes",
@@ -221,6 +223,8 @@ export type Product = {
   stock: number;
   rating: number;
   reviews_count: number;
+  /** Resumo das avaliações quando a página recebe só a 1ª leva. */
+  reviews_meta?: { total: number; avg: number; rated: number };
   sold_count: number;
   offer: Offer;
   media: Media[];

@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import type { Product, StoreSettings } from "./product-types";
-import { variantImage } from "./product-types";
+import { reviewsPageSize, variantImage } from "./product-types";
 import { parseGatewayDate } from "./pix-time";
 
 function publicClient() {
@@ -120,7 +120,24 @@ export const getProductBySlug = createServerFn({ method: "GET" })
       .eq("slug", data.slug)
       .eq("active", true)
       .maybeSingle();
-    return row ? normalize(row as Record<string, unknown>) : null;
+    return row ? trimReviews(normalize(row as Record<string, unknown>)) : null;
+  });
+
+/** Entrega só a 1ª página de avaliações visíveis + resumo (nota/total) calculado sobre todas. */
+function trimReviews(p: Product): Product {
+  const visible = (p.reviews ?? []).filter((r) => r && !r.hidden);
+  const real = visible.filter((r) => Number.isFinite(Number(r.rating)));
+  const avg = real.length ? real.reduce((a, r) => a + Number(r.rating), 0) / real.length : 0;
+  return { ...p, reviews: visible.slice(0, reviewsPageSize(p)), reviews_meta: { total: visible.length, avg, rated: real.length } };
+}
+
+/** Próximas avaliações visíveis (botão "Ver mais"); lê sempre do banco, então edições do painel valem na hora. */
+export const getMoreReviews = createServerFn({ method: "GET" })
+  .inputValidator((d: { slug: string; offset: number; limit: number }) => z.object({ slug: z.string().min(1), offset: z.number().int().min(0), limit: z.number().int().min(1).max(20) }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: row } = await publicClient().from("products").select("reviews").eq("slug", data.slug).eq("active", true).maybeSingle();
+    const all = (Array.isArray(row?.reviews) ? (row!.reviews as Product["reviews"]) : []).filter((r) => r && !r.hidden);
+    return { reviews: all.slice(data.offset, data.offset + data.limit), total: all.length };
   });
 
 export const getFeaturedProduct = createServerFn({ method: "GET" }).handler(async () => {
