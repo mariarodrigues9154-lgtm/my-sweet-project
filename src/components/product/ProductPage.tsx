@@ -88,6 +88,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
 
       {exitIntent.open && exitCfg && offerView && (
         <ExitOfferPopup
+          store={store}
           offer={exitCfg}
           offerKey={`product:${product.id}`}
           oldPrice={Number((offerView.unit * offerView.qty).toFixed(2))}
