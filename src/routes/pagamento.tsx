@@ -1,4 +1,4 @@
-import { readTracking } from "@/lib/utm-tracking";
+import { readTracking, useUtmifyScripts } from "@/lib/utm-tracking";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { PixQr } from "@/components/checkout/PixQr";
@@ -102,6 +102,7 @@ function CheckoutRoute() {
   });
   const store = storeQuery.data ?? defaultStore;
   useMetaPageView(store.id || null);
+  useUtmifyScripts(store.id || null);
   const checkoutStyle = checkoutTheme(store);
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<CheckoutDraft>(emptyDraft);
