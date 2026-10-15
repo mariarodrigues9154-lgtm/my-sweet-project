@@ -548,6 +548,7 @@ const sectionsSchema = z
         accent_color: z.string().trim().max(20).optional(),
         bg_color: z.string().trim().max(20).optional(),
     }).partial().optional(),
+    coupon_promo: z.unknown().optional().transform((v) => (v === undefined ? undefined : sanitizeCouponPromo(v))),
   })
   .nullish()
   .transform((v) => v ?? {});

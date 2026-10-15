@@ -14,6 +14,9 @@ export type CouponPromoSettings = {
   text_color?: string;
   accent_color?: string;
   border_color?: string;
+  /** Duração própria do cronômetro deste produto. */
+  countdown_hours?: number;
+  countdown_minutes?: number;
 };
 
 export const COUPON_DEFAULTS = {
@@ -30,6 +33,8 @@ export const COUPON_DEFAULTS = {
   text_color: "",
   accent_color: "",
   border_color: "",
+  countdown_hours: 18,
+  countdown_minutes: 9,
 } satisfies Required<CouponPromoSettings>;
 
 export type ResolvedCouponPromo = Required<CouponPromoSettings>;
@@ -50,12 +55,15 @@ export function sanitizeCouponPromo(raw: unknown): CouponPromoSettings {
   const bt = text(r['bar_text'], 160); if (bt !== undefined) out.bar_text = bt;
   const p = num(r['percent'], 0, 100); if (p !== undefined) out.percent = p;
   const m = num(r['max_value'], 0, 100000); if (m !== undefined) out.max_value = m;
+  const ch = num(r['countdown_hours'], 0, 99); if (ch !== undefined) out.countdown_hours = Math.floor(ch);
+  const cm = num(r['countdown_minutes'], 0, 59); if (cm !== undefined) out.countdown_minutes = Math.floor(cm);
   for (const k of ["bg_color", "text_color", "accent_color", "border_color"] as const) if (r[k] !== undefined) out[k] = color(r[k]);
   return out;
 }
 
-export function resolveCouponPromo(checkout: unknown): ResolvedCouponPromo {
-  const raw = (checkout && typeof checkout === "object" ? (checkout as { coupon_promo?: unknown }).coupon_promo : null) ?? {};
+/** Lê a configuração do produto (products.sections.coupon_promo). Sem configuração: chip e barra desligados. */
+export function resolveCouponPromo(sections: unknown): ResolvedCouponPromo {
+  const raw = (sections && typeof sections === "object" ? (sections as { coupon_promo?: unknown }).coupon_promo : null) ?? {};
   const s = sanitizeCouponPromo(raw);
   return {
     ...COUPON_DEFAULTS,
