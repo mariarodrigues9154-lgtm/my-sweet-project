@@ -78,7 +78,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
               key={`${v.handle}-${i}`}
               video={v}
               mode={selected === null ? "auto" : selected === i ? "selected" : "paused"}
-              onPlay={() => v.video && setSelected((s) => (s === i ? null : i))}
+              onPlay={() => v.video && setSelected(i)}
             />
           ),
         )}
