@@ -740,8 +740,28 @@ export const switchOrderToPix = createServerFn({ method: "POST" })
       // Já é PIX (ex.: segundo toque): segue o fluxo PIX normal sem alterar nada.
       return { ok: true as const, order_number: order.order_number as string, access_token: order.access_token as string };
     }
-    // Cobrança de cartão existente ou em processamento: não gera PIX para evitar cobrança dupla.
-    if (order.transaction_id || order.provider_status === "creating") return { ok: false as const, reason: "card_pending" as const };
+    // Tentativa de cartão em andamento: não gera PIX para evitar cobrança dupla.
+    if (order.provider_status === "creating") return { ok: false as const, reason: "card_pending" as const };
+    // Já existe transação de cartão: só libera o PIX se a falha estiver confirmada pelo gateway.
+    if (order.transaction_id) {
+      const FAILED = ["refused", "failed", "error", "canceled", "cancelled", "expired"];
+      let st = String(order.provider_status ?? "").toLowerCase();
+      if (!FAILED.includes(st)) {
+        try {
+          const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+          const { getProvider } = await import("@/lib/payments/providers.server");
+          const cfgRow = await loadStorePayment(order.store_id as string);
+          const gw = cfgRow ? getProvider(cfgRow.provider) : null;
+          if (!cfgRow || !gw) return { ok: false as const, reason: "card_pending" as const };
+          st = String((await gw.getStatus(toGatewayConfig(cfgRow), order.transaction_id as string)).status ?? "").toLowerCase();
+        } catch (e) {
+          console.error("[card] status incerto ao trocar para PIX", { order_number: order.order_number, store_id: order.store_id, transaction_id: order.transaction_id, error: e instanceof Error ? e.message : String(e) });
+          return { ok: false as const, reason: "card_pending" as const };
+        }
+        if (st === "paid") return { ok: false as const, reason: "paid" as const };
+        if (!FAILED.includes(st)) return { ok: false as const, reason: "card_pending" as const };
+      }
+    }
 
     const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", order.store_id).maybeSingle();
     const { resolvePaymentMethods, pixDiscountCents } = await import("./payment-methods");
@@ -761,11 +781,13 @@ export const switchOrderToPix = createServerFn({ method: "POST" })
         total: (grossCents - offCents) / 100,
         product_snapshot: snapshot,
         provider_status: null,
-        payment: { provider: null, status: "pendente", previous_method: "card" },
+        transaction_id: null,
+        payment_provider: null,
+        payment_method: "pix",
+        payment: { provider: null, status: "pendente", previous_method: "card", ...(order.transaction_id ? { previous_card_transaction: order.transaction_id } : {}) },
         updated_at: new Date().toISOString(),
       } as never)
       .eq("id", order.id)
-      .is("transaction_id", null)
       .neq("status", "pago")
       .or("provider_status.is.null,provider_status.neq.creating")
       .select("order_number, total, access_token");
