@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { fillCouponText, resolveCouponPromo, sanitizeCouponPromo } from "./coupon-promo";
 
 describe("cupom promocional", () => {
+  it("produto antigo sem configuração: chip e barra desligados", () => {
+    const c = resolveCouponPromo({});
+    expect([c.chip_enabled, c.bar_enabled]).toEqual([false, false]);
+  });
   it("desligar não apaga textos salvos", () => {
     const c = resolveCouponPromo({ coupon_promo: { chip_enabled: false, chip_text: "Cupom especial de outubro" } });
     expect(c.chip_enabled).toBe(false);
