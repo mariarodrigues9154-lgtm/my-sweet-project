@@ -46,10 +46,10 @@ export function sanitizeCouponPromo(raw: unknown): CouponPromoSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const out: CouponPromoSettings = {};
   for (const k of ["chip_enabled", "bar_enabled", "show_timer", "show_close", "show_arrow"] as const) if (typeof r[k] === "boolean") out[k] = r[k] as boolean;
-  const ct = text(r.chip_text, 120); if (ct !== undefined) out.chip_text = ct;
-  const bt = text(r.bar_text, 160); if (bt !== undefined) out.bar_text = bt;
-  const p = num(r.percent, 0, 100); if (p !== undefined) out.percent = p;
-  const m = num(r.max_value, 0, 100000); if (m !== undefined) out.max_value = m;
+  const ct = text(r['chip_text'], 120); if (ct !== undefined) out.chip_text = ct;
+  const bt = text(r['bar_text'], 160); if (bt !== undefined) out.bar_text = bt;
+  const p = num(r['percent'], 0, 100); if (p !== undefined) out.percent = p;
+  const m = num(r['max_value'], 0, 100000); if (m !== undefined) out.max_value = m;
   for (const k of ["bg_color", "text_color", "accent_color", "border_color"] as const) if (r[k] !== undefined) out[k] = color(r[k]);
   return out;
 }
