@@ -6,8 +6,8 @@ export const SHIPPING = {
   name: "Frete Expresso",
   originalPrice: 24.9, // referência visual riscada, nunca cobrada
   currentPrice: 0, // valor realmente cobrado
-  minDeliveryDays: 2,
-  maxDeliveryDays: 4,
+  minDeliveryDays: 7,
+  maxDeliveryDays: 12,
 } as const;
 
 const dayMonth = (d: Date) => new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "long" }).format(d);
