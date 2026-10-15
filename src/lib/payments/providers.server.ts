@@ -670,7 +670,134 @@ const blackcat: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, mercadopago, asaas };
+// ------------------------------------------------------------------ InvictusPay
+// Doc: API Seller v1 — header X-Api-Key, valores em centavos, PIX via POST /transactions.
+
+export const INVICTUS_BASE = "https://api.invictuspayv2.com.br/api/v1";
+
+/** Status oficiais da InvictusPay → status interno (minúsculo). */
+export const INVICTUS_STATUSES = ["pending", "processing", "antifraud", "paid", "failed", "refused", "expired", "cancelled", "refunded", "in_dispute", "pre_chargeback", "chargeback"] as const;
+export function mapInvictusStatus(raw: unknown): string {
+  const s = String(raw ?? "").trim().toLowerCase();
+  return (INVICTUS_STATUSES as readonly string[]).includes(s) ? s : "unknown";
+}
+
+function invictusError(status: number, retryAfter?: string | null): string {
+  if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique a API Key da InvictusPay.";
+  if (status === 400 || status === 422) return "Alguns dados do pedido não foram aceitos. Confira nome, e-mail, telefone e CPF.";
+  if (status === 429) return `Muitas tentativas seguidas. Aguarde ${retryAfter && /^\d+$/.test(retryAfter) ? `${retryAfter} segundos` : "um minuto"}.`;
+  return "O provedor de pagamento não respondeu. Tente novamente.";
+}
+
+/** A doc não descreve os campos do PIX na resposta: localiza o código EMV (000201…) e imagem pelo conteúdo. */
+function findPixInBody(body: unknown): { payload: string | null; image: string | null; keys: string[] } {
+  let payload: string | null = null;
+  let image: string | null = null;
+  const keys: string[] = [];
+  const walk = (v: unknown, path: string, depth: number) => {
+    if (depth > 5 || v == null) return;
+    if (typeof v === "string") {
+      if (!payload && isPixPayload(v)) { payload = v.trim(); keys.push(path); }
+      else if (!image && /^data:image\//.test(v)) { image = v; keys.push(path); }
+      return;
+    }
+    if (typeof v === "object") for (const [k, val] of Object.entries(v as Record<string, unknown>)) walk(val, path ? `${path}.${k}` : k, depth + 1);
+  };
+  walk(body, "", 0);
+  return { payload, image, keys };
+}
+
+function invictusTx(body: unknown): Record<string, unknown> | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+  for (const k of ["transaction", "data"]) {
+    const v = b[k];
+    if (v && typeof v === "object" && !Array.isArray(v) && "id" in (v as object)) return v as Record<string, unknown>;
+  }
+  return "id" in b ? b : null;
+}
+
+const invictuspay: PaymentProvider = {
+  id: "invictuspay",
+  async testConnection(config) {
+    const key = config.secrets["api_key"] ?? "";
+    if (!key) return { ok: false, error: "Informe a API Key." };
+    const res = await fetch(`${INVICTUS_BASE}/account`, { headers: { "X-Api-Key": key, accept: "application/json" }, signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return { ok: false, error: invictusError(res.status, res.headers.get("retry-after")) };
+    const j = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    const acc = ((j?.["data"] && typeof j["data"] === "object" ? j["data"] : j) ?? {}) as Record<string, unknown>;
+    const str = (...ks: string[]) => { for (const k of ks) if (typeof acc[k] === "string" && acc[k]) return acc[k] as string; return undefined; };
+    return { ok: true, company: { fantasy_name: str("fantasy_name", "trade_name", "name"), status: str("status") } };
+  },
+  async createPix(config, input) {
+    const key = config.secrets["api_key"] ?? "";
+    if (!key) return { ok: false, error: "Gateway sem credenciais." };
+    const amount = input.amountCents ?? Math.round(input.amount * 100);
+    if (!Number.isInteger(amount) || amount <= 0) return { ok: false, error: "Valor do pedido inválido." };
+    const phone = digits(input.customer.phone ?? "");
+    const doc = digits(input.customer.document);
+    if (!input.customer.email || !phone || !doc) return { ok: false, error: "Preencha e-mail, telefone e CPF para gerar o PIX." };
+    // Itens: soma exata = amount, e amount de cada item divisível pela quantidade.
+    let items = (input.items ?? []).map((i) => ({ description: i.title.slice(0, 140), quantity: i.quantity, amount: i.unit_price * i.quantity, ...(i.external_ref ? { externalRef: i.external_ref } : {}) }));
+    const fee = input.shipping?.fee ?? 0;
+    if (fee > 0) items.push({ description: "Frete", quantity: 1, amount: fee });
+    const sum = items.reduce((t, i) => t + i.amount, 0);
+    if (!items.length || sum !== amount || items.some((i) => i.amount % i.quantity !== 0)) {
+      items = [{ description: input.description.slice(0, 140), quantity: 1, amount, externalRef: input.orderNumber }];
+    }
+    const body = {
+      amount,
+      paymentMethod: "pix",
+      customer: { name: input.customer.name.trim().slice(0, 120) || "Cliente", email: input.customer.email.trim().slice(0, 160), document: doc, phone },
+      items,
+      ...(input.postbackUrl ? { postbackUrl: input.postbackUrl } : {}),
+      pix: { expirationInSeconds: 900 },
+    };
+    const res = await fetch(`${INVICTUS_BASE}/transactions`, {
+      method: "POST",
+      headers: { "X-Api-Key": key, "Content-Type": "application/json", accept: "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30000),
+    });
+    const json = (await res.json().catch(() => null)) as unknown;
+    const tx = invictusTx(json);
+    if (!res.ok || !tx?.["id"]) {
+      const msg = json && typeof json === "object" ? String((json as Record<string, unknown>)["message"] ?? "") : "";
+      console.error("[invictuspay] create falhou", res.status, msg.slice(0, 200));
+      return { ok: false, error: invictusError(res.status, res.headers.get("retry-after")) };
+    }
+    const found = findPixInBody(json);
+    // Registro só dos nomes dos campos (nunca valores) para conferir a resposta real.
+    console.info("[invictuspay] resposta PIX", { top: Object.keys(tx).slice(0, 30), pix_fields: found.keys });
+    let qr = found.image;
+    if (!qr && found.payload) qr = await qrFromPayload(found.payload);
+    if (!found.payload && !qr) return { ok: false, error: "O provedor não retornou os dados do PIX. Tente novamente." };
+    return {
+      ok: true,
+      transaction_id: String(tx["id"]),
+      qr_code: qr,
+      copy_paste: found.payload,
+      expires_in: 900,
+      provider_status: mapInvictusStatus(tx["status"] ?? "pending"),
+      amount_cents: typeof tx["amount"] === "number" ? (tx["amount"] as number) : null,
+    };
+  },
+  async getStatus(config, transactionId) {
+    const key = config.secrets["api_key"] ?? "";
+    if (!key) return { paid: false, status: "unknown" };
+    const res = await fetch(`${INVICTUS_BASE}/transactions/${encodeURIComponent(transactionId)}`, {
+      headers: { "X-Api-Key": key, accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`invictuspay status ${res.status}`);
+    const tx = invictusTx(await res.json().catch(() => null));
+    const status = mapInvictusStatus(tx?.["status"]);
+    const paidAt = typeof tx?.["paid_at"] === "string" ? (tx["paid_at"] as string) : null;
+    return { paid: status === "paid", status, paid_at: paidAt };
+  },
+};
+
+const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;
