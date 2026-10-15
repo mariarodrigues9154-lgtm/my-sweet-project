@@ -368,7 +368,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, total, status, store_id, product_id, quantity, unit_price, shipping_price, customer, address, product_snapshot, payment, transaction_id, provider_status, pix_expiration_date")
+      .select("id, order_number, total, status, store_id, product_id, quantity, unit_price, shipping_price, customer, address, product_snapshot, payment, transaction_id, provider_status, pix_expiration_date, tracking_params")
       .eq("order_number", data.order_number)
       .maybeSingle();
 
@@ -503,7 +503,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
         },
         ...(postbackUrl ? { postbackUrl } : {}),
         ...(checkoutUrl ? { checkoutUrl } : {}),
-        metadata: { order_id: order.id as string, store_id: order.store_id as string },
+        metadata: { ...Object.fromEntries(Object.entries(((order as { tracking_params?: unknown }).tracking_params ?? {}) as Record<string, unknown>).filter(([, v]) => typeof v === "string") as [string, string][]), order_id: order.id as string, store_id: order.store_id as string },
         expiresInDays: pixDays,
       });
     } catch (err) {
