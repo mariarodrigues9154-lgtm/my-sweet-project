@@ -797,7 +797,124 @@ const invictuspay: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, mercadopago, asaas };
+// ----------------------------------------------------------------------- CodeFy
+// Doc: usecodefy.com/docs (Gateway PIX) — headers x-public-key + x-secret-key, valores em REAIS.
+
+export const CODEFY_BASE = "https://usecodefy.com/api/v1/gateway";
+
+/** Status oficiais do Gateway CodeFy: pending, paid, expired, refunded. */
+export function mapCodefyStatus(raw: unknown): string {
+  const s = String(raw ?? "").trim().toLowerCase();
+  return s === "pending" || s === "paid" || s === "expired" || s === "refunded" ? s : "unknown";
+}
+
+function codefyHeaders(config: GatewayConfig): Record<string, string> | null {
+  const pk = config.publicData["public_key"] ?? "";
+  const sk = config.secrets["secret_key"] ?? "";
+  if (!pk || !sk) return null;
+  return { "x-public-key": pk, "x-secret-key": sk, "Content-Type": "application/json" };
+}
+
+function codefyError(status: number): string {
+  if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique as chaves da CodeFy.";
+  if (status === 400 || status === 422) return "Alguns dados do pedido não foram aceitos. Confira nome, CPF, telefone e endereço.";
+  if (status === 429) return "Muitas tentativas seguidas. Aguarde um minuto.";
+  return "O provedor de pagamento não respondeu. Tente novamente.";
+}
+
+type CodefyTx = { id?: string; external_id?: string; status?: string; amount?: number | string; pix_code?: string; qr_code_url?: string | null; expires_at?: string; pix_expiration?: string; paid_at?: string | null };
+const codefyTx = (j: unknown): CodefyTx | null => {
+  const o = j as { transaction?: CodefyTx; data?: CodefyTx } | null;
+  return o?.transaction ?? o?.data ?? ((o as CodefyTx | null)?.id ? (o as CodefyTx) : null);
+};
+
+const codefy: PaymentProvider = {
+  id: "codefy",
+  async testConnection(config) {
+    const h = codefyHeaders(config);
+    if (!h) return { ok: false, error: "Informe a Public Key e a Secret Key." };
+    const res = await fetch(`${CODEFY_BASE}/seller/balance`, { headers: h, signal: AbortSignal.timeout(10000) });
+    return res.ok ? { ok: true, company: {} } : { ok: false, error: codefyError(res.status) };
+  },
+  async createPix(config, input) {
+    const h = codefyHeaders(config);
+    if (!h) return { ok: false, error: "Gateway sem credenciais." };
+    const cents = input.amountCents ?? Math.round(input.amount * 100);
+    if (!Number.isInteger(cents) || cents <= 0) return { ok: false, error: "Valor do pedido inválido." };
+    const a = input.shipping?.address;
+    const zip = digits(a?.zip_code ?? "");
+    const address = a && zip.length === 8 && /^[A-Z]{2}$/.test(a.state)
+      ? { street: a.street, number: a.street_number, complement: a.complement, neighborhood: a.neighborhood, city: a.city, state: a.state, zip }
+      : undefined;
+    const phone = digits(input.customer.phone ?? "");
+    const tracking: Record<string, string> = {};
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "sck"]) {
+      const v = input.metadata?.[k];
+      if (v) tracking[k] = v.slice(0, 200);
+    }
+    const body = {
+      amount: cents / 100,
+      description: input.description.slice(0, 140),
+      ...(input.checkoutUrl ? { origin_url: input.checkoutUrl } : {}),
+      external_id: input.orderNumber,
+      ...(input.postbackUrl ? { callbackUrl: input.postbackUrl } : {}),
+      customer: {
+        name: input.customer.name.trim().slice(0, 120) || "Cliente",
+        cpf: digits(input.customer.document),
+        email: input.customer.email.trim().slice(0, 160),
+        ...(phone.length >= 10 ? { phone } : {}),
+        ...(address ? { address } : {}),
+      },
+      ...(Object.keys(tracking).length ? { trackingParameters: tracking } : {}),
+    };
+    const res = await fetch(`${CODEFY_BASE}/pix/receive`, { method: "POST", headers: h, body: JSON.stringify(body), signal: AbortSignal.timeout(30000) });
+    const json = (await res.json().catch(() => null)) as unknown;
+    const tx = codefyTx(json);
+    if (!res.ok || !tx?.id) {
+      console.error("[codefy] create falhou", res.status);
+      return { ok: false, error: codefyError(res.status) };
+    }
+    const copyPaste = isPixPayload(tx.pix_code) ? tx.pix_code.trim() : null;
+    const qr = copyPaste ? await qrFromPayload(copyPaste) : null;
+    if (!copyPaste) return { ok: false, error: "O provedor não retornou os dados do PIX. Tente novamente." };
+    const exp = tx.expires_at ?? tx.pix_expiration ?? null;
+    const expMs = exp ? Date.parse(exp) - Date.now() : NaN;
+    return {
+      ok: true,
+      transaction_id: String(tx.id),
+      qr_code: qr,
+      copy_paste: copyPaste,
+      expires_in: Number.isFinite(expMs) && expMs > 0 ? Math.floor(expMs / 1000) : 900,
+      provider_status: mapCodefyStatus(tx.status ?? "pending"),
+      expiration_date: exp,
+      amount_cents: tx.amount != null && Number.isFinite(Number(tx.amount)) ? Math.round(Number(tx.amount) * 100) : null,
+    };
+  },
+  async getStatus(config, transactionId) {
+    const h = codefyHeaders(config);
+    if (!h) return { paid: false, status: "unknown" };
+    const res = await fetch(`${CODEFY_BASE}/transactions/${encodeURIComponent(transactionId)}`, { headers: h, signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error(`codefy status ${res.status}`);
+    const tx = codefyTx(await res.json().catch(() => null));
+    const status = mapCodefyStatus(tx?.status);
+    return { paid: status === "paid", status, paid_at: tx?.paid_at ?? null };
+  },
+};
+
+/** Valida X-CodeFy-Signature (sha256=<hmac hex do corpo bruto>). */
+export async function verifyCodefySignature(raw: string, header: string | null, secret: string): Promise<boolean> {
+  if (!header || !secret) return false;
+  const given = header.replace(/^sha256=/i, "").trim().toLowerCase();
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw)));
+  const hex = Array.from(mac, (b) => b.toString(16).padStart(2, "0")).join("");
+  if (hex.length !== given.length) return false;
+  let diff = 0;
+  for (let i = 0; i < hex.length; i++) diff |= hex.charCodeAt(i) ^ given.charCodeAt(i);
+  return diff === 0;
+}
+
+const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;
