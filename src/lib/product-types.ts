@@ -123,6 +123,8 @@ export type ProductSections = {
   exit_offer?: import("./exit-offer").ExitOfferSettings;
   product_exit_offer_mode?: "store" | "on" | "off";
   product_exit_offer?: import("./exit-offer").ExitOfferSettings;
+  offer_countdown?: { hours?: number; minutes?: number };
+  coupon_promo?: import("./coupon-promo").CouponPromoSettings;
 };
 
 /** Atendimento por IA e suporte humano — por loja, lido só no servidor. */
