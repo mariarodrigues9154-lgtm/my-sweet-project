@@ -368,7 +368,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, total, status, store_id, product_id, quantity, unit_price, shipping_price, customer, address, product_snapshot, payment, transaction_id, provider_status, pix_expiration_date")
+      .select("id, order_number, total, status, store_id, product_id, quantity, unit_price, shipping_price, customer, address, product_snapshot, payment, transaction_id, provider_status, pix_expiration_date, tracking_params")
       .eq("order_number", data.order_number)
       .maybeSingle();
 
@@ -468,7 +468,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
       checkoutUrl = `${origin}/pagamento`;
-      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "freepay" ? `${origin}/api/public/webhooks/freepay` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : row.provider === "invictuspay" ? `${origin}/api/public/webhooks/invictuspay` : `${origin}/api/public/pagamentos/webhook`;
+      if (origin.startsWith("https://")) postbackUrl = row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "freepay" ? `${origin}/api/public/webhooks/freepay` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : row.provider === "invictuspay" ? `${origin}/api/public/webhooks/invictuspay` : row.provider === "codefy" ? `${origin}/api/public/webhooks/codefy` : `${origin}/api/public/pagamentos/webhook`;
     } catch {
       postbackUrl = undefined;
     }
@@ -503,7 +503,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
         },
         ...(postbackUrl ? { postbackUrl } : {}),
         ...(checkoutUrl ? { checkoutUrl } : {}),
-        metadata: { order_id: order.id as string, store_id: order.store_id as string },
+        metadata: { ...Object.fromEntries(Object.entries(((order as { tracking_params?: unknown }).tracking_params ?? {}) as Record<string, unknown>).filter(([, v]) => typeof v === "string") as [string, string][]), order_id: order.id as string, store_id: order.store_id as string },
         expiresInDays: pixDays,
       });
     } catch (err) {
@@ -531,7 +531,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const gatewayExpMs = Number.isFinite(rawGw) && rawGw > nowMs + 2 * 60 * 1000 ? rawGw : NaN;
     if (charge.expiration_date && !Number.isFinite(gatewayExpMs)) console.warn("[pix] validade do gateway ignorada", row.provider, charge.expiration_date);
     // Blackcat: a validade devolvida pelo gateway é a fonte de verdade (sem janela de 15 min).
-    const expMs = row.provider === "blackcat" && Number.isFinite(gatewayExpMs) ? gatewayExpMs : Math.min(nowMs + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
+    const expMs = (row.provider === "blackcat" || row.provider === "codefy") && Number.isFinite(gatewayExpMs) ? gatewayExpMs : Math.min(nowMs + PIX_WINDOW_MS, Number.isFinite(gatewayExpMs) ? gatewayExpMs : Infinity);
     const expIso = new Date(expMs).toISOString();
     charge = { ...charge, expiration_date: expIso, expires_in: Math.max(0, Math.floor((expMs - nowMs) / 1000)) };
 

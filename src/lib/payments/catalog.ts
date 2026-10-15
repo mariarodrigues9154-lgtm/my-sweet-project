@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -76,6 +76,18 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
     fields: [{ key: "api_key", label: "API Key", secret: true, required: true, hint: "Começa com sk_" }],
   },
   {
+    id: "codefy",
+    name: "CodeFy",
+    supportsPix: true,
+    singleEnvironment: true,
+    docs: "Painel da CodeFy > API & Integrações",
+    fields: [
+      { key: "public_key", label: "Public Key", secret: false, required: true, hint: "Começa com cfy_pk_" },
+      { key: "secret_key", label: "Secret Key", secret: true, required: true, hint: "Começa com cfy_sk_" },
+      { key: "webhook_secret", label: "Chave secreta de callback (opcional)", secret: true, required: false, hint: "Se preenchida, a assinatura X-CodeFy-Signature é validada" },
+    ],
+  },
+  {
     id: "mercadopago",
     name: "Mercado Pago",
     supportsPix: true,
@@ -111,5 +123,6 @@ export function maskSecret(value: string): string {
   // Apenas o prefixo público "sk_" e os 4 últimos caracteres, como pedido no painel.
   const v = String(value ?? "");
   if (v.startsWith("sk_") && v.length >= 16) return `sk_••••••••••••${v.slice(-4)}`;
+  if (v.length >= 16) return `••••••••••${v.slice(-4)}`;
   return "••••••••••••••••";
 }

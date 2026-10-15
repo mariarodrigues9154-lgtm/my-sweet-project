@@ -33,6 +33,7 @@ import { Route as ApiPublicHooksPixWhatsappRouteImport } from './routes/api/publ
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 import { Route as ApiPublicPagamentosWebhookRouteImport } from './routes/api/public/pagamentos.webhook'
 import { Route as ApiPublicWebhooksBlackcatRouteImport } from './routes/api/public/webhooks.blackcat'
+import { Route as ApiPublicWebhooksCodefyRouteImport } from './routes/api/public/webhooks.codefy'
 import { Route as ApiPublicWebhooksFreepayRouteImport } from './routes/api/public/webhooks.freepay'
 import { Route as ApiPublicWebhooksInvictuspayRouteImport } from './routes/api/public/webhooks.invictuspay'
 import { Route as ApiPublicWebhooksPinpayRouteImport } from './routes/api/public/webhooks.pinpay'
@@ -163,6 +164,11 @@ const ApiPublicWebhooksBlackcatRoute =
     path: '/api/public/webhooks/blackcat',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksCodefyRoute = ApiPublicWebhooksCodefyRouteImport.update({
+  id: '/api/public/webhooks/codefy',
+  path: '/api/public/webhooks/codefy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksFreepayRoute =
   ApiPublicWebhooksFreepayRouteImport.update({
     id: '/api/public/webhooks/freepay',
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
+  '/api/public/webhooks/codefy': typeof ApiPublicWebhooksCodefyRoute
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
+  '/api/public/webhooks/codefy': typeof ApiPublicWebhooksCodefyRoute
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/pagamentos/webhook': typeof ApiPublicPagamentosWebhookRoute
   '/api/public/webhooks/blackcat': typeof ApiPublicWebhooksBlackcatRoute
+  '/api/public/webhooks/codefy': typeof ApiPublicWebhooksCodefyRoute
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
+    | '/api/public/webhooks/codefy'
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
     | '/api/public/webhooks/pinpay'
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
+    | '/api/public/webhooks/codefy'
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
     | '/api/public/webhooks/pinpay'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/pagamentos/webhook'
     | '/api/public/webhooks/blackcat'
+    | '/api/public/webhooks/codefy'
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
     | '/api/public/webhooks/pinpay'
@@ -397,6 +409,7 @@ export interface RootRouteChildren {
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPagamentosWebhookRoute: typeof ApiPublicPagamentosWebhookRoute
   ApiPublicWebhooksBlackcatRoute: typeof ApiPublicWebhooksBlackcatRoute
+  ApiPublicWebhooksCodefyRoute: typeof ApiPublicWebhooksCodefyRoute
   ApiPublicWebhooksFreepayRoute: typeof ApiPublicWebhooksFreepayRoute
   ApiPublicWebhooksInvictuspayRoute: typeof ApiPublicWebhooksInvictuspayRoute
   ApiPublicWebhooksPinpayRoute: typeof ApiPublicWebhooksPinpayRoute
@@ -574,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksBlackcatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/codefy': {
+      id: '/api/public/webhooks/codefy'
+      path: '/api/public/webhooks/codefy'
+      fullPath: '/api/public/webhooks/codefy'
+      preLoaderRoute: typeof ApiPublicWebhooksCodefyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/freepay': {
       id: '/api/public/webhooks/freepay'
       path: '/api/public/webhooks/freepay'
@@ -659,6 +679,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPagamentosWebhookRoute: ApiPublicPagamentosWebhookRoute,
   ApiPublicWebhooksBlackcatRoute: ApiPublicWebhooksBlackcatRoute,
+  ApiPublicWebhooksCodefyRoute: ApiPublicWebhooksCodefyRoute,
   ApiPublicWebhooksFreepayRoute: ApiPublicWebhooksFreepayRoute,
   ApiPublicWebhooksInvictuspayRoute: ApiPublicWebhooksInvictuspayRoute,
   ApiPublicWebhooksPinpayRoute: ApiPublicWebhooksPinpayRoute,
