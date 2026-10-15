@@ -1,4 +1,3 @@
-import { CouponPromoFields } from "@/components/admin/CouponPromoFields";
 import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
 import { PaymentMethodsFields } from "@/components/admin/PaymentMethodsFields";
 import { useState } from "react";
@@ -201,15 +200,6 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
           </div>
         );
       })()}
-    </Group>
-
-    <Group title="Cupom / aviso promocional">
-      <CouponPromoFields
-        value={draft.checkout?.coupon_promo}
-        countdown={draft.checkout?.offer_countdown}
-        onChange={(v) => set("checkout", { ...draft.checkout, coupon_promo: v })}
-        onCountdownChange={(v) => set("checkout", { ...draft.checkout, offer_countdown: v })}
-      />
     </Group>
 
     <Group title="Formas de pagamento">

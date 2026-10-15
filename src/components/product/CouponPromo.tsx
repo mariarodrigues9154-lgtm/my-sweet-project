@@ -40,22 +40,24 @@ export function CouponBarView({ cfg, timer, onClose }: { cfg: ResolvedCouponProm
   );
 }
 
-export function CouponChip({ store }: { store: StoreLike }) {
-  const cfg = resolveCouponPromo(store?.checkout);
+type ProductLike = { id?: string | null; sections?: unknown };
+
+export function CouponChip({ product }: { product: ProductLike }) {
+  const cfg = resolveCouponPromo(product.sections);
   if (!cfg.chip_enabled) return null;
   return <div className="bg-card px-3 pt-2.5"><CouponChipView cfg={cfg} /></div>;
 }
 
-export function CouponBar({ store }: { store: StoreLike }) {
-  const cfg = resolveCouponPromo(store?.checkout);
-  const key = `coupon-bar-closed:${store?.id || "default"}`;
+export function CouponBar({ store, product }: { store: StoreLike; product: ProductLike }) {
+  const cfg = resolveCouponPromo(product.sections);
+  const key = `coupon-bar-closed:${product.id || "default"}`;
   const [closed, setClosed] = useState(false);
   useEffect(() => { try { setClosed(sessionStorage.getItem(key) === "1"); } catch { /* ignore */ } }, [key]);
   if (!cfg.bar_enabled || closed) return null;
   return (
     <CouponBarView
       cfg={cfg}
-      timer={<Countdown store={store} />}
+      timer={<Countdown store={store} product={product} />}
       onClose={() => { setClosed(true); try { sessionStorage.setItem(key, "1"); } catch { /* ignore */ } }}
     />
   );

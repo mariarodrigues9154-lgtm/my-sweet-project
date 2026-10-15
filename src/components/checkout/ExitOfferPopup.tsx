@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BadgeCheck, Clock, Gift, ShieldCheck, Star, Truck } from "lucide-react";
 
 import { brl, clock } from "@/lib/format";
-import { useStoreCountdown } from "@/lib/store-countdown";
+import { useStoreCountdown, type CountdownProduct } from "@/lib/store-countdown";
 import type { ResolvedExitOffer } from "@/lib/exit-offer";
 
 
@@ -39,8 +39,8 @@ export function useExitIntent(active: boolean, key: string) {
 
 export type ExitOfferProduct = { name: string; image?: string | undefined; variant?: string | undefined; quantity: number; rating?: number | null | undefined; warranty?: string | null | undefined };
 
-export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = "", store, onAccept, onDecline }: { store?: { id?: string | null; checkout?: unknown } | null | undefined; offer: ResolvedExitOffer; oldPrice: number; newPrice: number; product?: ExitOfferProduct; offerKey?: string; onAccept: () => void; onDecline: () => void }) {
-  const left = useStoreCountdown(store);
+export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = "", store, countdownProduct, onAccept, onDecline }: { store?: { id?: string | null; checkout?: unknown } | null | undefined; countdownProduct?: CountdownProduct; offer: ResolvedExitOffer; oldPrice: number; newPrice: number; product?: ExitOfferProduct; offerKey?: string; onAccept: () => void; onDecline: () => void }) {
+  const left = useStoreCountdown(store, countdownProduct);
   void offerKey;
   const timerText = offer.timer_text.includes("{MM:SS}") ? offer.timer_text.split("{MM:SS}") : [offer.timer_text + " ", ""];
   const decline = offer.decline_text.replace("{preco}", brl(oldPrice));

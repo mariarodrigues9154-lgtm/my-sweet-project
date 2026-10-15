@@ -1,3 +1,4 @@
+import { CouponPromoFields } from "@/components/admin/CouponPromoFields";
 import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
 import { parseMoney, moneyInput } from "@/lib/format";
 import * as React from "react";
@@ -845,6 +846,10 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
             Adicionar
           </button>
         </div>
+      </Group>
+
+      <Group title="Cupom / aviso promocional">
+        <CouponPromoFields value={d.sections.coupon_promo} onChange={(v) => set("sections", { ...d.sections, coupon_promo: v })} />
       </Group>
 
       <Group title="Popup de notificações">

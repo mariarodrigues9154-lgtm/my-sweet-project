@@ -22,13 +22,23 @@ export function remainingSeconds(deadline: number, duration: number, now: number
 }
 
 type StoreLike = { id?: string | null; checkout?: unknown } | null | undefined;
+export type CountdownProduct = { id?: string | null; sections?: unknown } | null | undefined;
 
-export function useStoreCountdown(store: StoreLike): number {
-  const duration = resolveCountdownSeconds(store?.checkout);
-  const storeKey = store?.id || "default";
+/** Duração própria do produto (sections.coupon_promo.countdown_*), ou null para usar a da loja. */
+export function productCountdownSeconds(product: CountdownProduct): number | null {
+  const cp = (product?.sections && typeof product.sections === "object" ? (product.sections as { coupon_promo?: { countdown_hours?: number; countdown_minutes?: number } }).coupon_promo : null) ?? null;
+  if (!cp || (cp.countdown_hours === undefined && cp.countdown_minutes === undefined)) return null;
+  return resolveCountdownSeconds({ offer_countdown: { hours: cp.countdown_hours ?? 0, minutes: cp.countdown_minutes ?? 0 } });
+}
+
+/** Um único prazo por produto (quando ele tem duração própria) ou por loja; persistido no navegador. */
+export function useStoreCountdown(store: StoreLike, product?: CountdownProduct): number {
+  const own = productCountdownSeconds(product);
+  const duration = own ?? resolveCountdownSeconds(store?.checkout);
+  const scope = own !== null && product?.id ? `product:${product.id}` : `store:${store?.id || "default"}`;
   const [left, setLeft] = useState(duration);
   useEffect(() => {
-    const key = `store-countdown:${storeKey}:${duration}`;
+    const key = `countdown:${scope}:${duration}`;
     const tick = () => {
       let saved = 0;
       try { saved = Number(window.localStorage.getItem(key)) || 0; } catch { /* sem storage */ }
@@ -39,6 +49,6 @@ export function useStoreCountdown(store: StoreLike): number {
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [storeKey, duration]);
+  }, [scope, duration]);
   return left;
 }
