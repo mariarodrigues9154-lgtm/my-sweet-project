@@ -8,10 +8,31 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
 
-/** Só aceita scripts hospedados pela própria UTMify. */
-function utmifySrc(code: string): string | null {
+const UTMIFY_SRC = /^https:\/\/cdn\.utmify\.com\.br\/[A-Za-z0-9/_.\-]+\.js$/;
+
+/**
+ * Lê (sem executar) o formato codificado oficial da UTMify: atob("...") onde
+ * byte0 = tamanho da chave, depois a chave XOR e o JSON {url, attributes}.
+ */
+export function decodeUtmifyLoader(code: string): string | null {
+  const m = code.match(/atob\(\s*["']([A-Za-z0-9+/=]{20,8000})["']\s*\)/);
+  if (!m) return null;
+  try {
+    const bin = atob(m[1]!);
+    const bytes = Array.from(bin, (c) => c.charCodeAt(0) & 255);
+    const n = bytes[0]!;
+    if (!n || bytes.length <= n + 1) return null;
+    const key = bytes.slice(1, 1 + n);
+    const out = bytes.slice(1 + n).map((b, i) => b ^ key[i % n]!);
+    const json = JSON.parse(new TextDecoder().decode(new Uint8Array(out))) as { url?: unknown };
+    return typeof json.url === "string" && UTMIFY_SRC.test(json.url) ? json.url : null;
+  } catch { return null; }
+}
+
+/** Só aceita scripts hospedados pela própria UTMify (texto simples ou formato codificado oficial). */
+export function utmifySrc(code: string): string | null {
   const m = code.match(/https:\/\/cdn\.utmify\.com\.br\/[A-Za-z0-9/_.\-]+\.js/);
-  return m ? m[0] : null;
+  return m ? m[0] : decodeUtmifyLoader(code);
 }
 function pixelIdFrom(code: string): string | null {
   const m = code.match(/pixelId\s*=\s*["']([A-Za-z0-9_\-]{4,80})["']/);

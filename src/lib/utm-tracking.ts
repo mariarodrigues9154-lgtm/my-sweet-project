@@ -52,7 +52,7 @@ export function useUtmifyScripts(storeId: string | null | undefined) {
     requested = storeId;
     void getStoreUtmifyScripts({ data: { store_id: storeId } }).then((cfg) => {
       if (!cfg) return;
-      if (cfg.utm_script_src) addScript(cfg.utm_script_src, { "data-utmify-prevent-subids": "" });
+      if (cfg.utm_script_src) addScript(cfg.utm_script_src, { "data-utmify-prevent-xcod-sck": "", "data-utmify-prevent-subids": "" });
       if (cfg.pixel_script_src && cfg.pixel_id) {
         (window as unknown as { pixelId?: string }).pixelId = cfg.pixel_id;
         addScript(cfg.pixel_script_src);
