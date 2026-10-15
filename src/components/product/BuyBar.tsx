@@ -2,6 +2,7 @@ import { StoreHomeLink } from "@/components/store/StoreHeader";
 import { MessageCircle, ShoppingCart, Store } from "lucide-react";
 import type { Product, StoreSettings } from "@/lib/product-types";
 import { brl } from "@/lib/format";
+import { CouponBar } from "./CouponPromo";
 
 export function BuyBar({
   product,
@@ -22,6 +23,7 @@ export function BuyBar({
   const shippingText = s.free || !s.fee ? "Frete grátis" : `Frete ${brl(s.fee)}`;
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card">
+      <div className="mx-auto max-w-[520px]"><CouponBar store={store} /></div>
       <div className="mx-auto flex max-w-[520px] items-center gap-2 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {store.visit_clickable !== false ? (
           <StoreHomeLink store={store} className="flex w-9 shrink-0 flex-col items-center gap-0.5 text-[11px] font-normal text-foreground/80">

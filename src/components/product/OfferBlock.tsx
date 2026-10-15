@@ -1,4 +1,5 @@
 import { useStoreCountdown } from "@/lib/store-countdown";
+import { CouponChip } from "./CouponPromo";
 import { ChevronRight, Ticket, Zap } from "lucide-react";
 
 import { brl, clock } from "@/lib/format";
@@ -63,6 +64,8 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
         </div>
       </div>
 
+
+      <CouponChip store={store} />
 
       {economy > 0 && (
         <div className="bg-card px-3 pt-3">

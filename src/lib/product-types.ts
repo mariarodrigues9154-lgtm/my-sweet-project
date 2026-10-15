@@ -277,6 +277,8 @@ export type CheckoutSettings = {
   /** Oferta de saída do checkout (por loja). */
   exit_offer?: import("./exit-offer").ExitOfferSettings;
   product_exit_offer?: import("./exit-offer").ExitOfferSettings;
+  offer_countdown?: { hours?: number; minutes?: number };
+  coupon_promo?: import("./coupon-promo").CouponPromoSettings;
 };
 
 

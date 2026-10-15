@@ -1,3 +1,4 @@
+import { sanitizeCouponPromo } from "@/lib/coupon-promo";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -288,6 +289,8 @@ const storeInput = z.object({
         product_ids: z.array(z.string().uuid()).max(200).optional(),
       })).max(50).optional(),
     }).optional(),
+    offer_countdown: z.object({ hours: z.number().int().min(0).max(99).optional(), minutes: z.number().int().min(0).max(59).optional() }).optional(),
+    coupon_promo: z.unknown().optional().transform((v) => (v === undefined ? undefined : sanitizeCouponPromo(v))),
   }),
   ai_support: z
     .object({
