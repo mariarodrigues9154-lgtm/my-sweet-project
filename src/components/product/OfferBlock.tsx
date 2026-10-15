@@ -1,28 +1,15 @@
-import { useEffect, useState } from "react";
+import { useStoreCountdown } from "@/lib/store-countdown";
 import { ChevronRight, Ticket, Zap } from "lucide-react";
 
 import { brl, clock } from "@/lib/format";
 import { discountPercent, promoBadges, savings, variantPriceRange, type Product } from "@/lib/product-types";
 
-export function useCountdown(seconds: number) {
-  const [left, setLeft] = useState(seconds);
-  useEffect(() => {
-    setLeft(seconds);
-    if (seconds <= 0) return;
-    const id = window.setInterval(() => {
-      setLeft((v) => (v <= 1 ? seconds : v - 1));
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [seconds]);
-  return left;
+/** Cronômetro isolado: lê a duração única da loja e o prazo salvo, só este texto atualiza. */
+export function Countdown({ store }: { store?: { id?: string | null; checkout?: unknown } | null }) {
+  return <>{clock(useStoreCountdown(store))}</>;
 }
 
-/** Cronômetro isolado: só este texto atualiza a cada segundo, não a página inteira. */
-export function Countdown({ seconds }: { seconds: number }) {
-  return <>{clock(useCountdown(seconds))}</>;
-}
-
-export function OfferBlock({ product }: { product: Product }) {
+export function OfferBlock({ product, store }: { product: Product; store?: { id?: string | null; checkout?: unknown } | null }) {
   const range = variantPriceRange(product);
   const min = range.min;
   const varies = range.multiple;
@@ -70,7 +57,7 @@ export function OfferBlock({ product }: { product: Product }) {
           <p className="mt-0.5 whitespace-nowrap text-[12.5px] sm:text-[13px]">
             Termina em{" "}
             <strong className="text-[13.5px] font-bold tnum sm:text-[14px]">
-              <Countdown seconds={product.offer.countdown_seconds ?? 600} />
+              <Countdown store={store} />
             </strong>
           </p>
         </div>
