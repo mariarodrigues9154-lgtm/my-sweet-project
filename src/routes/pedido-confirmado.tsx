@@ -3,7 +3,8 @@ import { CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 
 import { StoreLogo } from "@/components/store/StoreHeader";
-import { brl, deliveryWindow } from "@/lib/format";
+import { brl } from "@/lib/format";
+import { getEstimatedDeliveryRange } from "@/lib/shipping";
 import type { OrderSummary } from "@/lib/product-types";
 import { getOrder, getStoreSettings } from "@/lib/store.functions";
 import { checkoutTheme } from "@/lib/checkout-theme";
@@ -91,7 +92,7 @@ function Confirmed() {
               }
 
             />
-            <Row label="Prazo estimado" value={`Entrega entre ${deliveryWindow(4, 9)}`} />
+            <Row label="Prazo estimado" value={`Entrega entre ${getEstimatedDeliveryRange().compact}`} />
           </section>
         ) : (
           <section className="rounded-xl bg-card p-3.5 text-center text-[12.5px] text-muted-foreground shadow-card-soft">
