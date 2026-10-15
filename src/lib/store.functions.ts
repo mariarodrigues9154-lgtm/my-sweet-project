@@ -661,29 +661,40 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
     } catch { /* sem request */ }
 
     const { createFreepayCardCharge } = await import("@/lib/payments/providers.server");
-    const charge = await createFreepayCardCharge(toGatewayConfig(row), {
-      orderNumber: order.order_number as string,
-      amountCents,
-      installments: data.installments,
-      card: data.card,
-      customer: { name: customer.name ?? "Cliente", email: customer.email ?? "", document: customer.document ?? "", ...(customer.phone ? { phone: customer.phone } : {}) },
-      items: [{ title: product.title, unit_price: Math.round(amountCents / quantity), quantity, tangible: true, external_ref: product.id }],
-      shipping: {
-        fee: 0,
-        address: { street: address.street ?? "", street_number: address.number ?? "", complement: address.complement ?? "", zip_code: (address.cep ?? "").replace(/\D/g, ""), neighborhood: address.district ?? "", city: address.city ?? "", state: (address.state ?? "").toUpperCase(), country: "BR" },
-      },
-      ...(postbackUrl ? { postbackUrl } : {}),
-      ...(ip ? { ip } : {}),
-    });
+    const logFail = (kind: string, extra: Record<string, unknown>) =>
+      console.error("[card] falha", { kind, store_id: order.store_id, order_id: order.id, order_number: order.order_number, provider: row.provider, payment_method: "card", at: new Date().toISOString(), ...extra });
+    let charge: Awaited<ReturnType<typeof createFreepayCardCharge>>;
+    try {
+      charge = await createFreepayCardCharge(toGatewayConfig(row), {
+        orderNumber: order.order_number as string,
+        amountCents,
+        installments: data.installments,
+        card: data.card,
+        customer: { name: customer.name ?? "Cliente", email: customer.email ?? "", document: customer.document ?? "", ...(customer.phone ? { phone: customer.phone } : {}) },
+        items: [{ title: product.title, unit_price: Math.round(amountCents / quantity), quantity, tangible: true, external_ref: product.id }],
+        shipping: {
+          fee: 0,
+          address: { street: address.street ?? "", street_number: address.number ?? "", complement: address.complement ?? "", zip_code: (address.cep ?? "").replace(/\D/g, ""), neighborhood: address.district ?? "", city: address.city ?? "", state: (address.state ?? "").toUpperCase(), country: "BR" },
+        },
+        ...(postbackUrl ? { postbackUrl } : {}),
+        ...(ip ? { ip } : {}),
+      });
+    } catch (e) {
+      // Exceção inesperada: libera a trava e oferece a recuperação pelo PIX.
+      logFail("exception", { error: e instanceof Error ? e.message : String(e) });
+      await supabaseAdmin.from("orders").update({ provider_status: null } as never).eq("id", order.id);
+      return { status: "unavailable" as const, error: null };
+    }
 
     if (!charge.ok) {
       const refused = normalizeCardStatus("freepay", charge.status) === "refused";
       await supabaseAdmin.from("orders").update({ provider_status: refused ? "refused" : null } as never).eq("id", order.id);
+      logFail(refused ? "refused" : "technical", { provider_status: charge.status ?? null, error: charge.error });
       if (refused) return { status: "refused" as const, error: null };
-      // Falha técnica: a tentativa pode ter sido aprovada em segundo plano; o webhook marca como pago
-      // e a próxima tentativa começa conferindo o pedido (topo da função), evitando cobrança dupla.
-      if (charge.unavailable) return { status: "unavailable" as const, error: null };
-      return fail(charge.error);
+      // Qualquer falha técnica/de processamento (timeout, rede, 4xx/5xx, resposta inválida) abre a
+      // mensagem de recuperação. Sem transaction_id não houve cobrança registrada; se o gateway aprovar
+      // em segundo plano, o webhook marca o pedido como pago e switchOrderToPix recusa gerar PIX.
+      return { status: "unavailable" as const, error: null };
     }
 
     const result = normalizeCardStatus("freepay", charge.status);
