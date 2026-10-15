@@ -188,6 +188,20 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
       })()}
     </Group>
 
+    <Group title="Cronômetro da oferta (toda a loja)">
+      {(() => {
+        const oc = ((draft.checkout as { offer_countdown?: { hours?: number; minutes?: number } } | undefined)?.offer_countdown) ?? {};
+        const upd = (k: "hours" | "minutes", v: string) => set("checkout", { ...draft.checkout, offer_countdown: { hours: oc.hours ?? 18, minutes: oc.minutes ?? 9, [k]: Math.max(0, Math.floor(Number(v) || 0)) } } as typeof draft.checkout);
+        return (
+          <div className="flex items-end gap-3">
+            <label className="grid gap-1 text-sm">Horas<input type="number" min={0} max={99} className="h-10 w-20 rounded-md border border-input bg-background px-2" value={oc.hours ?? 18} onChange={(e) => upd("hours", e.target.value)} /></label>
+            <label className="grid gap-1 text-sm">Minutos<input type="number" min={0} max={59} className="h-10 w-20 rounded-md border border-input bg-background px-2" value={oc.minutes ?? 9} onChange={(e) => upd("minutes", e.target.value)} /></label>
+            <p className="pb-2 text-xs text-muted-foreground">Vale para a faixa, compra, checkouts e pop-ups.</p>
+          </div>
+        );
+      })()}
+    </Group>
+
     <Group title="Formas de pagamento">
       <PaymentMethodsFields value={draft.checkout?.payment_methods} onChange={(v) => set("checkout", { ...draft.checkout, payment_methods: v })} />
     </Group>

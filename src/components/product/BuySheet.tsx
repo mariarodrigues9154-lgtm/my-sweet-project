@@ -236,7 +236,7 @@ export function BuySheet({
                 {product.offer.flash_label ?? "Oferta Relâmpago"}
               </span>
               <span className="whitespace-nowrap text-[13px]">
-                Termina em <strong className="font-semibold tnum"><Countdown seconds={countdownSeconds || 1} /></strong>
+                Termina em <strong className="font-semibold tnum"><Countdown store={store} /></strong>
               </span>
             </div>
           )}

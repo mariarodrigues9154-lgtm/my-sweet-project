@@ -60,7 +60,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
 
       <main className="mx-auto max-w-[520px] bg-card">
         <Gallery media={product.media} title={product.name} />
-        <OfferBlock product={product} />
+        <OfferBlock product={product} store={store} />
         <ProductHeadline product={product} />
         <DeliveryCard product={product} />
         <div className="h-3 bg-card" />
@@ -88,6 +88,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
 
       {exitIntent.open && exitCfg && offerView && (
         <ExitOfferPopup
+          store={store}
           offer={exitCfg}
           offerKey={`product:${product.id}`}
           oldPrice={Number((offerView.unit * offerView.qty).toFixed(2))}

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { BadgeCheck, Clock, Gift, ShieldCheck, Star, Truck } from "lucide-react";
 
-import { brl } from "@/lib/format";
+import { brl, clock } from "@/lib/format";
+import { useStoreCountdown } from "@/lib/store-countdown";
 import type { ResolvedExitOffer } from "@/lib/exit-offer";
 
-const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 /** Detecta SOMENTE o botão/gesto Voltar (celular e computador). Uma única entrada de guarda no histórico,
  *  sem gatilho por tempo, rolagem ou mouse; ao recusar, a saída acontece de verdade (sem loop). */
@@ -39,23 +39,9 @@ export function useExitIntent(active: boolean, key: string) {
 
 export type ExitOfferProduct = { name: string; image?: string | undefined; variant?: string | undefined; quantity: number; rating?: number | null | undefined; warranty?: string | null | undefined };
 
-/** Prazo real da oferta: salvo na sessão para não reiniciar ao reabrir. */
-function useOfferDeadline(key: string, minutes: number) {
-  const [left, setLeft] = useState(minutes * 60);
-  useEffect(() => {
-    const k = `exit-offer-deadline:${key}`;
-    let end = Number(sessionStorage.getItem(k));
-    if (!end) { end = Date.now() + minutes * 60000; sessionStorage.setItem(k, String(end)); }
-    const tick = () => setLeft(Math.max(0, Math.round((end - Date.now()) / 1000)));
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [key, minutes]);
-  return left;
-}
-
-export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = "", onAccept, onDecline }: { offer: ResolvedExitOffer; oldPrice: number; newPrice: number; product?: ExitOfferProduct; offerKey?: string; onAccept: () => void; onDecline: () => void }) {
-  const left = useOfferDeadline(offerKey, offer.timer_minutes);
+export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = "", store, onAccept, onDecline }: { store?: { id?: string | null; checkout?: unknown } | null | undefined; offer: ResolvedExitOffer; oldPrice: number; newPrice: number; product?: ExitOfferProduct; offerKey?: string; onAccept: () => void; onDecline: () => void }) {
+  const left = useStoreCountdown(store);
+  void offerKey;
   const timerText = offer.timer_text.includes("{MM:SS}") ? offer.timer_text.split("{MM:SS}") : [offer.timer_text + " ", ""];
   const decline = offer.decline_text.replace("{preco}", brl(oldPrice));
   const savings = Math.max(0, Number((oldPrice - newPrice).toFixed(2)));
@@ -95,7 +81,7 @@ export function ExitOfferPopup({ offer, oldPrice, newPrice, product, offerKey = 
         {offer.timer_enabled && (
           <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11.5px] font-semibold text-primary">
             <Clock size={12} />
-            <span>{timerText[0]}<strong className="tnum">{mmss(left)}</strong>{timerText[1]}</span>
+            <span>{timerText[0]}<strong className="tnum">{clock(left)}</strong>{timerText[1]}</span>
           </div>
         )}
 
