@@ -248,7 +248,9 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
       }
       if (res.status === "unavailable") { setErrors({}); setUnavailable(true); return; }
       if (res.status === "pending") { setErrors({ form: "Pagamento em análise pelo banco. Você receberá a confirmação assim que for aprovado." }); return; }
-      setErrors({ form: res.error ?? "Não foi possível processar o cartão." });
+      // Qualquer outra falha: nunca mostra erro técnico; abre a recuperação pelo PIX.
+      console.error("[card] falha no pagamento", res.error);
+      setErrors({}); setUnavailable(true);
     } catch {
       // Erro de rede até o nosso servidor também é instabilidade, não recusa.
       setErrors({}); setUnavailable(true);
