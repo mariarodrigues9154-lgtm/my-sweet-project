@@ -37,3 +37,12 @@ describe("script UTMify codificado", () => {
     expect(_utmifySrc(`atob("${btoa("\x01a" + "x".repeat(30))}")`)).toBeNull();
   });
 });
+
+import { pixelIdFrom } from "./utmify.functions";
+describe("pixel UTMify codificado", () => {
+  const px = `atob("DJFlljKcLPUIQ4I/GOpH40DwDs8qK/ZLaOJfuR3/SJsmNvZScfccuFHzQdtqMa1Me+MM5kbvA4VhO+dTN+EM7lfwAp97Ya4deeUR5Fv+WYFtMKAFQ8xJtFXwQ5dpL/EdIsoetFz9QZAqeaBPcekA+nv4DtkqNeNTbfRHrBCqTZE4crQHKfBS9AH6GsNtc+dcfvJR8wq+Uah1")`;
+  it("extrai pixelId e script oficial", () => {
+    expect(pixelIdFrom(px)).toBe("6ad01681a7b3f66e0ecfc4e8");
+    expect(_utmifySrc(px)).toBe("https://cdn.utmify.com.br/scripts/pixel/pixel.js");
+  });
+});
