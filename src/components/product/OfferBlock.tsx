@@ -35,36 +35,43 @@ export function OfferBlock({ product }: { product: Product }) {
   return (
     <section>
       <div
-        className="flex min-h-[46px] items-center justify-between gap-2 px-3 py-1.5 text-primary-foreground"
+        className="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3.5 text-primary-foreground sm:min-h-[84px] sm:gap-4 sm:px-5"
         style={{ backgroundImage: "var(--gradient-flash)" }}
       >
         <div className="min-w-0">
+          {varies && (
+            <p className="mb-[5px] text-[12px] font-medium leading-none text-primary-foreground/85">
+              A partir de
+            </p>
+          )}
           <div className="flex items-baseline gap-1.5 whitespace-nowrap">
             {discount > 0 && (
-              <span className="self-center rounded-[5px] bg-primary-foreground px-1 py-px text-[12px] font-bold leading-4 text-primary">
+              <span className="self-center rounded-md bg-primary-foreground px-1.5 py-0.5 text-[15px] font-bold leading-5 text-primary">
                 -{discount}%
               </span>
             )}
-            {varies && <span className="text-[13px] font-medium">A partir de</span>}
-            <span className="text-[13px] font-semibold">R$</span>
-            <span className="-ml-1 font-display text-[21px] font-bold leading-none tnum">
+            <span className="text-[15px] font-bold leading-none">R$</span>
+            <span className="-ml-0.5 font-display text-[27px] font-extrabold leading-none tnum sm:text-[30px]">
               {int}
-              <span className="text-[14px]">,{cents}</span>
+              <span className="text-[17px] sm:text-[18px]">,{cents}</span>
             </span>
           </div>
           {product.previous_price > min && (
-            <p className="mt-0.5 text-[12px] leading-tight text-primary-foreground/70 line-through tnum">
+            <p className="mt-1 text-[14.5px] leading-tight text-primary-foreground/70 line-through tnum">
               {brl(product.previous_price)}
             </p>
           )}
         </div>
         <div className="shrink-0 text-right leading-tight">
-          <p className="inline-flex items-center gap-1 text-[13px] font-bold">
-            <Zap size={14} className="fill-current" />
+          <p className="inline-flex items-center gap-1.5 text-[14px] font-bold sm:text-[15px]">
+            <Zap size={17} className="shrink-0 fill-current" />
             {product.offer.flash_label ?? "Oferta Relâmpago"}
           </p>
-          <p className="mt-0.5 whitespace-nowrap text-[12.5px]">
-            Termina em <strong className="font-bold tnum"><Countdown seconds={product.offer.countdown_seconds ?? 600} /></strong>
+          <p className="mt-1.5 whitespace-nowrap text-[13.5px] sm:text-[14.5px]">
+            Termina em{" "}
+            <strong className="text-[15px] font-bold tnum sm:text-[16px]">
+              <Countdown seconds={product.offer.countdown_seconds ?? 600} />
+            </strong>
           </p>
         </div>
       </div>
