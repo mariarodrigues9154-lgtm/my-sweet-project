@@ -1,4 +1,4 @@
-import { useStoreCountdown } from "@/lib/store-countdown";
+import { useStoreCountdown, type CountdownProduct } from "@/lib/store-countdown";
 import { CouponChip } from "./CouponPromo";
 import { ChevronRight, Ticket, Zap } from "lucide-react";
 
@@ -6,8 +6,8 @@ import { brl, clock } from "@/lib/format";
 import { discountPercent, promoBadges, savings, variantPriceRange, type Product } from "@/lib/product-types";
 
 /** Cronômetro isolado: lê a duração única da loja e o prazo salvo, só este texto atualiza. */
-export function Countdown({ store }: { store?: { id?: string | null; checkout?: unknown } | null | undefined }) {
-  return <>{clock(useStoreCountdown(store))}</>;
+export function Countdown({ store, product }: { store?: { id?: string | null; checkout?: unknown } | null | undefined; product?: CountdownProduct }) {
+  return <>{clock(useStoreCountdown(store, product))}</>;
 }
 
 export function OfferBlock({ product, store }: { product: Product; store?: { id?: string | null; checkout?: unknown } | null | undefined }) {
@@ -58,14 +58,14 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
           <p className="mt-0.5 whitespace-nowrap text-[12.5px] sm:text-[13px]">
             Termina em{" "}
             <strong className="text-[13.5px] font-bold tnum sm:text-[14px]">
-              <Countdown store={store} />
+              <Countdown store={store} product={product} />
             </strong>
           </p>
         </div>
       </div>
 
 
-      <CouponChip store={store} />
+      <CouponChip product={product} />
 
       {economy > 0 && (
         <div className="bg-card px-3 pt-3">
