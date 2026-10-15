@@ -12,6 +12,7 @@ const nota = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; sections: ProductSections }) {
   const [active, setActive] = useState<number | null>(null);
   const [all, setAll] = useState(false);
+  const [selected, setSelected] = useState<number | null>(null);
   const list = videos.slice(0, 7);
   const current = active !== null ? list[active] : undefined;
   const style = sections.videos_card_style === "below" ? "below" : "overlay";
@@ -68,12 +69,17 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
         )}
       </div>
 
-      <div className="no-scrollbar snap-row -mx-3 mt-2.5 flex gap-2 overflow-x-auto overscroll-x-contain px-3 pb-1">
+      <div className={`no-scrollbar snap-row -mx-3 mt-2.5 flex overflow-x-auto overscroll-x-contain px-3 pb-1 ${style === "below" ? "gap-2" : "gap-[7px]"}`}>
         {list.map((v, i) =>
           style === "below" ? (
             <BelowCard key={`${v.handle}-${i}`} video={v} onPlay={() => v.video && setActive(i)} />
           ) : (
-            <CreatorCard key={`${v.handle}-${i}`} video={v} onPlay={() => v.video && setActive(i)} />
+            <CreatorCard
+              key={`${v.handle}-${i}`}
+              video={v}
+              mode={selected === null ? "auto" : selected === i ? "selected" : "paused"}
+              onPlay={() => v.video && setSelected((s) => (s === i ? null : i))}
+            />
           ),
         )}
       </div>
@@ -190,7 +196,56 @@ function Avatar({ video, size }: { video: CreatorVideo; size: number }) {
   );
 }
 
-function CreatorCard({ video, onPlay }: { video: CreatorVideo; onPlay: () => void }) {
+/** Vídeo em movimento dentro do cartão: mudo/loop antes de escolher; só o escolhido toca (com som) depois. */
+function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selected" | "paused" }) {
+  const wrap = useRef<HTMLSpanElement>(null);
+  const ref = useRef<HTMLVideoElement>(null);
+  const [near, setNear] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { setNear(true); setVisible(true); return; }
+    const nearIo = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) setNear(true); }, { rootMargin: "150px" });
+    const visIo = new IntersectionObserver((e) => setVisible(e.some((x) => x.isIntersecting)), { threshold: 0.35 });
+    nearIo.observe(el); visIo.observe(el);
+    return () => { nearIo.disconnect(); visIo.disconnect(); };
+  }, []);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const play = mode === "selected" || (mode === "auto" && visible);
+    v.muted = mode !== "selected";
+    if (play) void v.play().catch(() => { v.muted = true; void v.play().catch(() => undefined); });
+    else v.pause();
+  }, [mode, visible, near]);
+
+  if (!video.video || failed) return <Preview video={video} />;
+  return (
+    <span ref={wrap} className="absolute inset-0 block">
+      {video.thumb && <img src={sizedImage(video.thumb, 480)} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
+      {near && (
+        <video
+          ref={ref}
+          src={video.video}
+          poster={video.thumb ? sizedImage(video.thumb, 480) : undefined}
+          muted
+          loop
+          playsInline
+          autoPlay
+          preload="metadata"
+          onError={() => setFailed(true)}
+          className="pointer-events-none absolute inset-0 size-full object-cover"
+        />
+      )}
+    </span>
+  );
+}
+
+function CreatorCard({ video, onPlay, mode }: { video: CreatorVideo; onPlay: () => void; mode: "auto" | "selected" | "paused" }) {
   const showHandle = video.show_handle !== false && video.handle;
   const showTitle = video.show_title !== false && video.title;
   const showName = video.show_name === true && video.name;
@@ -202,11 +257,12 @@ function CreatorCard({ video, onPlay }: { video: CreatorVideo; onPlay: () => voi
       type="button"
       onClick={onPlay}
       aria-label={`Assistir vídeo de ${video.handle || video.name || "criador"}`}
-      className="relative aspect-[9/16] w-[calc((100%-18px)/4.2)] min-w-[78px] max-w-[112px] shrink-0 snap-start overflow-hidden rounded-xl bg-surface-strong text-left"
+      className="relative aspect-[9/15.5] w-[min(38vw,150px)] shrink-0 snap-start overflow-hidden rounded-[10px] bg-surface-strong text-left md:w-[170px]"
     >
-      <Preview video={video} />
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/80 to-transparent" />
-      <PlayIcon />
+      <AutoVideo video={video} mode={mode} />
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-foreground/70 to-transparent" />
+      {mode === "paused" && <PlayIcon />}
+
       <span className="pointer-events-none absolute inset-x-0 bottom-0 block p-1.5 text-background">
         {showStars && <Stars rating={Number(video.rating)} size={9} />}
         {showTitle && <span className="line-clamp-2 text-[10.5px] font-bold leading-tight">{video.title}</span>}
