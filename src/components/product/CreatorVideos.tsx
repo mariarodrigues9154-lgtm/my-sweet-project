@@ -164,7 +164,7 @@ function Preview({ video }: { video: CreatorVideo }) {
       {useThumb ? (
         <img src={sizedImage(video.thumb, 480)} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
       ) : video.video && near && !previewFailed ? (
-        <video src={`${video.video}#t=0.5`} preload="metadata" muted playsInline onError={() => setPreviewFailed(true)} className="pointer-events-none size-full object-cover" />
+        <video src={`${video.video}#t=0.1`} preload="auto" muted playsInline onError={() => setPreviewFailed(true)} className="pointer-events-none size-full object-cover" />
       ) : null}
     </span>
   );
