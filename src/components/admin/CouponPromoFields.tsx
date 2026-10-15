@@ -3,15 +3,11 @@ import { COUPON_DEFAULTS, resolveCouponPromo, type CouponPromoSettings } from "@
 import { resolveCountdownSeconds } from "@/lib/store-countdown";
 import { CouponBarView, CouponChipView } from "@/components/product/CouponPromo";
 
-type Countdown = { hours?: number; minutes?: number };
-
 const input = "h-10 w-full rounded-md border border-input bg-background px-2 text-sm";
 
-export function CouponPromoFields({ value, countdown, onChange, onCountdownChange }: {
+export function CouponPromoFields({ value, onChange }: {
   value: CouponPromoSettings | undefined;
-  countdown: Countdown | undefined;
   onChange: (v: CouponPromoSettings) => void;
-  onCountdownChange: (v: Countdown) => void;
 }) {
   const v = value ?? {};
   const cfg = resolveCouponPromo({ coupon_promo: v });
@@ -27,7 +23,7 @@ export function CouponPromoFields({ value, countdown, onChange, onCountdownChang
       </span>
     </label>
   );
-  const oc = countdown ?? {};
+  const oc = { hours: cfg.countdown_hours, minutes: cfg.countdown_minutes };
   return (
     <div className="grid gap-4">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -51,10 +47,10 @@ export function CouponPromoFields({ value, countdown, onChange, onCountdownChang
         {toggle("show_arrow", "Mostrar seta >")}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-1 text-sm">Cronômetro: horas<input type="number" min={0} max={99} className={input} value={oc.hours ?? 18} onChange={(e) => onCountdownChange({ hours: Math.max(0, Math.floor(Number(e.target.value) || 0)), minutes: oc.minutes ?? 9 })} /></label>
-        <label className="grid gap-1 text-sm">Cronômetro: minutos<input type="number" min={0} max={59} className={input} value={oc.minutes ?? 9} onChange={(e) => onCountdownChange({ hours: oc.hours ?? 18, minutes: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} /></label>
+        <label className="grid gap-1 text-sm">Cronômetro: horas<input type="number" min={0} max={99} className={input} value={oc.hours ?? 18} onChange={(e) => onChange({ ...v, countdown_hours: Math.max(0, Math.floor(Number(e.target.value) || 0)), countdown_minutes: oc.minutes })} /></label>
+        <label className="grid gap-1 text-sm">Cronômetro: minutos<input type="number" min={0} max={59} className={input} value={oc.minutes ?? 9} onChange={(e) => onChange({ ...v, countdown_hours: oc.hours, countdown_minutes: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} /></label>
       </div>
-      <p className="-mt-2 text-xs text-muted-foreground">A duração é a mesma do cronômetro global da loja.</p>
+      <p className="-mt-2 text-xs text-muted-foreground">Duração do cronômetro deste produto (vale para a faixa, barra e checkout dele).</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {colorField("bg_color", "Cor do fundo")}
         {colorField("text_color", "Cor do texto")}
