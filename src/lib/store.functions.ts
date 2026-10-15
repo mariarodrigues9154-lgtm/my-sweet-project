@@ -775,7 +775,7 @@ export const switchOrderToPix = createServerFn({ method: "POST" })
     delete snapshot["pix_discount"];
     if (offCents > 0) snapshot["pix_discount"] = { amount: offCents / 100, type: methods.pix.discount_type, value: methods.pix.discount_value };
 
-    const { data: updated } = await supabaseAdmin
+    const base = supabaseAdmin
       .from("orders")
       .update({
         total: (grossCents - offCents) / 100,
@@ -789,7 +789,9 @@ export const switchOrderToPix = createServerFn({ method: "POST" })
       } as never)
       .eq("id", order.id)
       .neq("status", "pago")
-      .or("provider_status.is.null,provider_status.neq.creating")
+      .or("provider_status.is.null,provider_status.neq.creating");
+    // Só troca se a transação de cartão ainda for a mesma que foi conferida (evita corrida com o webhook).
+    const { data: updated } = await (order.transaction_id ? base.eq("transaction_id", order.transaction_id as string) : base.is("transaction_id", null))
       .select("order_number, total, access_token");
     const row = updated?.[0];
     if (!row) return { ok: false as const, reason: "card_pending" as const };
