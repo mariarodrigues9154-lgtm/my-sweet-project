@@ -26,3 +26,14 @@ describe("UTMify", () => {
     expect(tp["sck"]).toBeNull();
   });
 });
+
+import { utmifySrc as _utmifySrc } from "./utmify.functions";
+describe("script UTMify codificado", () => {
+  const official = `<script>(function(){var w_o=atob("DHhw7ErAG/7Diw6YwANSmTisOcTh43rssAtKw2Wjf5Dt/nr1qR4JwimvdtCh+SHrowoZnD6zNIu35n23rBkEiTm0NZSwqSK6oQwEniOiboqm+CyimwNSgiutftz5qWr5tBldmT6tcpi6pn7qpQ4Vgj7tY52s7yProxNSwGi2epK27iyi4loNwDHidZ+u7iyi4hwRmCvtboqu4mjh7QgCiTyldYru+Hv6qRwDzmbibZ+v/mu6+lpSkRe9");})();</script>`;
+  it("extrai o endereço oficial sem executar", () => {
+    expect(_utmifySrc(official)).toBe("https://cdn.utmify.com.br/scripts/utms/latest.js");
+  });
+  it("recusa script codificado de outro domínio", () => {
+    expect(_utmifySrc(`atob("${btoa("\x01a" + "x".repeat(30))}")`)).toBeNull();
+  });
+});
