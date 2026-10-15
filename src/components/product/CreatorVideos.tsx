@@ -260,23 +260,23 @@ function CreatorCard({ video, onPlay, mode }: { video: CreatorVideo; onPlay: () 
       className="relative aspect-[9/15.5] w-[min(38vw,150px)] shrink-0 snap-start overflow-hidden rounded-[10px] bg-surface-strong text-left md:w-[170px]"
     >
       <AutoVideo video={video} mode={mode} />
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-foreground/70 to-transparent" />
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-foreground/75 via-foreground/30 to-transparent" />
       {mode === "paused" && <PlayIcon />}
 
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 block p-1.5 text-background">
-        {showStars && <Stars rating={Number(video.rating)} size={9} />}
-        {showTitle && <span className="line-clamp-2 text-[10.5px] font-bold leading-tight">{video.title}</span>}
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 block px-2 pb-2 text-background">
+        {showStars && <Stars rating={Number(video.rating)} size={10} />}
+        {showTitle && <span className="line-clamp-2 text-[11.5px] font-bold leading-tight">{video.title}</span>}
         {(showName || showHandle || showAvatar) && (
-          <span className="mt-0.5 flex min-w-0 items-center gap-1">
-            {showAvatar && <Avatar video={video} size={16} />}
-            <span className="min-w-0">
+          <span className="mt-1 flex min-w-0 items-center gap-[7px]">
+            {showAvatar && <Avatar video={video} size={32} />}
+            <span className="min-w-0 flex-1">
               {showName && (
-                <span className="flex items-center gap-0.5 truncate text-[9.5px] font-semibold">
+                <span className="flex min-w-0 items-center gap-0.5 text-[13px] font-semibold leading-tight">
                   <span className="truncate">{video.name}</span>
-                  {video.verified && <Check size={9} strokeWidth={3} className="shrink-0 text-success" />}
+                  {video.verified && <Check size={12} strokeWidth={3} className="shrink-0 text-success" />}
                 </span>
               )}
-              {showHandle && <span className="block truncate text-[9.5px] opacity-85">{at(video.handle)}</span>}
+              {showHandle && <span className={`block truncate leading-tight ${showName ? "text-[12px] opacity-90" : "text-[13px] font-semibold"}`}>{at(video.handle)}</span>}
             </span>
           </span>
         )}
