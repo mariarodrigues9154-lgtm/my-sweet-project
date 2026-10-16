@@ -69,7 +69,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
         )}
       </div>
 
-      <div className={`no-scrollbar snap-row -mx-3 mt-2.5 flex overflow-x-auto overscroll-x-contain px-3 pb-1 ${style === "below" ? "gap-2" : "gap-[7px]"}`}>
+      <div className="no-scrollbar snap-row -mx-3 mt-2.5 flex gap-2 overflow-x-auto overscroll-x-contain px-3.5 scroll-pl-3.5 scroll-pr-3.5 pb-1">
         {list.map((v, i) =>
           style === "below" ? (
             <BelowCard key={`${v.handle}-${i}`} video={v} onPlay={() => v.video && setActive(i)} />
