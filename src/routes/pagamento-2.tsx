@@ -68,6 +68,18 @@ function CheckoutTwo() {
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixLeft, setPixLeft] = useState(0);
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+  // Altura real da barra fixa: o conteúdo rola exatamente até encostar nela, sem sobra.
+  const [bottomBarH, setBottomBarH] = useState(176);
+  useEffect(() => {
+    const el = bottomBarRef.current;
+    if (!el) return;
+    const measure = () => setBottomBarH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const payCfg = useMemo(() => resolvePaymentMethods(store.checkout?.payment_methods), [store.checkout?.payment_methods]);
   const [cardPreview, setCardPreview] = useState(false);
   useEffect(() => { setCardPreview(new URLSearchParams(window.location.search).get("preview_cartao") === "1"); }, []);
