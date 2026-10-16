@@ -38,6 +38,9 @@ export type PaymentMethodsConfig = {
     show_brands: boolean;
     /** Bandeiras enviadas pelo painel, na ordem de exibição. Vazio = bandeiras padrão. */
     brands: CardBrandImage[];
+    /** Selos/logos enviados manualmente para a tela do cartão (até 5). */
+    show_seals: boolean;
+    seals: CardBrandImage[];
   };
   decline: CardDeclineTexts;
   provider_error: CardProviderErrorTexts;
@@ -94,6 +97,8 @@ export function resolvePaymentMethods(raw: unknown): PaymentMethodsConfig {
       promo_text: str(c.promo_text, ""),
       show_brands: c.show_brands !== false,
       brands: resolveBrands(c.brands),
+      show_seals: c.show_seals === true,
+      seals: resolveBrands(c.seals).slice(0, 5),
     },
     decline: resolveDecline(r.decline),
     provider_error: resolveProviderError(r.provider_error),
