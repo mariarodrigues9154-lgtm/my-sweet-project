@@ -259,8 +259,8 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
     }
   }
 
-  const field = (err?: string) => `h-14 w-full rounded-xl px-4 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
-  const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
+  const field = (err?: string) => `h-12 w-full rounded-xl px-3.5 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
+  const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1 flex items-center gap-1 text-[12.5px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
 
   if (declined) {
     const d = cfg.decline;
@@ -325,60 +325,69 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
 
   return (
     <Sheet onClose={onClose} full>
-      <header className="relative border-b border-border px-4 py-4 text-center text-[17px] font-bold">
-        <button type="button" onClick={onClose} aria-label="Voltar" className="absolute left-3 top-3.5"><ChevronLeft size={24} /></button>
+      <header className="relative border-b border-border px-12 py-3 text-center text-[16px] font-bold">
+        <button type="button" onClick={onClose} aria-label="Voltar" className="absolute left-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center"><ChevronLeft size={24} /></button>
         Adicionar cartão
       </header>
       {cfg.card.promo_enabled && cfg.card.promo_text && (
-        <div className="flex items-center gap-2 bg-primary/10 px-4 py-2.5 text-[13px]">
+        <div className="flex min-w-0 items-center gap-2 bg-primary/10 px-4 py-2 text-[12.5px]">
           <CreditCard size={16} className="shrink-0 text-primary" />
           <span className="min-w-0 flex-1 truncate">{cfg.card.promo_text}</span>
-          <button type="button" onClick={() => setPlans(true)} className="flex shrink-0 items-center text-[13px] font-semibold text-primary">Visualizar tudo ({cfg.card.max_installments}) <ChevronRight size={14} /></button>
+          <button type="button" onClick={() => setPlans(true)} className="flex shrink-0 items-center text-[12.5px] font-semibold text-primary">Visualizar tudo ({cfg.card.max_installments}) <ChevronRight size={14} /></button>
         </div>
       )}
-      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
+      <div className="flex-1 space-y-3.5 overflow-y-auto px-4 py-4">
         <div>
-          <div className="mb-2 flex items-center justify-between"><label htmlFor="cc-number" className="text-[15px] font-bold">Número do cartão</label><CardBrands small cfg={cfg} /></div>
+          <div className="mb-1.5 flex items-center justify-between gap-2"><label htmlFor="cc-number" className="shrink-0 text-[14px] font-bold">Número do cartão</label><CardBrands small cfg={cfg} /></div>
           <input id="cc-number" inputMode="numeric" autoComplete="cc-number" placeholder="Insira o número do cartão" value={number}
             onChange={(e) => setNumber(e.target.value.replace(/\D/g, "").slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "))} className={field(errors.number)} />
           {brand && !errors.number && <p className="mt-1 text-[12px] text-muted-foreground">{brand}</p>}
           <Err k="number" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="cc-exp" className="mb-2 block text-[15px] font-bold">Data de validade</label>
+        <div className="grid grid-cols-2 items-end gap-2.5">
+          <div className="min-w-0">
+            <label htmlFor="cc-exp" className="mb-1.5 block truncate text-[14px] font-bold">Data de validade</label>
             <input id="cc-exp" inputMode="numeric" autoComplete="cc-exp" placeholder="MM/AA" value={expiry}
               onChange={(e) => { const d = e.target.value.replace(/\D/g, "").slice(0, 4); setExpiry(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d); }} className={field(errors.expiry)} />
             <Err k="expiry" />
           </div>
-          <div>
-            <label htmlFor="cc-cvv" className="mb-2 flex items-center gap-1 text-[15px] font-bold">Código de segurança <button type="button" aria-label="O que é" onClick={() => setTip((v) => !v)}><Info size={15} className="text-muted-foreground" /></button></label>
+          <div className="min-w-0">
+            <label htmlFor="cc-cvv" className="mb-1.5 flex min-w-0 items-center gap-1 text-[14px] font-bold"><span className="truncate">Código de segurança</span> <button type="button" aria-label="O que é" onClick={() => setTip((v) => !v)}><Info size={15} className="text-muted-foreground" /></button></label>
             <input id="cc-cvv" inputMode="numeric" autoComplete="cc-csc" placeholder="CVV/CVC" value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))} className={field(errors.cvv)} />
             {tip && <p className="mt-1 text-[12px] text-muted-foreground">O código de segurança normalmente fica no verso do cartão.</p>}
             <Err k="cvv" />
           </div>
         </div>
         <div>
-          <label htmlFor="cc-name" className="mb-2 block text-[15px] font-bold">Nome do titular do cartão</label>
+          <label htmlFor="cc-name" className="mb-1.5 block text-[14px] font-bold">Nome do titular do cartão</label>
           <input id="cc-name" autoComplete="cc-name" placeholder="Nome completo" value={holder} onChange={(e) => setHolder(e.target.value.slice(0, 60))} className={field(errors.holder)} />
           <Err k="holder" />
         </div>
         <div>
-          <label htmlFor="cc-inst" className="mb-2 block text-[15px] font-bold">Parcelas</label>
+          <label htmlFor="cc-inst" className="mb-1.5 block text-[14px] font-bold">Parcelas</label>
           <select id="cc-inst" value={installments} onChange={(e) => setInstallments(Number(e.target.value))} className={field()}>
             {installmentPlan(totalCents, cfg).map((p) => (
               <option key={p.n} value={p.n}>{p.n}x de {brl(p.installmentCents / 100)}{p.free ? " sem juros" : ` (total ${brl(p.totalCents / 100)})`}</option>
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-3 rounded-xl bg-warning/10 px-4 py-3 text-[13px] text-foreground/80">
-          <p className="flex-1">Suas informações de pagamento serão processadas de forma segura. O código de segurança (CVV/CVC) nunca será armazenado.</p>
-          <ShieldCheck size={28} className="shrink-0 text-warning" />
+        <div className="flex items-center gap-3 rounded-xl bg-warning/10 px-3.5 py-2.5 text-[12.5px] leading-snug text-foreground/80">
+          <p className="min-w-0 flex-1">Suas informações de pagamento serão processadas de forma segura. O código de segurança (CVV/CVC) nunca será armazenado.</p>
+          <ShieldCheck size={24} className="shrink-0 text-warning" />
         </div>
+        {cfg.card.show_seals && cfg.card.seals.some((b) => b.enabled) && (
+          <div className="-mx-4 flex flex-wrap items-center justify-center gap-2 bg-surface px-4 py-2.5">
+            {cfg.card.seals.filter((b) => b.enabled).map((b) => (
+              <span key={b.id} className="grid h-11 w-[72px] place-items-center rounded-md border border-border bg-card p-1">
+                <img src={iconSrc(b.url)} alt={b.name || "Selo"} width={64} height={36} className="h-full w-full object-contain" loading="lazy" decoding="async" />
+              </span>
+            ))}
+          </div>
+        )}
         {errors.form && <p className="rounded-xl bg-destructive/10 px-4 py-3 text-[13px] font-semibold text-destructive">{errors.form}</p>}
       </div>
-      <footer className="border-t border-border px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
-        <button type="button" onClick={submit} disabled={busy} className="flex h-13 w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-[17px] font-bold text-primary-foreground active:scale-[0.99] disabled:opacity-70">{busy && <Loader2 size={18} className="animate-spin" />}{busy ? "Processando pagamento..." : "Pagar com cartão"}</button>
+      <footer className="border-t border-border px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2.5">
+        <button type="button" onClick={submit} disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-[16px] font-bold text-primary-foreground active:scale-[0.99] disabled:opacity-70">{busy && <Loader2 size={18} className="animate-spin" />}{busy ? "Processando pagamento..." : "Pagar com cartão"}</button>
       </footer>
       {plans && <InstallmentsSheet cfg={cfg} totalCents={totalCents} onClose={() => setPlans(false)} />}
     </Sheet>
