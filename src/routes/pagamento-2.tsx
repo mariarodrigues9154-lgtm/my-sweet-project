@@ -68,18 +68,17 @@ function CheckoutTwo() {
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixLeft, setPixLeft] = useState(0);
-  const bottomBarRef = useRef<HTMLDivElement>(null);
+  const [bottomBar, setBottomBar] = useState<HTMLDivElement | null>(null);
   // Altura real da barra fixa: o conteúdo rola exatamente até encostar nela, sem sobra.
   const [bottomBarH, setBottomBarH] = useState(176);
   useEffect(() => {
-    const el = bottomBarRef.current;
-    if (!el) return;
-    const measure = () => setBottomBarH(el.offsetHeight);
+    if (!bottomBar) return;
+    const measure = () => setBottomBarH(bottomBar.offsetHeight);
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
+    ro.observe(bottomBar);
     return () => ro.disconnect();
-  }, []);
+  }, [bottomBar]);
   const payCfg = useMemo(() => resolvePaymentMethods(store.checkout?.payment_methods), [store.checkout?.payment_methods]);
   const [cardPreview, setCardPreview] = useState(false);
   useEffect(() => { setCardPreview(new URLSearchParams(window.location.search).get("preview_cartao") === "1"); }, []);
@@ -231,7 +230,7 @@ function CheckoutTwo() {
         {store.checkout?.show_legal !== false && <p className="mt-5 whitespace-pre-line text-[10.5px] font-normal leading-relaxed text-muted-foreground">{store.checkout?.legal_text?.trim() ? <LegalText text={store.checkout.legal_text.trim()} slug={store.slug} /> : <>Ao fazer um pedido, você concorda com os <Link to="/termos-de-uso" search={{ loja: store.slug }} className="font-medium text-foreground">Termos de uso e venda</Link> e reconhece que leu a <Link to="/politica-de-privacidade" search={{ loja: store.slug }} className="font-medium text-foreground">Política de privacidade</Link> da {store.name}.</>}</p>}
       </section>
     </main>
-    <div ref={bottomBarRef} className="fixed inset-x-0 bottom-0 z-30">
+    <div ref={setBottomBar} className="fixed inset-x-0 bottom-0 z-30">
       {savings > 0 && <p className="flex items-center gap-1.5 bg-primary-soft px-4 py-2 text-[11px] font-medium text-primary"><Smile size={14} className="shrink-0" />Você está economizando {brl(savings)} nesse pedido.</p>}
       <div className="border-t border-border bg-card px-4 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-buybar"><div className="mx-auto max-w-[488px]"><div className="flex items-end justify-between"><span className="text-[13px] font-medium">Total ({quantity} {quantity === 1 ? "item" : "itens"})</span><strong className="text-[20px] font-semibold text-primary tnum">{brl(total)}</strong></div><Button onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)} className="mt-2 h-auto min-h-12 w-full rounded-full py-2 text-[16px] font-semibold"><span className="flex flex-col leading-tight"><span>{placing ? "Gerando pagamento..." : "Fazer pedido"}</span>{countdown > 0 && !placing && <span className="text-[11px] font-medium tnum">O cupom expira em <Countdown store={store} product={product} /></span>}</span></Button></div></div>
     </div>
