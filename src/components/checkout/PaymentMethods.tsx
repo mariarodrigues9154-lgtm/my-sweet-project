@@ -9,6 +9,15 @@ import { cardProviderReady, fillDeclineMessage, installmentPlan, pixDiscountLabe
 import { sizedImage, stableMediaUrl } from "@/lib/media-url";
 import { useServerFn } from "@tanstack/react-start";
 import { payOrderWithCard } from "@/lib/store.functions";
+import sealMastercard from "@/assets/seal-45.png.asset.json";
+import sealVisa from "@/assets/seal-47.png.asset.json";
+import sealSafekey from "@/assets/seal-46.png.asset.json";
+
+const SECURITY_SEALS: { src: string; alt: string }[] = [
+  { src: sealMastercard.url, alt: "Mastercard ID Check" },
+  { src: sealVisa.url, alt: "Visa Secure" },
+  { src: sealSafekey.url, alt: "SafeKey" },
+];
 
 export type PayMethod = "pix" | "card";
 
