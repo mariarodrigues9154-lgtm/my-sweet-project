@@ -3,7 +3,7 @@ import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPo
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { rememberPixOrder } from "@/lib/pix-orders";
 import { SHIPPING, getEstimatedDeliveryRange, shippingOptions as sharedShippingOptions } from "@/lib/shipping";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
