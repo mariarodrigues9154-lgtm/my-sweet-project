@@ -9,6 +9,15 @@ import { cardProviderReady, fillDeclineMessage, installmentPlan, pixDiscountLabe
 import { sizedImage, stableMediaUrl } from "@/lib/media-url";
 import { useServerFn } from "@tanstack/react-start";
 import { payOrderWithCard } from "@/lib/store.functions";
+import sealMastercard from "@/assets/seal-45.png.asset.json";
+import sealVisa from "@/assets/seal-47.png.asset.json";
+import sealSafekey from "@/assets/seal-46.png.asset.json";
+
+const SECURITY_SEALS: { src: string; alt: string }[] = [
+  { src: sealMastercard.url, alt: "Mastercard ID Check" },
+  { src: sealVisa.url, alt: "Visa Secure" },
+  { src: sealSafekey.url, alt: "SafeKey" },
+];
 
 export type PayMethod = "pix" | "card";
 
@@ -375,15 +384,11 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
           <p className="min-w-0 flex-1">Suas informações de pagamento serão processadas de forma segura. O código de segurança (CVV/CVC) nunca será armazenado.</p>
           <ShieldCheck size={24} className="shrink-0 text-warning" />
         </div>
-        {cfg.card.show_seals && cfg.card.seals.some((b) => b.enabled) && (
-          <div className="-mx-4 flex flex-wrap items-center justify-center gap-2 bg-surface px-4 py-2.5">
-            {cfg.card.seals.filter((b) => b.enabled).map((b) => (
-              <span key={b.id} className="grid h-11 w-[72px] place-items-center rounded-md border border-border bg-card p-1">
-                <img src={iconSrc(b.url)} alt={b.name || "Selo"} width={64} height={36} className="h-full w-full object-contain" loading="lazy" decoding="async" />
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-nowrap items-center justify-center gap-2.5" aria-label="Pagamento protegido">
+          {SECURITY_SEALS.map((s) => (
+            <img key={s.alt} src={s.src} alt={s.alt} title={s.alt} width={90} height={90} className="h-auto min-w-0 max-w-[90px] flex-1 object-contain" style={{ aspectRatio: "1 / 1" }} loading="eager" decoding="async" />
+          ))}
+        </div>
         {errors.form && <p className="rounded-xl bg-destructive/10 px-4 py-3 text-[13px] font-semibold text-destructive">{errors.form}</p>}
       </div>
       <footer className="border-t border-border px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2.5">
