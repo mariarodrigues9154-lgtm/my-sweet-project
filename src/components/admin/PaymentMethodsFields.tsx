@@ -61,6 +61,10 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
   const brands = cfg.card.brands;
   const setBrands = (b: typeof brands) => card({ brands: b });
   const moveBrand = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= brands.length) return; const n = [...brands]; const t = n[i]!; n[i] = n[j]!; n[j] = t; setBrands(n); };
+  const sealUp = useImageUpload();
+  const seals = cfg.card.seals;
+  const setSeals = (b: typeof seals) => card({ seals: b });
+  const moveSeal = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= seals.length) return; const n = [...seals]; const t = n[i]!; n[i] = n[j]!; n[j] = t; setSeals(n); };
 
   return (
     <div className="space-y-5">
@@ -133,6 +137,29 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
                   <button type="button" aria-label="Descer" onClick={() => moveBrand(i, 1)} className="p-1"><ArrowDown size={14} /></button>
                   <PickButton label="" busy={brandUp.busy} onFile={async (f) => { const url = await brandUp.run(f); if (url) setBrands(brands.map((x) => (x.id === b.id ? { ...x, url } : x))); }} />
                   <button type="button" aria-label="Remover" onClick={() => setBrands(brands.filter((x) => x.id !== b.id))} className="p-1 text-destructive"><Trash2 size={14} /></button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="space-y-2 rounded-md border border-border p-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[12px] font-extrabold">Logos / Selos do pagamento</p>
+            {seals.length < 5 && <PickButton label="Adicionar imagem" busy={sealUp.busy} onFile={async (f) => { const url = await sealUp.run(f); if (url) setSeals([...seals, { id: crypto.randomUUID().slice(0, 12), name: f.name.replace(/\.[^.]+$/, "").slice(0, 40), url, enabled: true }]); }} />}
+          </div>
+          <Check label="Exibir logos de segurança" checked={cfg.card.show_seals} onChange={(v) => card({ show_seals: v })} />
+          <p className="text-[11px] text-muted-foreground">Aparecem abaixo do aviso de segurança na tela "Adicionar cartão". Até 5 imagens. Só envie selos que seu gateway realmente suporta.</p>
+          {seals.length > 0 && (
+            <ul className="space-y-1.5">
+              {seals.map((b, i) => (
+                <li key={b.id} className="flex items-center gap-2 rounded-md bg-surface p-1.5">
+                  <span className="grid h-9 w-14 shrink-0 place-items-center rounded bg-card"><img src={stableMediaUrl(b.url)} alt={b.name} className="max-h-7 max-w-12 object-contain" /></span>
+                  <input className={`${input} h-8 min-w-0 flex-1`} value={b.name} placeholder="Nome" onChange={(e) => setSeals(seals.map((x) => (x.id === b.id ? { ...x, name: e.target.value } : x)))} />
+                  <input type="checkbox" title="Ativa" checked={b.enabled} onChange={(e) => setSeals(seals.map((x) => (x.id === b.id ? { ...x, enabled: e.target.checked } : x)))} />
+                  <button type="button" aria-label="Subir" onClick={() => moveSeal(i, -1)} className="p-1"><ArrowUp size={14} /></button>
+                  <button type="button" aria-label="Descer" onClick={() => moveSeal(i, 1)} className="p-1"><ArrowDown size={14} /></button>
+                  <PickButton label="" busy={sealUp.busy} onFile={async (f) => { const url = await sealUp.run(f); if (url) setSeals(seals.map((x) => (x.id === b.id ? { ...x, url } : x))); }} />
+                  <button type="button" aria-label="Remover" onClick={() => setSeals(seals.filter((x) => x.id !== b.id))} className="p-1 text-destructive"><Trash2 size={14} /></button>
                 </li>
               ))}
             </ul>
