@@ -260,7 +260,6 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
           playsInline
           autoPlay
           preload={visible || mode === "selected" ? "auto" : "metadata"}
-          // @ts-expect-error atributo antigo do iOS/WeChat
           webkit-playsinline="true"
           x5-playsinline="true"
           disablePictureInPicture
