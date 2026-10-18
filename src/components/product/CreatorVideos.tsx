@@ -232,6 +232,13 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
     else v.pause();
   }, [mode, visible, near]);
 
+  // Celular em economia de dados pode nunca baixar: após 6s troca o círculo pelo botão de play.
+  useEffect(() => {
+    if (!near || ready) return;
+    const t = setTimeout(() => setReady(true), 6000);
+    return () => clearTimeout(t);
+  }, [near, ready]);
+
   // Sem capa: depois de saber a duração, avança um instante para o celular desenhar o primeiro quadro.
   const showFrame = (v: HTMLVideoElement) => {
     if (v.currentTime < 0.05 && v.paused) {
