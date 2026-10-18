@@ -164,7 +164,15 @@ function Preview({ video }: { video: CreatorVideo }) {
       {useThumb ? (
         <img src={sizedImage(video.thumb, 480)} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
       ) : video.video && near && !previewFailed ? (
-        <video src={`${video.video}#t=0.1`} preload="auto" muted playsInline onError={() => setPreviewFailed(true)} className="pointer-events-none size-full object-cover" />
+        <video
+          src={video.video}
+          preload="metadata"
+          muted
+          playsInline
+          onLoadedMetadata={(e) => { try { e.currentTarget.currentTime = 0.1; } catch { /* ignora */ } }}
+          onError={() => setPreviewFailed(true)}
+          className="pointer-events-none size-full object-cover"
+        />
       ) : null}
     </span>
   );
@@ -224,6 +232,13 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
     else v.pause();
   }, [mode, visible, near]);
 
+  // Sem capa: depois de saber a duração, avança um instante para o celular desenhar o primeiro quadro.
+  const showFrame = (v: HTMLVideoElement) => {
+    if (v.currentTime < 0.05 && v.paused) {
+      try { v.currentTime = 0.1; } catch { /* ignora */ }
+    }
+  };
+
   if (!video.video || failed) return <Preview video={video} />;
   return (
     <span ref={wrap} className="absolute inset-0 block">
@@ -231,14 +246,22 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
       {near && (
         <video
           ref={ref}
-          src={`${video.video}#t=0.1`}
+          src={video.video}
           poster={video.thumb ? sizedImage(video.thumb, 480) : undefined}
           muted
           loop
           playsInline
           autoPlay
-          preload="auto"
+          preload={visible || mode === "selected" ? "auto" : "metadata"}
+          // @ts-expect-error atributo antigo do iOS/WeChat
+          webkit-playsinline="true"
+          x5-playsinline="true"
+          disablePictureInPicture
+          onLoadedMetadata={(e) => showFrame(e.currentTarget)}
           onLoadedData={() => setReady(true)}
+          onCanPlay={() => setReady(true)}
+          onSeeked={() => setReady(true)}
+          onPlaying={() => setReady(true)}
           onError={() => setFailed(true)}
           className="pointer-events-none absolute inset-0 size-full object-cover"
         />
