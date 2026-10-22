@@ -4,6 +4,7 @@
  * adicionados sem reescrever o checkout.
  */
 
+import { isValidCpfCnpj, isValidPhone } from "@/lib/format";
 import type { PaymentEnvironment, PaymentProviderId } from "./catalog";
 
 export type GatewayConfig = {
@@ -272,10 +273,66 @@ async function qrFromPayload(payload: string): Promise<string | null> {
   }
 }
 
-function wappiError(status: number): string {
+/** Extrai a mensagem real da Wappi: error_messages[].message ou o mapa errors {campo: [msg]} (RFC 9110). */
+export function wappiErrorDetail(json: unknown): string | null {
+  if (!json || typeof json !== "object") return null;
+  const j = json as { message?: unknown; error_messages?: unknown; errors?: unknown };
+  if (Array.isArray(j.error_messages)) {
+    const msgs = j.error_messages
+      .map((e) => (e && typeof e === "object" ? String((e as { message?: unknown }).message ?? "").trim() : ""))
+      .filter(Boolean);
+    if (msgs.length) return msgs.join(" | ");
+  }
+  if (j.errors && typeof j.errors === "object" && !Array.isArray(j.errors)) {
+    const parts = Object.entries(j.errors as Record<string, unknown>).map(
+      ([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : String(msgs)}`,
+    );
+    if (parts.length) return parts.join(" | ");
+  }
+  return typeof j.message === "string" && j.message.trim() ? j.message : null;
+}
+
+/** Mensagem amigável por campo quando a Wappi devolve erro de validação (RFC 9110). */
+function wappiFieldError(detail: string): string | null {
+  const d = detail.toLowerCase();
+  if (d.includes("phone")) return "Informe um telefone válido com DDD.";
+  if (d.includes("document")) return "Confira o CPF/CNPJ informado.";
+  if (d.includes("zip") || d.includes("cep")) return "Confira o CEP informado.";
+  if (d.includes("street_number")) return "Confira o número do endereço.";
+  if (d.includes("street") || d.includes("neighborhood") || d.includes("city") || d.includes("state")) return "Confira o endereço informado.";
+  if (d.includes("email")) return "Confira o e-mail informado.";
+  if (d.includes("name")) return "Confira o nome informado.";
+  return null;
+}
+
+function wappiError(status: number, detail?: string | null): string {
   if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique suas credenciais.";
-  if (status === 400) return "Alguns dados do pedido não foram aceitos. Confira CPF/CNPJ, telefone e endereço.";
+  if (status === 400) {
+    if (detail) {
+      const field = wappiFieldError(detail);
+      if (field) return field;
+      // Recusa do adquirente (ex.: GETNET_HTTP_ERROR): não é campo inválido do checkout.
+      if (detail.toLowerCase().includes("adquirente")) return "O provedor de pagamento recusou a transação. Tente novamente em alguns minutos.";
+    }
+    return "Alguns dados do pedido não foram aceitos. Confira CPF/CNPJ, telefone e endereço.";
+  }
   return "O provedor de pagamento não respondeu. Tente novamente.";
+}
+
+/** Validação local antes de enviar à Wappi: devolve a mensagem do campo inválido ou null. */
+export function validateWappiInput(input: {
+  doc: string;
+  phone: string;
+  address: { street: string; street_number: string; zip_code: string; neighborhood: string; city: string; state: string };
+}): string | null {
+  if (!isValidCpfCnpj(input.doc)) return "Confira o CPF/CNPJ informado.";
+  if (!isValidPhone(input.phone)) return "Informe um telefone válido com DDD.";
+  const a = input.address;
+  if (!a.street.trim()) return "Confira o endereço informado.";
+  if (!a.street_number.trim()) return "Confira o número do endereço.";
+  if (a.zip_code.replace(/\D/g, "").length !== 8) return "Confira o CEP informado.";
+  if (!a.neighborhood.trim() || !a.city.trim() || a.state.trim().length !== 2) return "Confira o endereço informado.";
+  return null;
 }
 
 /** Wappi e FreePay Brasil usam a mesma API (Basic Auth, /v1/payment-transaction, centavos). */
@@ -319,6 +376,14 @@ function makeBasicPixProvider(id: "wappi" | "freepay", BASE: string): PaymentPro
     const doc = digits(input.customer.document);
     let phone = digits(input.customer.phone ?? "");
     if (phone && !phone.startsWith("55")) phone = `55${phone}`;
+    if (id === "wappi") {
+      // Validação local com mensagem por campo: não envia CPF/telefone/endereço inválido ao gateway.
+      const invalid = validateWappiInput({ doc, phone, address: input.shipping.address });
+      if (invalid) {
+        console.warn("[wappi] validação local reprovou", { order: input.orderNumber, campo: invalid });
+        return { ok: false, error: invalid };
+      }
+    }
     const body = {
       amount: input.amountCents,
       payment_method: "pix",
@@ -337,8 +402,10 @@ function makeBasicPixProvider(id: "wappi" | "freepay", BASE: string): PaymentPro
     const res = await fetch(`${BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body) });
     const json = await res.json().catch(() => null);
     if (res.status !== 200 && res.status !== 201) {
-      console.error(`[${label}] create falhou`, res.status, JSON.stringify((json as { message?: unknown; errors?: unknown } | null)?.message ?? (json as { errors?: unknown } | null)?.errors ?? null).slice(0, 400));
-      return { ok: false, error: wappiError(res.status) };
+      // Registra a resposta real do gateway (sem credenciais) para diagnóstico da recusa.
+      const detail = wappiErrorDetail(json);
+      console.error(`[${label}] create falhou`, res.status, JSON.stringify({ order: input.orderNumber, detail: (detail ?? "sem detalhe").slice(0, 400) }));
+      return { ok: false, error: wappiError(res.status, detail) };
     }
     const tx = firstTx(json);
     if (!tx?.id) return { ok: false, error: "O provedor não conseguiu gerar o PIX agora." };
