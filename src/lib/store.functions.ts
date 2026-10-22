@@ -473,6 +473,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const pixDays = Number((row.pix_config as { expires_in_days?: number }).expires_in_days ?? 1) || 1;
 
     let charge;
+    const tGateway = Date.now();
     try {
       charge = await gateway.createPix(toGatewayConfig(row), {
         orderNumber: order.order_number as string,
@@ -510,9 +511,12 @@ export const createPixCharge = createServerFn({ method: "POST" })
       return { ...notConfigured, configured: true as const, error: "Não foi possível gerar o PIX agora. Tente novamente." };
     }
 
+    const tSaved0 = Date.now();
     if (!charge.ok) {
-      console.error("[pix] provedor recusou", JSON.stringify({ order: order.order_number, store: order.store_id, provider: row.provider, error: charge.error }));
-      await release();
+      console.error("[pix] provedor recusou", JSON.stringify({ order: order.order_number, store: order.store_id, provider: row.provider, error: charge.error, uncertain: Boolean(charge.uncertain), gateway_ms: tSaved0 - tGateway }));
+      // Timeout/rede: a cobrança pode ter sido criada no gateway. Mantém a trava (expira em 60s)
+      // para que um novo clique imediato não gere um segundo PIX.
+      if (!charge.uncertain) await release();
       return { ...notConfigured, configured: true as const, error: charge.error };
     }
 
@@ -555,8 +559,9 @@ export const createPixCharge = createServerFn({ method: "POST" })
       } as never)
       .eq("id", order.id);
 
-    console.info("[pix] create_result", { order: order.order_number, provider: row.provider, amountCents, status: charge.provider_status ?? "PENDING" });
+    const tUtm = Date.now();
     try { const { syncUtmifyOrder } = await import("./utmify.server"); await syncUtmifyOrder(order.id as string); } catch { /* nunca bloqueia o PIX */ }
+    console.info("[pix] create_result", JSON.stringify({ order: order.order_number, store_id: order.store_id, provider: row.provider, transaction_id: charge.transaction_id, amountCents, status: charge.provider_status ?? "PENDING", backend_prepare_ms: tGateway - tPrepare, gateway_ms: tSaved - tGateway, save_ms: tUtm - tSaved, utmify_ms: Date.now() - tUtm, total_ms: Date.now() - tPrepare }));
     return {
       ok: true as const,
       configured: true as const,
