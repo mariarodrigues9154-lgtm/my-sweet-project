@@ -376,6 +376,14 @@ function makeBasicPixProvider(id: "wappi" | "freepay", BASE: string): PaymentPro
     const doc = digits(input.customer.document);
     let phone = digits(input.customer.phone ?? "");
     if (phone && !phone.startsWith("55")) phone = `55${phone}`;
+    if (id === "wappi") {
+      // Validação local com mensagem por campo: não envia CPF/telefone/endereço inválido ao gateway.
+      const invalid = validateWappiInput({ doc, phone, address: input.shipping.address });
+      if (invalid) {
+        console.warn("[wappi] validação local reprovou", { order: input.orderNumber, campo: invalid });
+        return { ok: false, error: invalid };
+      }
+    }
     const body = {
       amount: input.amountCents,
       payment_method: "pix",
@@ -394,8 +402,10 @@ function makeBasicPixProvider(id: "wappi" | "freepay", BASE: string): PaymentPro
     const res = await fetch(`${BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body) });
     const json = await res.json().catch(() => null);
     if (res.status !== 200 && res.status !== 201) {
-      console.error(`[${label}] create falhou`, res.status, JSON.stringify((json as { message?: unknown; errors?: unknown } | null)?.message ?? (json as { errors?: unknown } | null)?.errors ?? null).slice(0, 400));
-      return { ok: false, error: wappiError(res.status) };
+      // Registra a resposta real do gateway (sem credenciais) para diagnóstico da recusa.
+      const detail = wappiErrorDetail(json);
+      console.error(`[${label}] create falhou`, res.status, JSON.stringify({ order: input.orderNumber, detail: (detail ?? "sem detalhe").slice(0, 400) }));
+      return { ok: false, error: wappiError(res.status, detail) };
     }
     const tx = firstTx(json);
     if (!tx?.id) return { ok: false, error: "O provedor não conseguiu gerar o PIX agora." };

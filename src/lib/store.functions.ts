@@ -513,7 +513,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     }
 
     if (!charge.ok) {
-      console.error("[pix] provedor recusou", row.provider, charge.error);
+      console.error("[pix] provedor recusou", JSON.stringify({ order: order.order_number, store: order.store_id, provider: row.provider, error: charge.error }));
       await release();
       return { ...notConfigured, configured: true as const, error: charge.error };
     }
