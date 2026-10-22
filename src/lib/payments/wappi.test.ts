@@ -39,3 +39,17 @@ describe("validateWappiInput", () => {
     expect(validateWappiInput({ doc: "52998224725", phone: "5561995635324", address: { ...address, zip_code: "7169" } })).toContain("CEP");
   });
 });
+
+import { classifyWappiError, WAPPI_CREATE_TIMEOUT_MS } from "./providers.server";
+describe("classifyWappiError", () => {
+  it("separa autenticação, validação, 5xx e 4xx", () => {
+    expect(classifyWappiError(401, null)).toBe("AUTH_ERROR");
+    expect(classifyWappiError(400, "Customer.Phone: required")).toBe("VALIDATION_ERROR");
+    expect(classifyWappiError(502, null)).toBe("HTTP_5XX");
+    expect(classifyWappiError(400, "Erro ao processar a transação com as adquirentes.")).toBe("HTTP_4XX");
+    expect(classifyWappiError(409, null)).toBe("DUPLICATE_TRANSACTION");
+  });
+  it("criação do PIX tem limite de tempo finito", () => {
+    expect(WAPPI_CREATE_TIMEOUT_MS).toBe(25000);
+  });
+});
