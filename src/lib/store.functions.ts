@@ -406,8 +406,13 @@ export const createPixCharge = createServerFn({ method: "POST" })
       };
     }
 
+    const tPrepare = Date.now();
     const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-    const row = await loadStorePayment(order.store_id as string);
+    // Gateway da loja e produto são independentes: buscados em paralelo.
+    const [row, { data: product }] = await Promise.all([
+      loadStorePayment(order.store_id as string),
+      supabaseAdmin.from("products").select("id, title, store_id, active").eq("id", order.product_id as string).maybeSingle(),
+    ]);
     if (!row || !row.enabled || row.provider === "none") {
       console.error("[pix] loja sem gateway ativo", order.store_id, Boolean(row));
       return notConfigured;
@@ -419,13 +424,6 @@ export const createPixCharge = createServerFn({ method: "POST" })
 
     const customer = (order.customer ?? {}) as { name?: string; email?: string; document?: string; phone?: string };
     const address = (order.address ?? {}) as { cep?: string; street?: string; number?: string; complement?: string; district?: string; city?: string; state?: string };
-
-    // Valores sempre relidos do banco — produto ativo, da mesma loja, preço do pedido calculado no servidor.
-    const { data: product } = await supabaseAdmin
-      .from("products")
-      .select("id, title, store_id, active")
-      .eq("id", order.product_id as string)
-      .maybeSingle();
     if (!product || product.store_id !== order.store_id) return { ...notConfigured, configured: true as const, error: "Produto indisponível." };
 
     const cents = (v: unknown) => Math.round(Number(String(v ?? 0)) * 100);
