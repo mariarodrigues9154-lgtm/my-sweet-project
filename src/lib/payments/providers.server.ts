@@ -305,6 +305,21 @@ function wappiFieldError(detail: string): string | null {
   return null;
 }
 
+/** Limite da criação do PIX na Wappi (a resposta normal leva poucos segundos). */
+export const WAPPI_CREATE_TIMEOUT_MS = 25000;
+
+export type WappiErrorCategory = "VALIDATION_ERROR" | "AUTH_ERROR" | "HTTP_4XX" | "HTTP_5XX" | "DUPLICATE_TRANSACTION";
+
+/** Classifica a resposta de erro da Wappi para os logs. */
+export function classifyWappiError(status: number, detail?: string | null): WappiErrorCategory {
+  const d = (detail ?? "").toLowerCase();
+  if (status === 401 || status === 403) return "AUTH_ERROR";
+  if (status === 409 || d.includes("duplicad") || d.includes("duplicate")) return "DUPLICATE_TRANSACTION";
+  if (status >= 500) return "HTTP_5XX";
+  if ((status === 400 || status === 422) && d && wappiFieldError(d)) return "VALIDATION_ERROR";
+  return "HTTP_4XX";
+}
+
 function wappiError(status: number, detail?: string | null): string {
   if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique suas credenciais.";
   if (status === 400) {
@@ -399,16 +414,33 @@ function makeBasicPixProvider(id: "wappi" | "freepay", BASE: string): PaymentPro
       pix: { expires_in_days: input.expiresInDays ?? 1 },
       metadata: { order_number: input.orderNumber, ...(input.metadata ?? {}) },
     };
-    const res = await fetch(`${BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body) });
+    // Timeout explícito: antes a chamada não tinha limite e podia ficar pendurada indefinidamente.
+    const t0 = Date.now();
+    const meta = { provider: label, order: input.orderNumber, store_id: input.metadata?.["store_id"], order_id: input.metadata?.["order_id"] };
+    let res: Response;
+    try {
+      res = await fetch(`${BASE}/v1/payment-transaction/create`, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(WAPPI_CREATE_TIMEOUT_MS) });
+    } catch (err) {
+      const isTimeout = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+      const category = isTimeout ? "TIMEOUT" : "NETWORK_ERROR";
+      console.error(`[${label}] create falhou`, JSON.stringify({ ...meta, category, wappi_request_ms: Date.now() - t0, at: new Date().toISOString() }));
+      return { ok: false, error: "O provedor de pagamento demorou para responder. Aguarde alguns segundos e tente novamente.", uncertain: true };
+    }
+    const wappiMs = Date.now() - t0;
     const json = await res.json().catch(() => null);
     if (res.status !== 200 && res.status !== 201) {
       // Registra a resposta real do gateway (sem credenciais) para diagnóstico da recusa.
       const detail = wappiErrorDetail(json);
-      console.error(`[${label}] create falhou`, res.status, JSON.stringify({ order: input.orderNumber, detail: (detail ?? "sem detalhe").slice(0, 400) }));
+      const category = classifyWappiError(res.status, detail);
+      console.error(`[${label}] create falhou`, JSON.stringify({ ...meta, category, http_status: res.status, detail: (detail ?? "sem detalhe").slice(0, 400), wappi_request_ms: wappiMs, at: new Date().toISOString() }));
       return { ok: false, error: wappiError(res.status, detail) };
     }
     const tx = firstTx(json);
-    if (!tx?.id) return { ok: false, error: "O provedor não conseguiu gerar o PIX agora." };
+    console.info(`[${label}] create ok`, JSON.stringify({ ...meta, http_status: res.status, transaction_id: tx?.id ?? null, provider_status: tx?.status ?? null, wappi_request_ms: wappiMs }));
+    if (!tx?.id) {
+      console.error(`[${label}] create falhou`, JSON.stringify({ ...meta, category: "INVALID_RESPONSE", http_status: res.status }));
+      return { ok: false, error: "O provedor não conseguiu gerar o PIX agora." };
+    }
     const pix = pixOf(tx);
     if (!pix) return { ok: false, error: "O provedor não retornou os dados do PIX. Tente novamente." };
 
