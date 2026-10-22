@@ -46,7 +46,8 @@ export type PixChargeResult =
       amount_cents?: number | null;
       payment_url?: string | null;
     }
-  | { ok: false; error: string };
+  /** uncertain = timeout/rede: o gateway pode ter criado a cobrança, então não liberar nova tentativa na hora. */
+  | { ok: false; error: string; uncertain?: boolean };
 
 export type StatusResult = { paid: boolean; status: string; e2e?: string | null; paid_at?: string | null };
 
