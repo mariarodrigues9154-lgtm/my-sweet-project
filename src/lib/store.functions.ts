@@ -559,6 +559,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       } as never)
       .eq("id", order.id);
 
+    const tSaved = tSaved0;
     const tUtm = Date.now();
     try { const { syncUtmifyOrder } = await import("./utmify.server"); await syncUtmifyOrder(order.id as string); } catch { /* nunca bloqueia o PIX */ }
     console.info("[pix] create_result", JSON.stringify({ order: order.order_number, store_id: order.store_id, provider: row.provider, transaction_id: charge.transaction_id, amountCents, status: charge.provider_status ?? "PENDING", backend_prepare_ms: tGateway - tPrepare, gateway_ms: tSaved - tGateway, save_ms: tUtm - tSaved, utmify_ms: Date.now() - tUtm, total_ms: Date.now() - tPrepare }));
