@@ -1,5 +1,12 @@
 # Roadmap
 
+## Auditoria UTMify → Meta (24/10/2026)
+- [ ] Conferir configuração, vendas e horários reais dos últimos 7 dias
+- [ ] Auditar UTMs, Purchase, deduplicação, webhooks e retries sem criar outra integração
+- [ ] Validar navegação e simulações de rastreamento sem cobrar clientes
+- [ ] Corrigir somente defeitos comprovados e apresentar relatório com limites de verificação
+- [ ] Confirmar pagamento de teste, recebimento/atribuição na Meta e horário da notificação (depende de pagamento de teste e acesso aos registros externos)
+
 - [x] Aproximar cabeçalho, compra e checkout das referências enviadas
 - [x] Adicionar quatro controles independentes do selo verificado no painel
 - [x] Validar o fluxo de produto até a primeira etapa do checkout em celular e a vitrine em desktop
