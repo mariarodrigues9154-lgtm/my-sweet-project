@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildUtmifyBody, utcStamp } from "./utmify.server";
+import { buildUtmifyBody, postUtmify, targetStatus, utcStamp } from "./utmify.server";
+import { afterEach, vi } from "vitest";
 
 const order = {
   id: "1", order_number: "20261014-ABCDE", store_id: "s", status: "pago", created_at: "2026-10-14T20:00:00-03:00", paid_at: "2026-10-14T20:05:30-03:00",
@@ -10,6 +11,18 @@ const order = {
 };
 
 describe("UTMify", () => {
+  it("PIX gerado não vira venda paga nem Purchase", () => {
+    expect(targetStatus({ ...order, status: "aguardando_pagamento" })).toBe("waiting_payment");
+    expect(targetStatus({ ...order, status: "aguardando_pagamento", transaction_id: null })).toBeNull();
+    expect(targetStatus(order)).toBe("paid");
+  });
+  it("preserva as cinco UTMs e o total final pago com desconto e frete", () => {
+    const tracking_params = { utm_source: "FB", utm_campaign: "campanha", utm_medium: "conjunto", utm_content: "anuncio", utm_term: "feed" };
+    const body = buildUtmifyBody({ ...order, unit_price: 60, total: 114, tracking_params }, "paid");
+    expect(body.commission.totalPriceInCents).toBe(11400);
+    expect(body.trackingParameters).toMatchObject(tracking_params);
+    expect(body.approvedDate).toBe("2026-10-14 23:05:30");
+  });
   it("datas em UTC 0 no formato YYYY-MM-DD HH:MM:SS", () => {
     expect(utcStamp("2026-10-14T20:00:00-03:00")).toBe("2026-10-14 23:00:00");
   });
@@ -29,6 +42,30 @@ describe("UTMify", () => {
     const tp = buildUtmifyBody(order, "paid").trackingParameters;
     expect(tp["utm_source"]).toBe("FB");
     expect(tp["sck"]).toBeNull();
+  });
+});
+
+describe("tentativas UTMify sem enviar vendas reais", () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); });
+  it("registra cada resposta e repete 5xx após 800ms", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response("indisponível", { status: 503 })).mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const promise = postUtmify("token-de-teste", {}, { store_id: "s", order_number: "TESTE", status: "paid" });
+    await vi.advanceTimersByTimeAsync(799);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await promise).ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(info.mock.calls.map((call) => (call[1] as { attempt: number }).attempt)).toEqual([1, 2]);
+    expect(info.mock.calls[1]?.[1]).toMatchObject({ http_status: 200, ok: true });
+  });
+  it("não repete erro definitivo HTTP 400", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("invalid payload", { status: 400 }));
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await postUtmify("token-de-teste", {})).status).toBe(400);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
