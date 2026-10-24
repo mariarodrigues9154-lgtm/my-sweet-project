@@ -3,6 +3,7 @@ import { getProvider, type GatewayConfig, type PixChargeInput } from "./payments
 import { WESTPAY_BASE, mapWestpayStatus, parseWestpayPix, westpay, westpayMatchesOrder, westpayPayload } from "./payments/westpay.server";
 import { confirmWestpayOrder } from "./payments/westpay-confirm.server";
 import { providerSpec } from "./payments/catalog";
+import { pixRetryBlocked } from "./pix-attempt";
 
 const config: GatewayConfig = { provider: "westpay", environment: "production", secrets: { public_key: "test-public", secret_key: "test-secret" }, publicData: {} };
 const input: PixChargeInput = { orderNumber: "PED-1", amount: 119.90, amountCents: 11990, description: "Produto", customer: { name: "Teste", email: "teste@example.com", document: "529.982.247-25", phone: "11999999999" }, metadata: { order_id: "o1", store_id: "s1" }, postbackUrl: "https://example.com/api/public/webhooks/westpay" };
@@ -12,6 +13,8 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const mockResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 describe("WestPay official contract", () => {
+  it("timeout bloqueia nova tentativa no checkout", () => { expect(pixRetryBlocked({ provider: "westpay", retry_blocked: true })).toBe(true); });
+  it("falha definitiva não bloqueia correção dos dados", () => { expect(pixRetryBlocked({ provider: "westpay", retry_blocked: false })).toBe(false); expect(pixRetryBlocked(null)).toBe(false); });
   it("registra WestPay sem substituir os outros gateways", () => {
     expect(getProvider("westpay")).toBe(westpay);
     for (const id of ["wappi", "freepay", "pinpay", "blackcat", "invictuspay", "codefy", "umbrellapag", "mercadopago", "asaas"]) expect(getProvider(id)?.id).toBe(id);
