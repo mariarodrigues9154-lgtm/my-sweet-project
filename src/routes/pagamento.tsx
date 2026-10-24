@@ -1,4 +1,5 @@
 import { readTracking, useUtmifyScripts } from "@/lib/utm-tracking";
+import { logPixSubmit, pixRetryBlocked } from "@/lib/pix-attempt";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { PixQr } from "@/components/checkout/PixQr";
@@ -107,6 +108,7 @@ function CheckoutRoute() {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<CheckoutDraft>(emptyDraft);
   const [placing, setPlacing] = useState(false);
+  const [retryBlocked, setRetryBlocked] = useState(false);
   const [offerAccepted, setOfferAccepted] = useState(false);
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<
@@ -179,6 +181,7 @@ function CheckoutRoute() {
         setOrder({ number: saved, total: (charge as { total?: number }).total ?? 0 });
         applyCharge(charge);
       } else {
+        if (pixRetryBlocked(charge)) { setRetryBlocked(true); toast.error((charge as { error?: string }).error); return; }
         window.localStorage.removeItem(PIX_KEY);
       }
     });
@@ -285,7 +288,8 @@ function CheckoutRoute() {
   async function placeOrder(fromCardOrder: string | null = null) {
     if (!product || !selectedShipping) return;
     if (!validateStep1() || !validateStep2()) return;
-    if (placing) return;
+    if (placing || retryBlocked) return;
+    const submitStarted = performance.now();
     setPlacing(true);
     void trackAddPaymentInfo(store.id, product, quantity, Number((unitPrice * quantity + selectedShipping.price).toFixed(2)));
     try {
@@ -293,6 +297,8 @@ function CheckoutRoute() {
         const sw = await toPix({ data: { order_number: fromCardOrder } });
         if (sw.ok) {
           const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
+          logPixSubmit(submitStarted, charge, store.id);
+          if (pixRetryBlocked(charge)) { setRetryBlocked(true); window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento", search: { pedido: sw.order_number }, replace: true }); }
           if (isPixCharge(charge)) {
             const total = Number((charge as { total?: number }).total ?? 0);
             setOrder({ number: sw.order_number, total });
@@ -327,6 +333,8 @@ function CheckoutRoute() {
       }
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
+      logPixSubmit(submitStarted, charge, store.id);
+      if (pixRetryBlocked(charge)) { setRetryBlocked(true); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); }
       if (isPixCharge(charge)) {
         applyCharge(charge);
         window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); rememberPixOrder(result.access_token, store.id);
@@ -602,7 +610,7 @@ function CheckoutRoute() {
             <p className="border-b border-border pb-2 text-[14px] font-extrabold">Forma de pagamento</p>
             <PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />
             {!payCfg.pix.enabled && !showCard && <p className="py-3 text-[12.5px] text-muted-foreground">Nenhuma forma de pagamento disponível no momento.</p>}
-            <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : "Efetuar pagamento"}</PrimaryButton></div>
+            <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || retryBlocked || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : retryBlocked ? "Aguardando confirmação da WestPay" : "Efetuar pagamento"}</PrimaryButton></div>
             {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => void navigate({ to: "/pedido-confirmado", search: { pedido: no } })} customerName={form.customer.name} onPayPix={(no) => { setPayMethod("pix"); setCardSheet(false); void placeOrder(no); }} />}
           </section>
         )}

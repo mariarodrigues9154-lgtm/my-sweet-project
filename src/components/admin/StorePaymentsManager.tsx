@@ -40,7 +40,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
   }, [data]);
 
   const spec = providerSpec(provider);
-  const hookPath = provider === "wappi" ? "/api/public/webhooks/wappi" : provider === "freepay" ? "/api/public/webhooks/freepay" : provider === "pinpay" ? "/api/public/webhooks/pinpay" : provider === "blackcat" ? "/api/public/webhooks/blackcat" : provider === "invictuspay" ? "/api/public/webhooks/invictuspay" : provider === "codefy" ? "/api/public/webhooks/codefy" : provider === "umbrellapag" ? "/api/public/webhooks/umbrellapag" : WEBHOOK_PATH;
+  const hookPath = provider === "westpay" ? "/api/public/webhooks/westpay" : provider === "wappi" ? "/api/public/webhooks/wappi" : provider === "freepay" ? "/api/public/webhooks/freepay" : provider === "pinpay" ? "/api/public/webhooks/pinpay" : provider === "blackcat" ? "/api/public/webhooks/blackcat" : provider === "invictuspay" ? "/api/public/webhooks/invictuspay" : provider === "codefy" ? "/api/public/webhooks/codefy" : provider === "umbrellapag" ? "/api/public/webhooks/umbrellapag" : WEBHOOK_PATH;
   const webhookUrl = typeof window === "undefined" ? hookPath : `${window.location.origin}${hookPath}`;
 
   async function handleSave() {
@@ -90,10 +90,11 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
                 setProvider(event.target.value as PaymentProviderId);
                 setSecrets({});
                 setPublicData({});
+                setEditing({});
               }}
               className="mt-1 h-11 w-full rounded-lg border border-input bg-background px-3 text-[13.5px] font-semibold"
             >
-              {PAYMENT_PROVIDERS.filter((item) => item.id === "none" || item.id === "wappi" || item.id === "freepay" || item.id === "pinpay" || item.id === "blackcat" || item.id === "invictuspay" || item.id === "codefy" || item.id === "umbrellapag" || item.id === provider).map((item) => (
+              {PAYMENT_PROVIDERS.filter((item) => item.id === "none" || item.id === "wappi" || item.id === "freepay" || item.id === "pinpay" || item.id === "blackcat" || item.id === "invictuspay" || item.id === "codefy" || item.id === "umbrellapag" || item.id === "westpay" || item.id === provider).map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
@@ -119,7 +120,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
 
               <div className="grid gap-2 sm:grid-cols-2">
                 {spec.fields.map((field) => {
-                  const savedMask = data?.secrets_masked?.[field.key];
+                  const savedMask = data?.provider === provider ? data.secrets_masked?.[field.key] : undefined;
                   const locked = field.secret && savedMask && !editing[field.key];
                   return (
                     <label key={field.key} className="block">

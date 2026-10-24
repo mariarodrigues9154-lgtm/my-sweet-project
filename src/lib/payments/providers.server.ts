@@ -6,6 +6,7 @@
 
 import { isValidCpfCnpj, isValidPhone } from "@/lib/format";
 import type { PaymentEnvironment, PaymentProviderId } from "./catalog";
+import { westpay } from "./westpay.server";
 
 export type GatewayConfig = {
   provider: PaymentProviderId;
@@ -49,7 +50,7 @@ export type PixChargeResult =
   /** uncertain = timeout/rede: o gateway pode ter criado a cobrança, então não liberar nova tentativa na hora. */
   | { ok: false; error: string; uncertain?: boolean };
 
-export type StatusResult = { paid: boolean; status: string; e2e?: string | null; paid_at?: string | null };
+export type StatusResult = { paid: boolean; status: string; e2e?: string | null; paid_at?: string | null; amount_cents?: number | null; metadata?: Record<string, unknown> };
 
 export type PaymentProvider = {
   id: PaymentProviderId;
@@ -1171,7 +1172,7 @@ const umbrellapag: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, umbrellapag, mercadopago, asaas };
+const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, umbrellapag, westpay, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;
