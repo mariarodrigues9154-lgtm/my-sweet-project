@@ -41,16 +41,23 @@ async function logUtmify(entry: { store_id: string; order_number?: string | null
   } catch { /* histórico nunca bloqueia */ }
 }
 
-export async function postUtmify(token: string, body: Record<string, unknown>): Promise<{ ok: boolean; status: number; error?: string }> {
+export async function postUtmify(token: string, body: Record<string, unknown>, audit?: { store_id: string; order_number: string; status: string }): Promise<{ ok: boolean; status: number; error?: string }> {
   let last: { ok: boolean; status: number; error?: string } = { ok: false, status: 0, error: "Sem resposta" };
   for (let attempt = 0; attempt < 2; attempt++) {
+    const startedAt = new Date().toISOString();
+    const started = Date.now();
+    const recordAttempt = (result: { ok: boolean; status: number }) => {
+      if (audit) console.info("[utmify] attempt", { ...audit, attempt: attempt + 1, started_at: startedAt, response_at: new Date().toISOString(), duration_ms: Date.now() - started, http_status: result.status, ok: result.ok });
+    };
     try {
       const res = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "x-api-token": token }, body: JSON.stringify(body) });
-      if (res.ok) return { ok: true, status: res.status };
+      if (res.ok) { recordAttempt({ ok: true, status: res.status }); return { ok: true, status: res.status }; }
       last = { ok: false, status: res.status, error: (await res.text()).slice(0, 400) };
+      recordAttempt(last);
       if (res.status < 500 && res.status !== 429) return last; // erro definitivo: não repete
     } catch {
       last = { ok: false, status: 0, error: "Falha de conexão com a UTMify." };
+      recordAttempt(last);
     }
     if (attempt === 0) await new Promise((r) => setTimeout(r, 800));
   }
@@ -64,7 +71,7 @@ type OrderRow = {
   tracking_params: Record<string, string> | null; utmify_sent_status: string | null; payment: Record<string, unknown> | null;
 };
 
-function targetStatus(o: OrderRow): "waiting_payment" | "paid" | "refunded" | null {
+export function targetStatus(o: OrderRow): "waiting_payment" | "paid" | "refunded" | null {
   if (o.status === "pago") return "paid";
   if (o.status === "reembolsado") return o.utmify_sent_status ? "refunded" : null;
   if (o.status === "aguardando_pagamento" && o.transaction_id && (o.payment_method ?? "pix") === "pix") return "waiting_payment";
@@ -133,7 +140,7 @@ export async function syncUtmifyOrder(orderId: string): Promise<void> {
     const { data: claimed } = await claim.select("id").maybeSingle();
     if (!claimed) return;
 
-    const result = await postUtmify(settings.api_token, buildUtmifyBody(order, status));
+    const result = await postUtmify(settings.api_token, buildUtmifyBody(order, status), { store_id: order.store_id, order_number: order.order_number, status });
     await logUtmify({ store_id: order.store_id, order_number: order.order_number, status, ok: result.ok, http_status: result.status || null, error: result.error ?? null });
     if (!result.ok) {
       await supabaseAdmin.from("orders").update({ utmify_sent_status: previous } as never).eq("id", order.id).eq("utmify_sent_status", status);
