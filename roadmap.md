@@ -57,3 +57,8 @@
 - [x] Frete único grátis (Frete Expresso, R$ 24,90 riscado, entrega +2 a +4 dias) em produto e checkouts
 - [x] Comprar agora não reabre PIX antigo; PIX novo vale 15 min
 - [x] Auditoria e correção de fotos/vídeos que não carregam (todo o site)
+
+## Gateway UmbrellaPag
+- [x] Adapter UmbrellaPag (x-api-key, centavos, POST /user/transactions) + webhook /api/public/webhooks/umbrellapag com reconfirmação
+- [x] Opção no painel por loja + testes de status (4 novos, 70 no total)
+- [ ] Teste com API Key real e PIX real (depende da credencial da loja)
