@@ -37,6 +37,7 @@ import { Route as ApiPublicWebhooksCodefyRouteImport } from './routes/api/public
 import { Route as ApiPublicWebhooksFreepayRouteImport } from './routes/api/public/webhooks.freepay'
 import { Route as ApiPublicWebhooksInvictuspayRouteImport } from './routes/api/public/webhooks.invictuspay'
 import { Route as ApiPublicWebhooksPinpayRouteImport } from './routes/api/public/webhooks.pinpay'
+import { Route as ApiPublicWebhooksUmbrellapagRouteImport } from './routes/api/public/webhooks.umbrellapag'
 import { Route as ApiPublicWebhooksWappiRouteImport } from './routes/api/public/webhooks.wappi'
 import { Route as ApiPublicPedidosOrderNumberStatusRouteImport } from './routes/api/public/pedidos.$orderNumber.status'
 
@@ -186,6 +187,12 @@ const ApiPublicWebhooksPinpayRoute = ApiPublicWebhooksPinpayRouteImport.update({
   path: '/api/public/webhooks/pinpay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksUmbrellapagRoute =
+  ApiPublicWebhooksUmbrellapagRouteImport.update({
+    id: '/api/public/webhooks/umbrellapag',
+    path: '/api/public/webhooks/umbrellapag',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksWappiRoute = ApiPublicWebhooksWappiRouteImport.update({
   id: '/api/public/webhooks/wappi',
   path: '/api/public/webhooks/wappi',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
+  '/api/public/webhooks/umbrellapag': typeof ApiPublicWebhooksUmbrellapagRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -256,6 +264,7 @@ export interface FileRoutesByTo {
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
+  '/api/public/webhooks/umbrellapag': typeof ApiPublicWebhooksUmbrellapagRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -289,6 +298,7 @@ export interface FileRoutesById {
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
+  '/api/public/webhooks/umbrellapag': typeof ApiPublicWebhooksUmbrellapagRoute
   '/api/public/webhooks/wappi': typeof ApiPublicWebhooksWappiRoute
   '/api/public/pedidos/$orderNumber/status': typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
     | '/api/public/webhooks/pinpay'
+    | '/api/public/webhooks/umbrellapag'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
   fileRoutesByTo: FileRoutesByTo
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
     | '/api/public/webhooks/pinpay'
+    | '/api/public/webhooks/umbrellapag'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
   id:
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
     | '/api/public/webhooks/pinpay'
+    | '/api/public/webhooks/umbrellapag'
     | '/api/public/webhooks/wappi'
     | '/api/public/pedidos/$orderNumber/status'
   fileRoutesById: FileRoutesById
@@ -413,6 +426,7 @@ export interface RootRouteChildren {
   ApiPublicWebhooksFreepayRoute: typeof ApiPublicWebhooksFreepayRoute
   ApiPublicWebhooksInvictuspayRoute: typeof ApiPublicWebhooksInvictuspayRoute
   ApiPublicWebhooksPinpayRoute: typeof ApiPublicWebhooksPinpayRoute
+  ApiPublicWebhooksUmbrellapagRoute: typeof ApiPublicWebhooksUmbrellapagRoute
   ApiPublicWebhooksWappiRoute: typeof ApiPublicWebhooksWappiRoute
   ApiPublicPedidosOrderNumberStatusRoute: typeof ApiPublicPedidosOrderNumberStatusRoute
 }
@@ -615,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksPinpayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/umbrellapag': {
+      id: '/api/public/webhooks/umbrellapag'
+      path: '/api/public/webhooks/umbrellapag'
+      fullPath: '/api/public/webhooks/umbrellapag'
+      preLoaderRoute: typeof ApiPublicWebhooksUmbrellapagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/wappi': {
       id: '/api/public/webhooks/wappi'
       path: '/api/public/webhooks/wappi'
@@ -683,6 +704,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebhooksFreepayRoute: ApiPublicWebhooksFreepayRoute,
   ApiPublicWebhooksInvictuspayRoute: ApiPublicWebhooksInvictuspayRoute,
   ApiPublicWebhooksPinpayRoute: ApiPublicWebhooksPinpayRoute,
+  ApiPublicWebhooksUmbrellapagRoute: ApiPublicWebhooksUmbrellapagRoute,
   ApiPublicWebhooksWappiRoute: ApiPublicWebhooksWappiRoute,
   ApiPublicPedidosOrderNumberStatusRoute:
     ApiPublicPedidosOrderNumberStatusRoute,

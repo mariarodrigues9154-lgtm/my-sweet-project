@@ -1014,7 +1014,164 @@ export async function verifyCodefySignature(raw: string, header: string | null, 
   return diff === 0;
 }
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, mercadopago, asaas };
+// ------------------------------------------------------------------ UmbrellaPag
+// Doc: https://docs.umbrellapag.com — header x-api-key + User-Agent UMBRELLAB2B/1.0, valores em centavos.
+
+export const UMBRELLAPAG_BASE = "https://api-gateway.umbrellapag.com/api";
+
+/**
+ * Status reais da UmbrellaPag → status interno (minúsculo).
+ * A criação/consulta devolvem maiúsculo (WAITING_PAYMENT, REFUSED) e o postback minúsculo (paid):
+ * por isso a normalização é case-insensitive e status fora da lista vira "unknown" (nunca recusa).
+ */
+export function mapUmbrellaStatus(raw: unknown): string {
+  const s = String(raw ?? "").trim().toLowerCase();
+  if (s === "paid") return "paid";
+  if (s === "waiting_payment" || s === "pending" || s === "processing") return "pending";
+  if (s === "refused") return "refused";
+  if (s === "failed") return "failed";
+  if (s === "refunded") return "refunded";
+  if (s === "chargeback") return "chargeback";
+  if (s === "expired" || s === "canceled" || s === "cancelled") return "expired";
+  return "unknown";
+}
+
+function umbrellaHeaders(config: GatewayConfig): Record<string, string> | null {
+  const key = config.secrets["api_key"] ?? "";
+  if (!key) return null;
+  return { "x-api-key": key, "User-Agent": "UMBRELLAB2B/1.0", "Content-Type": "application/json" };
+}
+
+function umbrellaError(status: number): string {
+  if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique a API Key da UmbrellaPag.";
+  if (status === 400 || status === 422) return "Alguns dados do pedido não foram aceitos. Confira nome, e-mail, telefone, CPF e endereço.";
+  if (status === 429) return "Muitas tentativas seguidas. Aguarde um minuto.";
+  return "O provedor de pagamento não respondeu. Tente novamente.";
+}
+
+/** Envelope documentado: { status, message, data: { ...transação } }. */
+function umbrellaTx(body: unknown): Record<string, unknown> | null {
+  if (!body || typeof body !== "object") return null;
+  const data = (body as { data?: unknown }).data;
+  if (data && typeof data === "object" && !Array.isArray(data) && "id" in (data as object)) return data as Record<string, unknown>;
+  return "id" in (body as object) ? (body as Record<string, unknown>) : null;
+}
+
+const umbrellapag: PaymentProvider = {
+  id: "umbrellapag",
+  async testConnection(config) {
+    const headers = umbrellaHeaders(config);
+    if (!headers) return { ok: false, error: "Informe a API Key." };
+    // Listar transações valida a chave sem criar cobrança.
+    const res = await fetch(`${UMBRELLAPAG_BASE}/user/transactions`, { headers, signal: AbortSignal.timeout(10000) });
+    if (res.ok) return { ok: true };
+    return { ok: false, error: umbrellaError(res.status) };
+  },
+  async createPix(config, input) {
+    const headers = umbrellaHeaders(config);
+    if (!headers) return { ok: false, error: "Gateway sem credenciais." };
+    const amount = input.amountCents ?? Math.round(input.amount * 100);
+    if (!Number.isInteger(amount) || amount <= 0) return { ok: false, error: "Valor do pedido inválido." };
+    const doc = digits(input.customer.document);
+    const phone = digits(input.customer.phone ?? "");
+    const a = input.shipping?.address;
+    const address = a
+      ? {
+          street: a.street,
+          streetNumber: a.street_number,
+          complement: a.complement,
+          zipCode: digits(a.zip_code),
+          neighborhood: a.neighborhood,
+          city: a.city,
+          state: a.state,
+          country: "BR",
+        }
+      : undefined;
+    const items = (input.items?.length ? input.items : [{ title: input.description, unit_price: amount, quantity: 1, tangible: true }]).map((i) => ({
+      title: i.title.slice(0, 140),
+      unitPrice: i.unit_price,
+      quantity: i.quantity,
+      tangible: i.tangible,
+      externalRef: i.external_ref ?? input.orderNumber,
+    }));
+    const body: Record<string, unknown> = {
+      amount,
+      currency: "BRL",
+      paymentMethod: "PIX",
+      installments: 1,
+      customer: {
+        name: input.customer.name.trim().slice(0, 120) || "Cliente",
+        email: input.customer.email.trim().slice(0, 160),
+        document: { number: doc, type: doc.length > 11 ? "CNPJ" : "CPF" },
+        ...(phone ? { phone } : {}),
+        externalRef: input.orderNumber,
+        ...(address ? { address } : {}),
+      },
+      items,
+      pix: { expiresInDays: Math.max(1, input.expiresInDays ?? 1) },
+      ...(input.postbackUrl ? { postbackUrl: input.postbackUrl } : {}),
+      metadata: JSON.stringify({ order_number: input.orderNumber, ...(input.metadata ?? {}) }),
+      traceable: false,
+    };
+    if (input.shipping) body["shipping"] = { fee: input.shipping.fee, ...(address ? { address } : {}) };
+
+    const t0 = Date.now();
+    const meta = { provider: "umbrellapag", order: input.orderNumber, store_id: input.metadata?.["store_id"], order_id: input.metadata?.["order_id"] };
+    let res: Response;
+    try {
+      res = await fetch(`${UMBRELLAPAG_BASE}/user/transactions`, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(25000) });
+    } catch (err) {
+      const isTimeout = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+      // Timeout/rede: a UmbrellaPag pode ter criado a cobrança — não liberar nova tentativa na hora.
+      console.error("[umbrellapag] create falhou", JSON.stringify({ ...meta, category: isTimeout ? "TIMEOUT" : "NETWORK_ERROR", request_ms: Date.now() - t0, at: new Date().toISOString() }));
+      return { ok: false, error: "O provedor de pagamento demorou para responder. Aguarde alguns segundos e tente novamente.", uncertain: true };
+    }
+    const requestMs = Date.now() - t0;
+    const json = await res.json().catch(() => null);
+    if (res.status !== 200 && res.status !== 201) {
+      const detail = json && typeof json === "object" ? String((json as Record<string, unknown>)["message"] ?? (json as Record<string, unknown>)["error"] ?? "") : "";
+      console.error("[umbrellapag] create falhou", JSON.stringify({ ...meta, http_status: res.status, detail: detail.slice(0, 300), request_ms: requestMs }));
+      return { ok: false, error: umbrellaError(res.status) };
+    }
+    const tx = umbrellaTx(json);
+    if (!tx?.["id"]) {
+      console.error("[umbrellapag] create falhou", JSON.stringify({ ...meta, category: "INVALID_RESPONSE", http_status: res.status }));
+      return { ok: false, error: "O provedor não conseguiu gerar o PIX agora." };
+    }
+    console.info("[umbrellapag] create ok", JSON.stringify({ ...meta, http_status: res.status, transaction_id: tx["id"], provider_status: tx["status"] ?? null, request_ms: requestMs }));
+
+    // qrCode documentado; sem supor subcampos: copia-e-cola só se tiver formato EMV (000201…).
+    const qrRaw = typeof tx["qrCode"] === "string" ? (tx["qrCode"] as string) : null;
+    const copyPaste = isPixPayload(qrRaw) ? qrRaw.trim() : null;
+    let qr: string | null = qrRaw && isImage(qrRaw) ? qrRaw : null;
+    if (!qr && copyPaste) qr = await qrFromPayload(copyPaste);
+    if (!qr && !copyPaste) return { ok: false, error: "O provedor não retornou os dados do PIX. Tente novamente." };
+
+    return {
+      ok: true,
+      transaction_id: String(tx["id"]),
+      qr_code: qr,
+      copy_paste: copyPaste,
+      // A API só aceita expiresInDays; a janela real da loja (15 min) continua valendo no checkout.
+      expires_in: (input.expiresInDays ?? 1) * 86400,
+      provider_status: mapUmbrellaStatus(tx["status"] ?? "WAITING_PAYMENT"),
+      amount_cents: typeof tx["amount"] === "number" ? (tx["amount"] as number) : null,
+    };
+  },
+  async getStatus(config, transactionId) {
+    const headers = umbrellaHeaders(config);
+    if (!headers) return { paid: false, status: "unknown" };
+    const res = await fetch(`${UMBRELLAPAG_BASE}/user/transactions/${encodeURIComponent(transactionId)}`, { headers, signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error(`umbrellapag status ${res.status}`);
+    const tx = umbrellaTx(await res.json().catch(() => null));
+    const status = mapUmbrellaStatus(tx?.["status"]);
+    const paidAt = typeof tx?.["paidAt"] === "string" ? (tx["paidAt"] as string) : null;
+    const e2e = typeof tx?.["endToEndId"] === "string" ? (tx["endToEndId"] as string) : null;
+    return { paid: status === "paid", status, paid_at: paidAt, e2e };
+  },
+};
+
+const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, umbrellapag, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;
