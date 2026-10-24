@@ -1,10 +1,12 @@
 # Roadmap
 
 ## Auditoria UTMify → Meta (24/10/2026)
-- [ ] Conferir configuração, vendas e horários reais dos últimos 7 dias
-- [ ] Auditar UTMs, Purchase, deduplicação, webhooks e retries sem criar outra integração
-- [ ] Validar navegação e simulações de rastreamento sem cobrar clientes
-- [ ] Corrigir somente defeitos comprovados e apresentar relatório com limites de verificação
+- [x] Conferir configuração, vendas e horários reais dos últimos 7 dias
+- [x] Auditar UTMs, Purchase, deduplicação, webhooks e retries sem criar outra integração
+- [x] Validar navegação e simulações de rastreamento sem cobrar clientes (duas lojas; 31 testes)
+- [x] Adicionar diagnóstico de horários por tentativa UTMify, sem alterar pagamentos ou instalar Pixel
+- [x] Apresentar relatório com limites de verificação
+- [ ] Validar troca do Pixel UTMify entre lojas no checkout publicado: identificador muda para loja padrão; depende de confirmar comportamento suportado pelo script externo antes de alterar sua inicialização
 - [ ] Confirmar pagamento de teste, recebimento/atribuição na Meta e horário da notificação (depende de pagamento de teste e acesso aos registros externos)
 
 - [x] Aproximar cabeçalho, compra e checkout das referências enviadas
