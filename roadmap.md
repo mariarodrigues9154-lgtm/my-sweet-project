@@ -1,5 +1,9 @@
 # Roadmap
 
+## Barra inferior de cupom (24/10/2026)
+- [x] Ajustar somente o visual da barra conforme a referência, preservando configuração e cronômetro
+- [ ] Conferir alinhamento, fechamento e compra no celular e desktop
+
 ## Auditoria UTMify → Meta (24/10/2026)
 - [x] Conferir configuração, vendas e horários reais dos últimos 7 dias
 - [x] Auditar UTMs, Purchase, deduplicação, webhooks e retries sem criar outra integração
