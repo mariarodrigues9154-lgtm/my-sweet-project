@@ -3,7 +3,7 @@ export async function checkOrderPaymentStatus(orderNumber: string): Promise<{ fo
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row } = await supabaseAdmin
     .from("orders")
-    .select("id, status, store_id, transaction_id, payment, paid_at")
+    .select("id, status, store_id, transaction_id, payment, paid_at, payment_provider, total")
     .eq("order_number", orderNumber)
     .maybeSingle();
   if (!row) return { found: false, status: "desconhecido", paid_at: null };
@@ -13,12 +13,19 @@ export async function checkOrderPaymentStatus(orderNumber: string): Promise<{ fo
   const { loadStorePayment, toGatewayConfig } = await import("./resolve.server");
   const settings = await loadStorePayment(row.store_id as string);
   if (!settings || settings.provider === "none") return current;
+  if ((row.payment_provider === "westpay" || settings.provider === "westpay") && row.payment_provider !== settings.provider) return current;
   const { getProvider } = await import("./providers.server");
   const gateway = getProvider(settings.provider);
   if (!gateway) return current;
 
   try {
     const result = await gateway.getStatus(toGatewayConfig(settings), row.transaction_id as string);
+    if (row.payment_provider === "westpay") {
+      const { confirmWestpayOrder } = await import("./westpay-confirm.server");
+      const { sendPurchaseForOrder } = await import("@/lib/meta.server");
+      const paid = await confirmWestpayOrder(supabaseAdmin, { ...row, store_id: row.store_id as string, total: Number(row.total) }, result, sendPurchaseForOrder);
+      return paid ? { found: true, status: "pago", paid_at: row.paid_at ?? result.paid_at ?? new Date().toISOString() } : current;
+    }
     if (!result.paid) return current;
     const paidAt = new Date().toISOString();
     const payment = (row.payment ?? {}) as Record<string, unknown>;
