@@ -1,5 +1,12 @@
 # Roadmap
 
+## Gateway WestPay (24/10/2026)
+- [ ] Ler documentação oficial completa e auditar arquitetura existente
+- [ ] Adicionar WestPay ao painel e pagamentos atuais somente com contrato oficial confirmado
+- [ ] Validar criação, consulta, webhook, isolamento e proteção contra duplicação com testes
+- [ ] Testar PIX real pago e rastreamento (depende de credenciais WestPay e pagamento autorizado)
+- [ ] Entregar relatório com contrato oficial, alterações, testes e limitações
+
 ## Barra inferior de cupom (24/10/2026)
 - [x] Ajustar somente o visual da barra conforme a referência, preservando configuração e cronômetro
 - [x] Conferir visual e X em prévia isolada mobile/desktop, abertura da compra no produto e 10 testes de configuração/cronômetro (produtos consultados estavam com barra desativada)
