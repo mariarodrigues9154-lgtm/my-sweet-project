@@ -1,4 +1,5 @@
 import { readTracking, useUtmifyScripts } from "@/lib/utm-tracking";
+import { logPixSubmit, pixRetryBlocked } from "@/lib/pix-attempt";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { rememberPixOrder } from "@/lib/pix-orders";
@@ -65,6 +66,7 @@ function CheckoutTwo() {
   useUtmifyScripts(store.id || null);
   const [form, setForm] = useState<CheckoutDraft>(emptyDraft);
   const [placing, setPlacing] = useState(false);
+  const [retryBlocked, setRetryBlocked] = useState(false);
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<PixState | null>(null);
   const [pixLeft, setPixLeft] = useState(0);
@@ -133,6 +135,7 @@ function CheckoutTwo() {
     if (!saved || window.localStorage.getItem(PIX_KEY) !== saved) return;
     void openPix({ data: { order_number: saved } }).then((charge: unknown) => {
       if (isPixCharge(charge)) { setOrder({ number: saved, total: Number((charge as { total?: number }).total ?? 0) }); applyCharge(charge); }
+      else if (pixRetryBlocked(charge)) { setRetryBlocked(true); toast.error((charge as { error?: string }).error); }
       else window.localStorage.removeItem(PIX_KEY);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -160,7 +163,8 @@ function CheckoutTwo() {
   async function placeOrder(fromCardOrder: string | null = null) {
     if (!product || !shipping) { toast.error("Selecione uma forma de entrega válida."); return; }
     if (!hasAddress) { toast.error("Adicione o endereço de entrega para continuar."); void navigate({ to: "/pagamento-2-endereco" }); return; }
-    if (placing) return;
+    if (placing || retryBlocked) return;
+    const submitStarted = performance.now();
     setPlacing(true);
     void trackAddPaymentInfo(store.id, product, quantity, total);
     try {
@@ -168,6 +172,8 @@ function CheckoutTwo() {
         const sw = await toPix({ data: { order_number: fromCardOrder } });
         if (sw.ok) {
           const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
+          logPixSubmit(submitStarted, charge, store.id);
+          if (pixRetryBlocked(charge)) { setRetryBlocked(true); window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento-2", search: { pedido: sw.order_number }, replace: true }); }
           if (isPixCharge(charge)) {
             const pixTotal = Number((charge as { total?: number }).total ?? 0);
             setOrder({ number: sw.order_number, total: pixTotal }); applyCharge(charge);
@@ -184,6 +190,8 @@ function CheckoutTwo() {
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
+      logPixSubmit(submitStarted, charge, store.id);
+      if (pixRetryBlocked(charge)) { setRetryBlocked(true); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento-2", search: { pedido: result.order_number }, replace: true }); }
       if (isPixCharge(charge)) { applyCharge(charge); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento-2", search: { pedido: result.order_number }, replace: true }); rememberPixOrder(result.access_token, store.id); void trackPaymentPending(store.id, result.order_number, result.total, product.id); }
       else { const failure = charge as { configured?: boolean; error?: string } | null; setPix({ configured: Boolean(failure?.configured) } as PixState); toast.error(failure?.error ?? "O PIX ainda não está disponível."); }
     } finally { setPlacing(false); }
@@ -232,7 +240,7 @@ function CheckoutTwo() {
     </main>
     <div ref={setBottomBar} className="fixed inset-x-0 bottom-0 z-30">
       {savings > 0 && <p className="flex items-center gap-1.5 bg-primary-soft px-4 py-2 text-[11px] font-medium text-primary"><Smile size={14} className="shrink-0" />Você está economizando {brl(savings)} nesse pedido.</p>}
-      <div className="border-t border-border bg-card px-4 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-buybar"><div className="mx-auto max-w-[488px]"><div className="flex items-end justify-between"><span className="text-[13px] font-medium">Total ({quantity} {quantity === 1 ? "item" : "itens"})</span><strong className="text-[20px] font-semibold text-primary tnum">{brl(total)}</strong></div><Button onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || (payMethod === "pix" && !payCfg.pix.enabled)} className="mt-2 h-auto min-h-12 w-full rounded-full py-2 text-[16px] font-semibold"><span className="flex flex-col leading-tight"><span>{placing ? "Gerando pagamento..." : "Fazer pedido"}</span>{countdown > 0 && !placing && <span className="text-[11px] font-medium tnum">O cupom expira em <Countdown store={store} product={product} /></span>}</span></Button></div></div>
+      <div className="border-t border-border bg-card px-4 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-buybar"><div className="mx-auto max-w-[488px]"><div className="flex items-end justify-between"><span className="text-[13px] font-medium">Total ({quantity} {quantity === 1 ? "item" : "itens"})</span><strong className="text-[20px] font-semibold text-primary tnum">{brl(total)}</strong></div><Button onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || retryBlocked || (payMethod === "pix" && !payCfg.pix.enabled)} className="mt-2 h-auto min-h-12 w-full rounded-full py-2 text-[16px] font-semibold"><span className="flex flex-col leading-tight"><span>{placing ? "Gerando seu PIX..." : retryBlocked ? "Aguardando confirmação da WestPay" : "Fazer pedido"}</span>{countdown > 0 && !placing && !retryBlocked && <span className="text-[11px] font-medium tnum">O cupom expira em <Countdown store={store} product={product} /></span>}</span></Button></div></div>
     </div>
   </div>;
 }

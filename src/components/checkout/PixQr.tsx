@@ -7,10 +7,11 @@ export function PixQr({ code, fallback, className }: { code?: string | null | un
     let alive = true;
     setSrc(null);
     const payload = code?.trim();
+    const started = performance.now();
     if (payload) {
       import("qrcode")
         .then((QR) => QR.toDataURL(payload, { margin: 1, width: 320, errorCorrectionLevel: "M" }))
-        .then((url) => { if (alive) setSrc(url); })
+        .then((url) => { if (alive) { setSrc(url); console.info("[pix] qr_render", { qr_render_ms: Math.round(performance.now() - started), at: new Date().toISOString() }); } })
         .catch(() => { if (alive && fallback?.startsWith("data:image")) setSrc(fallback); });
     } else if (fallback && /^(data:image|https:\/\/)/.test(fallback)) {
       setSrc(fallback);

@@ -90,6 +90,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
                 setProvider(event.target.value as PaymentProviderId);
                 setSecrets({});
                 setPublicData({});
+                setEditing({});
               }}
               className="mt-1 h-11 w-full rounded-lg border border-input bg-background px-3 text-[13.5px] font-semibold"
             >
@@ -119,7 +120,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
 
               <div className="grid gap-2 sm:grid-cols-2">
                 {spec.fields.map((field) => {
-                  const savedMask = data?.secrets_masked?.[field.key];
+                  const savedMask = data?.provider === provider ? data.secrets_masked?.[field.key] : undefined;
                   const locked = field.secret && savedMask && !editing[field.key];
                   return (
                     <label key={field.key} className="block">

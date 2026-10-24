@@ -385,7 +385,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     if (!order.store_id) return notConfigured;
     // WestPay has no documented lookup-by-reference or idempotency key. Never retry an ambiguous POST.
     if (order.payment_provider === "westpay" && !order.transaction_id && ["creating", "westpay_uncertain"].includes(order.provider_status ?? "")) {
-      return { ...notConfigured, configured: true as const, error: "A geração do seu PIX ainda precisa ser confirmada pela WestPay. Não faça outro pagamento antes dessa confirmação." };
+      return { ...notConfigured, configured: true as const, provider: "westpay", retry_blocked: true, error: "A geração do seu PIX ainda precisa ser confirmada pela WestPay. Não faça outro pagamento antes dessa confirmação." };
     }
 
     // Se a cobrança já existe, devolvemos a mesma — sem duplicar no provedor.
@@ -460,7 +460,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       .or(row.provider === "westpay" ? "provider_status.is.null,and(provider_status.neq.creating,provider_status.neq.westpay_uncertain)" : `provider_status.is.null,provider_status.neq.creating,updated_at.lt.${staleIso}`)
       .select("id");
     if (!locked || locked.length === 0) {
-      return { ...notConfigured, configured: true as const, error: "Seu PIX já está sendo gerado. Aguarde alguns segundos." };
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay", error: "Seu PIX já está sendo gerado. Aguarde alguns segundos." };
     }
     const release = () => supabaseAdmin.from("orders").update({ provider_status: null } as never).eq("id", order.id).eq("provider_status", "creating");
 
@@ -512,7 +512,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
     } catch (err) {
       console.error("[pix] erro ao gerar", err instanceof Error ? err.message : "desconhecido");
       if (row.provider !== "westpay") await release();
-      return { ...notConfigured, configured: true as const, error: "Não foi possível gerar o PIX agora. Tente novamente." };
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay", error: "Não foi possível gerar o PIX agora. Tente novamente." };
     }
 
     const tSaved0 = Date.now();
@@ -522,7 +522,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       // para que um novo clique imediato não gere um segundo PIX.
       if (!charge.uncertain) await release();
       else if (row.provider === "westpay") await supabaseAdmin.from("orders").update({ provider_status: "westpay_uncertain" } as never).eq("id", order.id).eq("provider_status", "creating");
-      return { ...notConfigured, configured: true as const, error: charge.error };
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay" && Boolean(charge.uncertain), error: charge.error };
     }
 
     // Prazo de pagamento da loja: 15 minutos a partir da criação. A Wappi só aceita validade em
@@ -566,7 +566,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
 
     if (row.provider === "westpay" && chargeSaveError) {
       console.error("[westpay] persist_failed", { store_id: order.store_id, order_id: order.id, transaction_id: charge.transaction_id, at: new Date().toISOString() });
-      return { ...notConfigured, configured: true as const, error: "Não foi possível salvar a confirmação do PIX. Aguarde antes de tentar novamente." };
+      return { ...notConfigured, configured: true as const, provider: "westpay", retry_blocked: true, error: "Não foi possível salvar a confirmação do PIX. Aguarde antes de tentar novamente." };
     }
 
     const tSaved = tSaved0;
