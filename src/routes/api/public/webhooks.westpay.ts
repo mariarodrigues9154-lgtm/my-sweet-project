@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/webhooks/westpay")({
       const confirmed = await westpay.getStatus(toGatewayConfig(settings), payload.data.Id);
       const { confirmWestpayOrder } = await import("@/lib/payments/westpay-confirm.server");
       const { sendPurchaseForOrder } = await import("@/lib/meta.server");
-      await confirmWestpayOrder(supabaseAdmin, { ...order, total: Number(order.total) }, confirmed, sendPurchaseForOrder);
+      await confirmWestpayOrder(supabaseAdmin, { ...order, store_id: order.store_id, total: Number(order.total) }, confirmed, sendPurchaseForOrder);
       console.info("[westpay] webhook", { provider: "westpay", order_id: order.id, store_id: order.store_id, transaction_id: payload.data.Id, provider_status: confirmed.status, at: new Date().toISOString() });
       return new Response("ok");
     } catch { return new Response("confirmação indisponível", { status: 503 }); }
