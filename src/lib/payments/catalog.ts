@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -26,6 +26,14 @@ export type ProviderSpec = {
 
 export const PAYMENT_PROVIDERS: ProviderSpec[] = [
   { id: "none", name: "Nenhum", supportsPix: false, fields: [] },
+  {
+    id: "westpay", name: "WestPay", supportsPix: true, singleEnvironment: true,
+    docs: "Painel da WestPay > Credenciais API",
+    fields: [
+      { key: "public_key", label: "PUBLIC_KEY", secret: true, required: true },
+      { key: "secret_key", label: "SECRET_KEY", secret: true, required: true },
+    ],
+  },
   {
     id: "wappi",
     name: "Wappi Brasil",
