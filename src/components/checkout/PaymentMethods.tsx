@@ -384,11 +384,26 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
           <p className="min-w-0 flex-1">Suas informações de pagamento serão processadas de forma segura. O código de segurança (CVV/CVC) nunca será armazenado.</p>
           <ShieldCheck size={24} className="shrink-0 text-warning" />
         </div>
-        <div className="flex flex-nowrap items-center justify-center gap-2.5" aria-label="Pagamento protegido">
-          {SECURITY_SEALS.map((s) => (
-            <img key={s.alt} src={s.src} alt={s.alt} title={s.alt} width={90} height={90} className="h-auto min-w-0 max-w-[90px] flex-1 object-contain" style={{ aspectRatio: "1 / 1" }} loading="eager" decoding="async" />
-          ))}
-        </div>
+        {(() => {
+          if (!cfg.card.show_seals) return null;
+          const custom = cfg.card.seals.filter((s) => s.enabled && s.url);
+          if (custom.length > 0) {
+            return (
+              <div className="flex flex-nowrap items-center justify-center gap-2.5" aria-label="Pagamento protegido">
+                {custom.map((s) => (
+                  <img key={s.id} src={iconSrc(s.url)} alt={s.name || "Selo"} title={s.name} width={90} height={44} className="h-[44px] w-auto min-w-0 max-w-[90px] flex-1 object-contain" loading="eager" decoding="async" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                ))}
+              </div>
+            );
+          }
+          return (
+            <div className="flex flex-nowrap items-center justify-center gap-2.5" aria-label="Pagamento protegido">
+              {SECURITY_SEALS.map((s) => (
+                <img key={s.alt} src={s.src} alt={s.alt} title={s.alt} width={90} height={90} className="h-auto min-w-0 max-w-[90px] flex-1 object-contain" style={{ aspectRatio: "1 / 1" }} loading="eager" decoding="async" />
+              ))}
+            </div>
+          );
+        })()}
         {errors.form && <p className="rounded-xl bg-destructive/10 px-4 py-3 text-[13px] font-semibold text-destructive">{errors.form}</p>}
       </div>
       <footer className="border-t border-border px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2.5">
