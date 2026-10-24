@@ -519,7 +519,7 @@ export async function createFreepayCardCharge(config: GatewayConfig, input: Card
       name: input.customer.name.trim().slice(0, 120) || "Cliente",
       email: input.customer.email.trim().slice(0, 160),
       document: { number: doc, type: doc.length > 11 ? "cnpj" : "cpf" },
-      ...(phone ? { phone } : {}),
+      ...(phone ? { phone: `+${phone}` } : {}),
     },
     items: input.items,
     shipping: input.shipping,

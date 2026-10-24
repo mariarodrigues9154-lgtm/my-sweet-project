@@ -20,6 +20,11 @@ describe("UTMify", () => {
     expect(paid.approvedDate).toBe("2026-10-14 23:05:30");
     expect(buildUtmifyBody(order, "waiting_payment").approvedDate).toBeNull();
   });
+  it("venda no cartão vai como credit_card, nunca como pix", () => {
+    expect(buildUtmifyBody({ ...order, payment_method: "credit_card" }, "paid").paymentMethod).toBe("credit_card");
+    expect(buildUtmifyBody({ ...order, payment_method: "card" }, "paid").paymentMethod).toBe("credit_card");
+    expect(buildUtmifyBody(order, "paid").paymentMethod).toBe("pix");
+  });
   it("parâmetros ausentes vão como null", () => {
     const tp = buildUtmifyBody(order, "paid").trackingParameters;
     expect(tp["utm_source"]).toBe("FB");

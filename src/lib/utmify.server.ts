@@ -80,7 +80,7 @@ export function buildUtmifyBody(o: OrderRow, status: string, now = new Date().to
   return {
     orderId: o.order_number,
     platform: "AchadosTik",
-    paymentMethod: o.payment_method === "card" ? "credit_card" : "pix",
+    paymentMethod: o.payment_method === "card" || o.payment_method === "credit_card" ? "credit_card" : "pix",
     status,
     createdAt: utcStamp(o.created_at),
     approvedDate: status === "paid" || status === "refunded" ? utcStamp(o.paid_at ?? now) : null,
