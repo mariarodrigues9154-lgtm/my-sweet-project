@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Ícone refinado no título dos vídeos (25/10/2026)
-- [ ] Refinar só o ícone e limitar sua cor personalizada, preservando título e seção
-- [ ] Conferir configurações existentes, testes e exibição na página
+- [x] Refinar só o ícone e limitar sua cor personalizada, preservando título e seção
+- [x] Validar 28 testes e fluxo autenticado dos cinco ícones: salvar/reabrir, posição, cor exclusiva, atualizar e desligar; escolhas originais restauradas, sem erros de execução
 
 ## Correção do salvamento do ícone no título (25/10/2026)
 - [x] Corrigir remoção dos campos existentes pela validação de salvamento, sem mudar seção ou controles
