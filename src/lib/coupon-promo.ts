@@ -1,10 +1,12 @@
-/** Chip de cupom (perto do preço) e barra de cupom (acima do menu inferior): config por loja em checkout.coupon_promo.
+/** Chip de cupom (perto do preço) e barra de cupom (acima do menu inferior): config por produto em sections.coupon_promo.
  *  Só os ícones são fixos; textos aceitam {percent} e {max}. Desligar apenas esconde (os dados ficam salvos). */
 export type CouponPromoSettings = {
   chip_enabled?: boolean;
   bar_enabled?: boolean;
   chip_text?: string;
   bar_text?: string;
+  highlight_text?: string;
+  secondary_text?: string;
   percent?: number;
   max_value?: number;
   show_timer?: boolean;
@@ -24,6 +26,8 @@ export const COUPON_DEFAULTS = {
   bar_enabled: false,
   chip_text: "Desconto de {percent}%, máximo de {max}",
   bar_text: "O cupom de {percent}% de desconto está expirando",
+  highlight_text: "O cupom de {percent}%",
+  secondary_text: "de desconto está expirando",
   percent: 60,
   max_value: 20,
   show_timer: true,
@@ -53,6 +57,8 @@ export function sanitizeCouponPromo(raw: unknown): CouponPromoSettings {
   for (const k of ["chip_enabled", "bar_enabled", "show_timer", "show_close", "show_arrow"] as const) if (typeof r[k] === "boolean") out[k] = r[k] as boolean;
   const ct = text(r['chip_text'], 120); if (ct !== undefined) out.chip_text = ct;
   const bt = text(r['bar_text'], 160); if (bt !== undefined) out.bar_text = bt;
+  const ht = text(r['highlight_text'], 160); if (ht !== undefined) out.highlight_text = ht;
+  const st = text(r['secondary_text'], 160); if (st !== undefined) out.secondary_text = st;
   const p = num(r['percent'], 0, 100); if (p !== undefined) out.percent = p;
   const m = num(r['max_value'], 0, 100000); if (m !== undefined) out.max_value = m;
   const ch = num(r['countdown_hours'], 0, 99); if (ch !== undefined) out.countdown_hours = Math.floor(ch);
@@ -65,11 +71,16 @@ export function sanitizeCouponPromo(raw: unknown): CouponPromoSettings {
 export function resolveCouponPromo(sections: unknown): ResolvedCouponPromo {
   const raw = (sections && typeof sections === "object" ? (sections as { coupon_promo?: unknown }).coupon_promo : null) ?? {};
   const s = sanitizeCouponPromo(raw);
+  // Texto antigo permanece inteiro, sem tentar inferir destaque por palavras.
+  const hasParts = s.highlight_text !== undefined || s.secondary_text !== undefined;
+  const legacyText = s.bar_text || "";
   return {
     ...COUPON_DEFAULTS,
     ...s,
     chip_text: s.chip_text || COUPON_DEFAULTS.chip_text,
     bar_text: s.bar_text || COUPON_DEFAULTS.bar_text,
+    highlight_text: hasParts ? s.highlight_text ?? "" : legacyText ? "" : COUPON_DEFAULTS.highlight_text,
+    secondary_text: hasParts ? s.secondary_text ?? "" : legacyText || COUPON_DEFAULTS.secondary_text,
   };
 }
 

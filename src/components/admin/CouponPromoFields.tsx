@@ -33,8 +33,11 @@ export function CouponPromoFields({ value, onChange }: {
       <label className="grid gap-1 text-sm">Texto do chip
         <input className={input} maxLength={120} value={v.chip_text ?? ""} placeholder={COUPON_DEFAULTS.chip_text} onChange={(e) => set("chip_text", e.target.value)} />
       </label>
-      <label className="grid gap-1 text-sm">Texto da barra
-        <input className={input} maxLength={160} value={v.bar_text ?? ""} placeholder={COUPON_DEFAULTS.bar_text} onChange={(e) => set("bar_text", e.target.value)} />
+      <label className="grid gap-1 text-sm">Texto destacado
+        <input className={input} maxLength={160} value={cfg.highlight_text} onChange={(e) => onChange({ ...v, highlight_text: e.target.value, secondary_text: cfg.secondary_text })} />
+      </label>
+      <label className="grid gap-1 text-sm">Texto complementar
+        <input className={input} maxLength={160} value={cfg.secondary_text} onChange={(e) => onChange({ ...v, highlight_text: cfg.highlight_text, secondary_text: e.target.value })} />
       </label>
       <p className="-mt-2 text-xs text-muted-foreground">Escreva o que quiser. Use {"{percent}"} e {"{max}"} para inserir o percentual e o valor máximo.</p>
       <div className="grid grid-cols-2 gap-3">
