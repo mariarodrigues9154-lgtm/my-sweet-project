@@ -84,12 +84,8 @@ function Confirmed() {
             <Row label="Total" value={brl(order.total)} />
             <Row label="E-mail" value={order.customer?.email ?? "—"} />
             <Row
-              label="Endereço"
-              value={
-                order.address["street"]
-                  ? `${order.address["street"]}, ${order.address["number"]} · ${order.address["district"]} · ${order.address["city"]}/${order.address["state"]} · ${order.address["cep"]}`
-                  : "—"
-              }
+              label="Entrega"
+              value={order.address["city"] ? `${order.address["city"]}/${order.address["state"]}` : "—"}
 
             />
             <Row label="Prazo estimado" value={`Entrega entre ${getEstimatedDeliveryRange().compact}`} />

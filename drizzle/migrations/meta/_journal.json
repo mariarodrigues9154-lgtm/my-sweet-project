@@ -50,6 +50,13 @@
       "when": 1792833391622,
       "tag": "0006_add_westpay_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792938158318,
+      "tag": "0007_stop_auto_admin",
+      "breakpoints": true
     }
   ]
 }

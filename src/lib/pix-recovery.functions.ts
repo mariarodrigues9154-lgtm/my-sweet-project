@@ -87,18 +87,9 @@ export const getPixOrders = createServerFn({ method: "POST" })
  */
 export const claimLegacyPixOrders = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ order_numbers: z.array(z.string().min(4).max(40)).max(5) }).parse(data))
-  .handler(async ({ data }): Promise<Array<{ token: string; store_id: string }>> => {
-    if (!data.order_numbers.length) return [];
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const since = new Date(Date.now() - 30 * 86400000).toISOString();
-    const { data: rows } = await supabaseAdmin
-      .from("orders")
-      .select("access_token, store_id, transaction_id")
-      .in("order_number", data.order_numbers)
-      .gte("created_at", since);
-    return (rows ?? [])
-      .filter((r) => r.store_id && r.transaction_id && r.access_token)
-      .map((r) => ({ token: r.access_token as string, store_id: r.store_id as string }));
+  .handler(async (): Promise<Array<{ token: string; store_id: string }>> => {
+    // Desativado: só o número do pedido não prova quem é o comprador.
+    return [];
   });
 
 /**

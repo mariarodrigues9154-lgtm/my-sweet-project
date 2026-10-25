@@ -342,13 +342,19 @@ export const getOrder = createServerFn({ method: "GET" })
     const { data: row } = await supabaseAdmin
       .from("orders")
       .select(
-        "order_number, status, product_id, quantity, unit_price, subtotal, shipping_label, shipping_price, total, product_snapshot, variant, customer, address, payment, created_at",
+        "order_number, status, product_id, quantity, unit_price, subtotal, shipping_label, shipping_price, total, product_snapshot, variant, customer, address, created_at",
       )
       .eq("order_number", data.order_number)
       .maybeSingle();
     if (!row) return null;
+    // Número do pedido não é segredo: nunca devolver dados pessoais completos.
+    const c = (row.customer ?? {}) as { email?: string };
+    const a = (row.address ?? {}) as { city?: string; state?: string };
+    const email = c.email ? c.email.replace(/^(.{2})[^@]*(@.*)$/, "$1***$2") : undefined;
     return {
       ...row,
+      customer: email ? { email } : {},
+      address: { city: a.city ?? "", state: a.state ?? "" } as Record<string, string>,
       unit_price: Number(row.unit_price),
       subtotal: Number(row.subtotal),
       shipping_price: Number(row.shipping_price),
