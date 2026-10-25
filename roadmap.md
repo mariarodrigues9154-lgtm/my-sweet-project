@@ -1,5 +1,9 @@
 # Roadmap
 
+## Correção do salvamento do ícone no título (25/10/2026)
+- [x] Corrigir remoção dos campos existentes pela validação de salvamento, sem mudar seção ou controles
+- [x] Validar 28 testes e fluxo autenticado: cinco ícones, três posições, salvar/reabrir, atualizar página, desligar e isolamento entre produtos; configurações originais restauradas, sem erros de execução
+
 ## Verificação dos criadores (25/10/2026)
 - [x] Adicionar estilo opcional por criador, preservando controle atual e verificação verde dos vídeos antigos
 - [x] Validar 15 testes, salvar/reabrir estilo azul no painel autenticado, controle desligar/ligar e visual azul junto ao verde em 320/390/1280px; restaurar escolha verde original após teste

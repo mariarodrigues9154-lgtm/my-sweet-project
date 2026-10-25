@@ -15,6 +15,7 @@
 
 - Large media (videos) upload browser-direct via signed upload URLs (createMediaUpload/finalizeMediaUpload) to the private product-images bucket; why: server-fn base64 limits.
 - Per-product section texts/toggles live in products.sections; per-store checkout flags in store_settings.checkout; why: no page-specific tables.
+- Existing video-title fields are validated through the shared videosTitleSchema extended into product sections on save; why: prevent Zod from stripping the admin's icon, position, enable flag and color before persistence.
 
 - Cada loja tem seu próprio gateway de pagamento em `store_payment_settings`; credenciais só no servidor, cobrança PIX criada pelo gateway da loja dona do produto e status confirmado por webhook/consulta ao provedor; motivo: lojas independentes sem fallback entre elas.
 - O modelo de checkout é salvo em `store_settings.checkout.checkout_model`; `/pagamento` permanece o Checkout 1 e `/pagamento-2` é apenas uma segunda interface sobre as mesmas funções de pedido e PIX.
