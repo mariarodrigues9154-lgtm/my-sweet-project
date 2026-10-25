@@ -32,6 +32,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
   const showCount = titleCfg.showCount;
   const TitleIcon = titleCfg.icon ? TITLE_ICONS[titleCfg.icon] : null;
   const titleIconEl = TitleIcon ? <TitleIcon size={16} className="shrink-0" aria-hidden /> : null;
+  const titleColor = titleCfg.color ?? undefined;
   const showMore = sections.videos_show_more === true;
   const moreText = sections.videos_more_text?.trim() || "Ver mais";
   const subtitle = sections.videos_subtitle?.trim() || "Criadores que compraram mostrando o produto funcionando";
@@ -60,11 +61,11 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
   return (
     <section className="mt-2 bg-card px-3 py-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold">
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold" style={titleColor ? { color: titleColor } : undefined}>
           {titleCfg.iconPosition === "before" && titleIconEl}
           <span className="truncate">{title}</span>
           {titleCfg.iconPosition === "after" && titleIconEl}
-          {showCount && <span className="shrink-0 font-normal text-muted-foreground">({count})</span>}
+          {showCount && <span className="shrink-0 font-normal text-muted-foreground" style={titleColor ? { color: titleColor } : undefined}>({count})</span>}
           {titleCfg.iconPosition === "after_count" && titleIconEl}
         </h2>
         {showMore && (
