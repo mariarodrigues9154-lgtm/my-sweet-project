@@ -1,10 +1,19 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, ChevronRight, Play, Video, X } from "lucide-react";
+import { ArrowRight, Camera, Check, ChevronRight, Clapperboard, Play, Video, Videotape, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
+import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
+
+const TITLE_ICONS: Record<VideosTitleIcon, typeof Video> = {
+  video: Video,
+  play: Play,
+  camera: Camera,
+  clapperboard: Clapperboard,
+  videotape: Videotape,
+};
 
 const at = (h: string) => (h.startsWith("@") ? h : `@${h}`);
 const nota = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
