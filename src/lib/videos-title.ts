@@ -31,9 +31,11 @@ export function resolveVideosTitle(sections: ProductSections | undefined): Video
         : "video"
       : null;
   const rawPos = s.videos_title_icon_position;
+  const rawColor = s.videos_title_color?.trim();
   return {
     showCount: s.videos_show_count !== false,
     icon,
     iconPosition: POSITIONS.includes(rawPos as VideosTitleIconPosition) ? (rawPos as VideosTitleIconPosition) : "after",
+    color: rawColor && HEX.test(rawColor) ? rawColor : null,
   };
 }
