@@ -85,7 +85,7 @@ describe("resolveVideosTitle", () => {
     expect(resolveVideosTitle({ videos_title_color: "  " }).color).toBeNull();
   });
 
-  it("cor hex válida é aplicada ao título e ao ícone", () => {
+  it("preserva a cor hex personalizada do ícone", () => {
     expect(resolveVideosTitle({ videos_title_color: "#ff0000" }).color).toBe("#ff0000");
     expect(resolveVideosTitle({ videos_title_color: "#f0f" }).color).toBe("#f0f");
   });

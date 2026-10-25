@@ -1,5 +1,5 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, Camera, ChevronRight, Clapperboard, Play, Video, Videotape, X } from "lucide-react";
 
@@ -8,13 +8,46 @@ import { CreatorVerification } from "@/components/product/CreatorVerification";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
 import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
 
-const TITLE_ICONS: Record<VideosTitleIcon, typeof Video> = {
-  video: Video,
-  play: Play,
-  camera: Camera,
-  clapperboard: Clapperboard,
-  videotape: Videotape,
-};
+/** Ícone compacto com volume e brilho; sua cor nunca é herdada pelo título. */
+function TitleVideoIcon({ icon, color }: { icon: VideosTitleIcon; color: string | null }) {
+  const id = useId().replace(/:/g, "");
+  const fill = `url(#video-title-${id})`;
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" className="shrink-0 text-primary" style={color ? { color } : undefined} aria-hidden="true">
+      <defs>
+        <linearGradient id={`video-title-${id}`} x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.65" />
+          <stop offset="0.45" stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" />
+        </linearGradient>
+        <linearGradient id={`video-shine-${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.85" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <g fill={fill} stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+        {(icon === "video" || icon === "videotape") && <>
+          <circle cx="7" cy="5" r="3.2" fill="none" strokeWidth="2.5" />
+          <circle cx="14.5" cy="5" r="3.2" fill="none" strokeWidth="2.5" />
+          <rect x="2" y="9" width="16" height="11" rx="3" />
+          <path d="m18 12 4-2v9l-4-2Z" />
+          <path d="m8 20-2 3m6-3 2 3" fill="none" strokeWidth="2" strokeLinecap="round" />
+        </>}
+        {icon === "play" && <path d="M6 4.5c0-1 .9-1.5 1.8-1l12 7c1.2.7 1.2 2.3 0 3l-12 7c-.9.5-1.8 0-1.8-1Z" />}
+        {icon === "camera" && <>
+          <path d="M3 7h4l2-3h6l2 3h4v13H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" />
+          <circle cx="12" cy="13" r="4" className="text-primary-foreground" fill="none" strokeWidth="1.8" />
+        </>}
+        {icon === "clapperboard" && <>
+          <path d="M3 9h18v12H3Z" />
+          <path d="m2 5 18-3 1 5-18 3Z" />
+          <path d="m7 4 3 4m4-5 3 4" className="text-primary-foreground" fill="none" strokeWidth="2" />
+        </>}
+      </g>
+      <path d={icon === "play" ? "M7.5 5.5v10l3-8Z" : icon === "clapperboard" ? "M4.5 11h15v3h-15Z" : icon === "camera" ? "M4 8.5h15v2H4Z" : "M4 10.5h12v3H4Z"} fill={`url(#video-shine-${id})`} className="text-primary-foreground" />
+    </svg>
+  );
+}
 
 const at = (h: string) => (h.startsWith("@") ? h : `@${h}`);
 const nota = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
@@ -31,9 +64,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
   const count = sections.videos_count?.trim() || String(list.length);
   const titleCfg = resolveVideosTitle(sections);
   const showCount = titleCfg.showCount;
-  const TitleIcon = titleCfg.icon ? TITLE_ICONS[titleCfg.icon] : null;
-  const titleIconEl = TitleIcon ? <TitleIcon size={16} className="shrink-0" aria-hidden /> : null;
-  const titleColor = titleCfg.color ?? undefined;
+  const titleIconEl = titleCfg.icon ? <TitleVideoIcon icon={titleCfg.icon} color={titleCfg.color} /> : null;
   const showMore = sections.videos_show_more === true;
   const moreText = sections.videos_more_text?.trim() || "Ver mais";
   const subtitle = sections.videos_subtitle?.trim() || "Criadores que compraram mostrando o produto funcionando";
@@ -62,11 +93,11 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
   return (
     <section className="mt-2 bg-card px-3 py-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold" style={titleColor ? { color: titleColor } : undefined}>
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold text-foreground">
           {titleCfg.iconPosition === "before" && titleIconEl}
           <span className="truncate">{title}</span>
           {titleCfg.iconPosition === "after" && titleIconEl}
-          {showCount && <span className="shrink-0 font-normal text-muted-foreground" style={titleColor ? { color: titleColor } : undefined}>({count})</span>}
+          {showCount && <span className="shrink-0 font-normal text-muted-foreground">({count})</span>}
           {titleCfg.iconPosition === "after_count" && titleIconEl}
         </h2>
         {showMore && (
