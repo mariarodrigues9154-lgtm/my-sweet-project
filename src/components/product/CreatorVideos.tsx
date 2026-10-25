@@ -28,7 +28,10 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
 
   const title = sections.videos_title?.trim() || "Vídeos de criadores";
   const count = sections.videos_count?.trim() || String(list.length);
-  const showCount = sections.videos_show_count !== false;
+  const titleCfg = resolveVideosTitle(sections);
+  const showCount = titleCfg.showCount;
+  const TitleIcon = titleCfg.icon ? TITLE_ICONS[titleCfg.icon] : null;
+  const titleIconEl = TitleIcon ? <TitleIcon size={16} className="shrink-0" aria-hidden /> : null;
   const showMore = sections.videos_show_more === true;
   const moreText = sections.videos_more_text?.trim() || "Ver mais";
   const subtitle = sections.videos_subtitle?.trim() || "Criadores que compraram mostrando o produto funcionando";
