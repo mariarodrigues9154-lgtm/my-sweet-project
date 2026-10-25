@@ -4,7 +4,7 @@ import { resolveVideosTitle } from "@/lib/videos-title";
 
 describe("resolveVideosTitle", () => {
   it("produto antigo: quantidade ligada e sem ícone", () => {
-    expect(resolveVideosTitle({})).toEqual({ showCount: true, icon: null, iconPosition: "after" });
+    expect(resolveVideosTitle({})).toEqual({ showCount: true, icon: null, iconPosition: "after", color: null });
     expect(resolveVideosTitle(undefined).showCount).toBe(true);
   });
 
