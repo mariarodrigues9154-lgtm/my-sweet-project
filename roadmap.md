@@ -1,5 +1,9 @@
 # Roadmap
 
+## Textos editáveis da barra por produto (25/10/2026)
+- [x] Adicionar texto destacado e complementar na configuração existente, sem destaque baseado em palavras
+- [x] Validar edição independente com 15 testes e visual móvel/desktop com componentes existentes e produto real em prévia temporária; prazo idêntico após atualizar, fechar e reabrir, sem alterar timer ou dados reais (salvamento no painel não exercitado)
+
 ## Gateway WestPay (24/10/2026)
 - [x] Ler documentação oficial completa e auditar arquitetura existente
 - [x] Adicionar WestPay ao painel e pagamentos atuais com contrato oficial; conferir painel autenticado sem trocar gateways reais

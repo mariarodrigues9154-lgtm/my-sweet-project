@@ -27,13 +27,14 @@ export function CouponChipView({ cfg }: { cfg: ResolvedCouponPromo }) {
 
 /** Visual da barra (usado no site e na prévia do painel). */
 export function CouponBarView({ cfg, timer, onClose }: { cfg: ResolvedCouponPromo; timer?: React.ReactNode; onClose?: () => void }) {
-  const text = fillCouponText(cfg.bar_text, cfg);
-  const highlighted = text.match(/^O cupom de\s+\d+(?:[.,]\d+)?%/i)?.[0];
+  const highlighted = fillCouponText(cfg.highlight_text, cfg);
+  const secondary = fillCouponText(cfg.secondary_text, cfg);
   return (
     <div style={styleOf(cfg)} className="grid min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-2 border-y border-primary/10 bg-primary-soft px-3 py-1.5 text-[12px] leading-[15px] text-muted-foreground">
       <Ticket size={18} fill="currentColor" strokeWidth={1.5} aria-hidden="true" className="shrink-0 -rotate-35 text-primary" style={accentOf(cfg)} />
-      <span className="min-w-0 break-words">
-        {highlighted ? <><strong className="font-bold text-primary" style={accentOf(cfg)}>{highlighted}</strong>{text.slice(highlighted.length)}</> : text}
+      <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+        {highlighted && <strong className="font-bold text-primary" style={accentOf(cfg)}>{highlighted}</strong>}
+        {highlighted && secondary ? " " : ""}{secondary}
       </span>
       <div className="flex shrink-0 items-center gap-0.5">
       {cfg.show_timer && timer && <strong className="whitespace-nowrap font-bold text-primary tnum" style={accentOf(cfg)}>{timer}</strong>}
