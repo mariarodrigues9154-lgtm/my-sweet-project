@@ -109,7 +109,7 @@ export type ProductSections = {
   videos_title_icon?: "video" | "play" | "camera" | "clapperboard" | "videotape" | "none";
   videos_title_icon_position?: "before" | "after" | "after_count";
   /** Cor do título e do ícone da seção de vídeos (hex). Vazio = cor padrão do tema. */
-  videos_title_color?: string;
+  videos_title_color?: string | undefined;
   videos_card_style?: "overlay" | "below";
   about_title?: string;
   /** Avaliações exibidas de início e a cada "Ver mais" (1 a 20, padrão 20). */
