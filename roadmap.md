@@ -1,5 +1,9 @@
 # Roadmap
 
+## Verificação dos criadores (25/10/2026)
+- [x] Adicionar estilo opcional por criador, preservando controle atual e verificação verde dos vídeos antigos
+- [ ] Validar regras e visual do selo azul, verde e desligado, além dos controles no painel
+
 ## Textos editáveis da barra por produto (25/10/2026)
 - [x] Adicionar texto destacado e complementar na configuração existente, sem destaque baseado em palavras
 - [x] Validar edição independente com 15 testes e visual móvel/desktop com componentes existentes e produto real em prévia temporária; prazo idêntico após atualizar, fechar e reabrir, sem alterar timer ou dados reais (salvamento no painel não exercitado)

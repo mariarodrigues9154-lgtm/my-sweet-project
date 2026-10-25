@@ -1020,6 +1020,12 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                   <label key={k} className="flex items-center gap-2"><input type="checkbox" checked={video[k] ?? def} onChange={(e) => upd({ [k]: e.target.checked })} /> {label}</label>
                 ))}
               </div>
+              <label className="block text-[12px] font-semibold">Estilo do verificado
+                <select aria-label={`Estilo do verificado do vídeo ${i + 1}`} value={video.verified_style ?? "green"} disabled={!video.verified} onChange={(e) => upd({ verified_style: e.target.value === "blue" ? "blue" : "green" })} className={`${inputCls} mt-1 disabled:opacity-50`}>
+                  <option value="green">Verde atual</option>
+                  <option value="blue">Selo azul</option>
+                </select>
+              </label>
             </DragCard>
           );
         })}
