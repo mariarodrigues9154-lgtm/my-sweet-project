@@ -1,7 +1,7 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Camera, ChevronRight, Clapperboard, Play, Video, Videotape, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Play, Video, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { CreatorVerification } from "@/components/product/CreatorVerification";
