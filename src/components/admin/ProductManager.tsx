@@ -939,6 +939,28 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           <Field numeric={false} label="Texto Ver mais" value={d.sections.videos_more_text ?? ""} onChange={(v) => set("sections", { ...d.sections, videos_more_text: v })} />
           <Field numeric={false} label="Subtítulo da seção" value={d.sections.videos_subtitle ?? ""} onChange={(v) => set("sections", { ...d.sections, videos_subtitle: v })} />
           <Field numeric={false} label="Texto de orientação (ex.: arraste)" value={d.sections.videos_hint_text ?? ""} onChange={(v) => set("sections", { ...d.sections, videos_hint_text: v })} />
+          <label className="flex items-center gap-2 text-[12px] font-semibold">
+            <input type="checkbox" checked={d.sections.videos_title_show_icon ?? false} onChange={(e) => set("sections", { ...d.sections, videos_title_show_icon: e.target.checked })} /> Mostrar ícone no título
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-[12px] font-semibold">Ícone do título
+              <select value={d.sections.videos_title_icon ?? "video"} onChange={(e) => set("sections", { ...d.sections, videos_title_icon: e.target.value as NonNullable<typeof d.sections.videos_title_icon> })} className={inputCls}>
+                <option value="video">Vídeo</option>
+                <option value="play">Play</option>
+                <option value="camera">Câmera</option>
+                <option value="clapperboard">Gravação</option>
+                <option value="videotape">Filmadora</option>
+                <option value="none">Nenhum</option>
+              </select>
+            </label>
+            <label className="block text-[12px] font-semibold">Posição do ícone
+              <select value={d.sections.videos_title_icon_position ?? "after"} onChange={(e) => set("sections", { ...d.sections, videos_title_icon_position: e.target.value as NonNullable<typeof d.sections.videos_title_icon_position> })} className={inputCls}>
+                <option value="after">Depois do título</option>
+                <option value="before">Antes do título</option>
+                <option value="after_count">Depois da quantidade</option>
+              </select>
+            </label>
+          </div>
           <div className="grid grid-cols-2 gap-1.5 text-[12px] font-semibold">
             {([["videos_show_count", "Exibir quantidade", true], ["videos_show_more", "Exibir Ver mais", false], ["videos_show_icon", "Exibir ícone de vídeo", false], ["videos_show_hint", "Exibir orientação", false]] as const).map(([k, label, def]) => (
               <label key={k} className="flex items-center gap-2"><input type="checkbox" checked={d.sections[k] ?? def} onChange={(e) => set("sections", { ...d.sections, [k]: e.target.checked })} /> {label}</label>

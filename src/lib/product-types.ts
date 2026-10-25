@@ -104,6 +104,10 @@ export type ProductSections = {
   videos_show_icon?: boolean;
   videos_show_hint?: boolean;
   videos_hint_text?: string;
+  /** Ícone no título da seção de vídeos (por produto). Padrão: desligado. */
+  videos_title_show_icon?: boolean;
+  videos_title_icon?: "video" | "play" | "camera" | "clapperboard" | "videotape" | "none";
+  videos_title_icon_position?: "before" | "after" | "after_count";
   videos_card_style?: "overlay" | "below";
   about_title?: string;
   /** Avaliações exibidas de início e a cada "Ver mais" (1 a 20, padrão 20). */

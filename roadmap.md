@@ -77,3 +77,4 @@
 - [x] Adapter UmbrellaPag (x-api-key, centavos, POST /user/transactions) + webhook /api/public/webhooks/umbrellapag com reconfirmação
 - [x] Opção no painel por loja + testes de status (4 novos, 70 no total)
 - [ ] Teste com API Key real e PIX real (depende da credencial da loja)
+- [x] Título "Quem comprou, mostrou" configurável por produto: quantidade liga/desliga, ícone (vídeo/play/câmera/gravação/filmadora) com posição, sem alterar vídeos nem layout

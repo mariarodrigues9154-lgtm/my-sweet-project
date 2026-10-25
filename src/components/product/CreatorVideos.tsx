@@ -1,10 +1,19 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, ChevronRight, Play, Video, X } from "lucide-react";
+import { ArrowRight, Camera, Check, ChevronRight, Clapperboard, Play, Video, Videotape, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
+import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
+
+const TITLE_ICONS: Record<VideosTitleIcon, typeof Video> = {
+  video: Video,
+  play: Play,
+  camera: Camera,
+  clapperboard: Clapperboard,
+  videotape: Videotape,
+};
 
 const at = (h: string) => (h.startsWith("@") ? h : `@${h}`);
 const nota = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
@@ -19,7 +28,10 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
 
   const title = sections.videos_title?.trim() || "Vídeos de criadores";
   const count = sections.videos_count?.trim() || String(list.length);
-  const showCount = sections.videos_show_count !== false;
+  const titleCfg = resolveVideosTitle(sections);
+  const showCount = titleCfg.showCount;
+  const TitleIcon = titleCfg.icon ? TITLE_ICONS[titleCfg.icon] : null;
+  const titleIconEl = TitleIcon ? <TitleIcon size={16} className="shrink-0" aria-hidden /> : null;
   const showMore = sections.videos_show_more === true;
   const moreText = sections.videos_more_text?.trim() || "Ver mais";
   const subtitle = sections.videos_subtitle?.trim() || "Criadores que compraram mostrando o produto funcionando";
@@ -48,8 +60,12 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
   return (
     <section className="mt-2 bg-card px-3 py-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <h2 className="min-w-0 truncate text-[15px] font-bold">
-          {title} {showCount && <span className="font-normal text-muted-foreground">({count})</span>}
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold">
+          {titleCfg.iconPosition === "before" && titleIconEl}
+          <span className="truncate">{title}</span>
+          {titleCfg.iconPosition === "after" && titleIconEl}
+          {showCount && <span className="shrink-0 font-normal text-muted-foreground">({count})</span>}
+          {titleCfg.iconPosition === "after_count" && titleIconEl}
         </h2>
         {showMore && (
           <button type="button" onClick={() => setAll(true)} className="flex shrink-0 items-center text-[12.5px] text-muted-foreground">
