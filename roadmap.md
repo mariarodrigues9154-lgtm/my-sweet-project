@@ -2,7 +2,7 @@
 
 ## Correção do salvamento do ícone no título (25/10/2026)
 - [x] Corrigir remoção dos campos existentes pela validação de salvamento, sem mudar seção ou controles
-- [ ] Validar testes e fluxo autenticado de salvar, reabrir e conferir todos os ícones/posições na página pública; restaurar configurações originais
+- [x] Validar 28 testes e fluxo autenticado: cinco ícones, três posições, salvar/reabrir, atualizar página, desligar e isolamento entre produtos; configurações originais restauradas, sem erros de execução
 
 ## Verificação dos criadores (25/10/2026)
 - [x] Adicionar estilo opcional por criador, preservando controle atual e verificação verde dos vídeos antigos
