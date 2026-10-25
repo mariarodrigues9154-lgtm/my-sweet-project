@@ -26,11 +26,11 @@ describe("resolveVideosTitle", () => {
   });
 
   it("tipo desconhecido cai no padrão vídeo", () => {
-    expect(resolveVideosTitle({ videos_title_show_icon: true, videos_title_icon: "emoji" }).icon).toBe("video");
+    expect(resolveVideosTitle({ videos_title_show_icon: true, videos_title_icon: "emoji" as never }).icon).toBe("video");
   });
 
   it("posição desconhecida cai no padrão depois do título", () => {
-    const r = resolveVideosTitle({ videos_title_show_icon: true, videos_title_icon_position: "lado" });
+    const r = resolveVideosTitle({ videos_title_show_icon: true, videos_title_icon_position: "lado" as never });
     expect(r.iconPosition).toBe("after");
   });
 
