@@ -1,7 +1,7 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, ChevronRight, Play, Video, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Play, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { CreatorVerification } from "@/components/product/CreatorVerification";
@@ -108,7 +108,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
       </div>
       <div className="mt-1 flex min-w-0 items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
-          {showIcon && <Video size={15} className="shrink-0 text-foreground" />}
+          {showIcon && <Play size={13} strokeWidth={2} className="shrink-0 text-foreground" />}
           <span className={`truncate ${showIcon ? "font-semibold text-foreground" : ""}`}>{subtitle}</span>
         </p>
         {showHint && (
