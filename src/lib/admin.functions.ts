@@ -1,4 +1,5 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
+import { videosTitleSchema } from "@/lib/videos-title";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -551,6 +552,7 @@ const sectionsSchema = z
     }).partial().optional(),
     coupon_promo: z.unknown().optional().transform((v) => (v === undefined ? undefined : sanitizeCouponPromo(v))),
   })
+  .extend(videosTitleSchema.shape)
   .nullish()
   .transform((v) => v ?? {});
 const reviewSchema = z.object({

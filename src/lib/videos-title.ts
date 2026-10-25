@@ -1,4 +1,5 @@
 import type { ProductSections } from "@/lib/product-types";
+import { z } from "zod";
 
 export type VideosTitleIcon = "video" | "play" | "camera" | "clapperboard" | "videotape";
 export type VideosTitleIconPosition = "before" | "after" | "after_count";
@@ -8,6 +9,14 @@ const POSITIONS: VideosTitleIconPosition[] = ["before", "after", "after_count"];
 
 /** Aceita apenas hex seguro (#rgb, #rrggbb, #rrggbbaa); qualquer outro valor cai na cor padrão. */
 const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+/** Campos existentes: a validação de salvamento deve preservá-los, sem aplicar defaults. */
+export const videosTitleSchema = z.object({
+  videos_title_show_icon: z.boolean().optional(),
+  videos_title_icon: z.enum(["video", "play", "camera", "clapperboard", "videotape", "none"]).optional(),
+  videos_title_icon_position: z.enum(["before", "after", "after_count"]).optional(),
+  videos_title_color: z.string().trim().regex(HEX).optional(),
+});
 
 export type VideosTitleConfig = {
   /** Mostra "(7)" ao lado do título. Padrão: ligado (lojas antigas). */
