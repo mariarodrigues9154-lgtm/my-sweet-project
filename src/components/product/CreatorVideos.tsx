@@ -60,8 +60,12 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
   return (
     <section className="mt-2 bg-card px-3 py-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <h2 className="min-w-0 truncate text-[15px] font-bold">
-          {title} {showCount && <span className="font-normal text-muted-foreground">({count})</span>}
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold">
+          {titleCfg.iconPosition === "before" && titleIconEl}
+          <span className="truncate">{title}</span>
+          {titleCfg.iconPosition === "after" && titleIconEl}
+          {showCount && <span className="shrink-0 font-normal text-muted-foreground">({count})</span>}
+          {titleCfg.iconPosition === "after_count" && titleIconEl}
         </h2>
         {showMore && (
           <button type="button" onClick={() => setAll(true)} className="flex shrink-0 items-center text-[12.5px] text-muted-foreground">
