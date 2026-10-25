@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Store identity lives in `store_settings`; product content/social proof stays in structured product JSON fields; why: one reusable layout for every product.
+- Creator verification keeps the existing enable flag and an optional style in each creator_videos JSON item, resolved by one shared badge for both card layouts; why: preserve legacy appearance and consistent per-creator editing without new tables.
 - The public store hub is `/loja`; product profile “Visitar” links always use this internal route.
 
 - Large media (videos) upload browser-direct via signed upload URLs (createMediaUpload/finalizeMediaUpload) to the private product-images bucket; why: server-fn base64 limits.

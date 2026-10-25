@@ -1,9 +1,9 @@
 /** Selo azul de loja verificada (SVG leve, nítido em qualquer tela). */
-export function VerifiedBadge({ size = 16, className = "" }: { size?: number; className?: string }) {
+export function VerifiedBadge({ size = 16, className = "", label = "Loja verificada" }: { size?: number; className?: string; label?: string }) {
   return (
     <svg
       role="img"
-      aria-label="Loja verificada"
+      aria-label={label}
       width={size}
       height={size}
       viewBox="0 0 24 24"

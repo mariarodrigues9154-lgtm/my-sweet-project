@@ -90,6 +90,7 @@ export type CreatorVideo = {
   avatar?: string | null;
   show_avatar?: boolean;
   verified?: boolean;
+  verified_style?: "green" | "blue";
   show_rating_number?: boolean;
   show_description?: boolean;
 };

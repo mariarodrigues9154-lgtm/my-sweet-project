@@ -1,9 +1,10 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Camera, Check, ChevronRight, Clapperboard, Play, Video, Videotape, X } from "lucide-react";
+import { ArrowRight, Camera, ChevronRight, Clapperboard, Play, Video, Videotape, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
+import { CreatorVerification } from "@/components/product/CreatorVerification";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
 import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
 
@@ -326,7 +327,7 @@ function CreatorCard({ video, onPlay, mode }: { video: CreatorVideo; onPlay: () 
               {showName && (
                 <span className="flex min-w-0 items-center gap-0.5 text-[13px] font-semibold leading-tight">
                   <span className="truncate">{video.name}</span>
-                  {video.verified && <Check size={12} strokeWidth={3} className="shrink-0 text-success" />}
+                   <CreatorVerification video={video} size={12} />
                 </span>
               )}
               {showHandle && <span className={`block truncate leading-tight ${showName ? "text-[12px] opacity-90" : "text-[13px] font-semibold"}`}>{at(video.handle)}</span>}
@@ -363,7 +364,7 @@ function BelowCard({ video, onPlay, grid = false }: { video: CreatorVideo; onPla
           <div className="flex min-w-0 items-center gap-1.5">
             <Avatar video={video} size={20} />
             {showName && <span className="truncate text-[13px] font-semibold">{video.name}</span>}
-            {showName && video.verified && <Check size={13} strokeWidth={3} className="shrink-0 text-success" aria-label="Verificado" />}
+             {showName && <CreatorVerification video={video} size={13} />}
           </div>
         )}
         {showHandle && <p className="truncate text-[11.5px] text-muted-foreground">{at(video.handle)}</p>}
