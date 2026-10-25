@@ -109,7 +109,7 @@ export type ProductSections = {
   videos_title_show_icon?: boolean;
   videos_title_icon?: "video" | "play" | "camera" | "clapperboard" | "videotape" | "none";
   videos_title_icon_position?: "before" | "after" | "after_count";
-  /** Cor do título e do ícone da seção de vídeos (hex). Vazio = cor padrão do tema. */
+  /** Cor exclusiva do ícone da seção de vídeos (hex). Vazio = rosa/vermelho do tema. */
   videos_title_color?: string | undefined;
   videos_card_style?: "overlay" | "below";
   about_title?: string;

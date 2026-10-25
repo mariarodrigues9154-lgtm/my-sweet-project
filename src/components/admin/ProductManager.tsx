@@ -962,11 +962,11 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
             </label>
           </div>
           <label className="flex items-center gap-2 text-[12px] font-semibold">
-            <input type="checkbox" checked={!!d.sections.videos_title_color} onChange={(e) => set("sections", { ...d.sections, videos_title_color: e.target.checked ? (d.sections.videos_title_color || "#fe2c55") : undefined })} /> Cor personalizada do título e do ícone
+            <input type="checkbox" checked={!!d.sections.videos_title_color} onChange={(e) => set("sections", { ...d.sections, videos_title_color: e.target.checked ? (d.sections.videos_title_color || "#fe2c55") : undefined })} /> Cor personalizada do ícone
           </label>
           {d.sections.videos_title_color && (
             <div className="flex items-center gap-2">
-              <input type="color" value={d.sections.videos_title_color} onChange={(e) => set("sections", { ...d.sections, videos_title_color: e.target.value })} className="h-9 w-12 rounded border border-input" />
+              <input type="color" aria-label="Cor do ícone do título" value={d.sections.videos_title_color} onChange={(e) => set("sections", { ...d.sections, videos_title_color: e.target.value })} className="h-9 w-12 rounded border border-input" />
               <span className="text-[12px] font-semibold">{d.sections.videos_title_color}</span>
             </div>
           )}

@@ -25,7 +25,7 @@ export type VideosTitleConfig = {
   icon: VideosTitleIcon | null;
   /** Posição do ícone: antes do título, depois do título ou depois da quantidade. */
   iconPosition: VideosTitleIconPosition;
-  /** Cor do título e do ícone (hex); null = cor padrão do tema. */
+  /** Cor exclusiva do ícone (hex); null = rosa/vermelho do tema. */
   color: string | null;
 };
 
