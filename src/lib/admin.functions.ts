@@ -489,6 +489,7 @@ const creatorVideoSchema = z.object({
   avatar: optStr(2000),
   show_avatar: optBool,
   verified: optBool,
+  verified_style: z.enum(["green", "blue"]).optional(),
   show_rating_number: optBool,
   show_description: optBool,
 });
