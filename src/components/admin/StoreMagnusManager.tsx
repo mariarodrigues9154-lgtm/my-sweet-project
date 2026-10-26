@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState("");
   const [codes, setCodes] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState("");
 
   useEffect(() => { if (cfg.data) { setEnabled(cfg.data.enabled); setToken(""); } }, [cfg.data]);
 
