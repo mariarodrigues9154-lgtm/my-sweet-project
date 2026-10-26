@@ -114,7 +114,7 @@ export const updateShipment = createServerFn({ method: "POST" })
       if (!cur || cur.send_status !== "enviado") patch["send_status"] = "manual";
     }
     if (!Object.keys(patch).length) return { ok: true };
-    if (cur) await supabaseAdmin.from("order_shipments").update(patch).eq("id", cur.id);
+    if (cur) await supabaseAdmin.from("order_shipments").update(patch as never).eq("id", cur.id);
     else {
       if (!data.tracking_code) throw new Error("Informe o código de rastreio.");
       await supabaseAdmin.from("order_shipments").insert({ order_id: order.id, store_id: data.store_id, provider: "manual", ...patch } as never);
