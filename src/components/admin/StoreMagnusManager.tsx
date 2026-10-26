@@ -68,8 +68,14 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
       </div>
       {(() => {
         const q = query.trim().toLowerCase();
+        const qd = q.replace(/\D/g, "");
         const all = ships.data ?? [];
-        const filtered = q ? all.filter((o) => o.customer.toLowerCase().includes(q) || o.order_number.toLowerCase().includes(q) || (o.shipment?.tracking_code ?? "").toLowerCase().includes(q)) : all;
+        const matches = (o: (typeof all)[number]) => o.customer.toLowerCase().includes(q)
+          || o.order_number.toLowerCase().includes(q)
+          || o.id.toLowerCase().includes(q)
+          || (o.shipment?.tracking_code ?? "").toLowerCase().includes(q)
+          || (qd.length >= 2 && o.phone.replace(/\D/g, "").includes(qd));
+        const filtered = q ? all.filter(matches) : all;
         return ships.isLoading ? <Loader2 className="mt-2 animate-spin text-muted-foreground" /> : all.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido pago.</p> : filtered.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido encontrado.</p> :
       <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
         {filtered.map((o) => {
