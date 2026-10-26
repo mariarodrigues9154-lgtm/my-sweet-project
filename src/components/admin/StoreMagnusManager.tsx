@@ -63,7 +63,7 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
       <p className="text-[13px] font-semibold">Pedidos pagos (30 dias)</p>
       <div className="relative mt-2">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Pesquisar cliente, pedido ou rastreio..." aria-label="Pesquisar pedidos" className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-[12.5px]" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Pesquisar nome, telefone, pedido ou rastreio..." aria-label="Pesquisar pedidos" className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-[12.5px]" />
         {query && <button type="button" aria-label="Limpar pesquisa" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
       </div>
       {(() => {
