@@ -492,7 +492,7 @@ export function ratingText(value: number): string {
   return (Math.round((Number.isFinite(value) ? value : 0) * 10) / 10).toFixed(1).replace(".", ",");
 }
 
-type MetricsProduct = Pick<Product, "rating" | "reviews_count" | "sold_count" | "display" | "offer"> & { reviews?: Review[] };
+export type MetricsProduct = Pick<Product, "rating" | "reviews_count" | "sold_count" | "display" | "offer"> & { reviews?: Review[] };
 
 /** Nota na página do produto: "5.0", "4.8". */
 export function ratingDot(value: number): string {
