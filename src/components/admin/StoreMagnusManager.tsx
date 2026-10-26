@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState("");
   const [codes, setCodes] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState("");
 
   useEffect(() => { if (cfg.data) { setEnabled(cfg.data.enabled); setToken(""); } }, [cfg.data]);
 
@@ -60,9 +61,18 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
     </>}
     <div className="mt-5 border-t border-border pt-3">
       <p className="text-[13px] font-semibold">Pedidos pagos (30 dias)</p>
-      {ships.isLoading ? <Loader2 className="mt-2 animate-spin text-muted-foreground" /> : (ships.data ?? []).length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido pago.</p> :
+      <div className="relative mt-2">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Pesquisar cliente, pedido ou rastreio..." aria-label="Pesquisar pedidos" className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-[12.5px]" />
+        {query && <button type="button" aria-label="Limpar pesquisa" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
+      </div>
+      {(() => {
+        const q = query.trim().toLowerCase();
+        const all = ships.data ?? [];
+        const filtered = q ? all.filter((o) => o.customer.toLowerCase().includes(q) || o.order_number.toLowerCase().includes(q) || (o.shipment?.tracking_code ?? "").toLowerCase().includes(q)) : all;
+        return ships.isLoading ? <Loader2 className="mt-2 animate-spin text-muted-foreground" /> : all.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido pago.</p> : filtered.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido encontrado.</p> :
       <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
-        {(ships.data ?? []).map((o) => {
+        {filtered.map((o) => {
           const sh = o.shipment;
           return <li key={o.id} className="grid gap-1.5 p-2.5 text-[12px]">
             <div className="flex flex-wrap items-center gap-2">
@@ -93,7 +103,7 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
             </div>
           </li>;
         })}
-      </ul>}
+      </ul>;})()}
     </div>
   </section>;
 }
