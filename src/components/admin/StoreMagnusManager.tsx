@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { getStoreMagnus, listStoreShipments, saveStoreMagnus, sendMagnusShipment, sendPendingMagnus, updateShipment } from "@/lib/magnus.functions";
+import { shipmentMatchesQuery } from "@/lib/magnus-search";
 
 const SEND_LABEL: Record<string, string> = { enviando: "Enviando", enviado: "Enviado", falhou: "Falhou", incerto: "Sem confirmação", manual: "Código manual" };
 const DELIVERY_LABEL: Record<string, string> = {
@@ -63,13 +64,12 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
       <p className="text-[13px] font-semibold">Pedidos pagos (30 dias)</p>
       <div className="relative mt-2">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Pesquisar cliente, pedido ou rastreio..." aria-label="Pesquisar pedidos" className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-[12.5px]" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Pesquisar nome, telefone, pedido ou rastreio..." aria-label="Pesquisar pedidos" className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-[12.5px]" />
         {query && <button type="button" aria-label="Limpar pesquisa" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
       </div>
       {(() => {
-        const q = query.trim().toLowerCase();
         const all = ships.data ?? [];
-        const filtered = q ? all.filter((o) => o.customer.toLowerCase().includes(q) || o.order_number.toLowerCase().includes(q) || (o.shipment?.tracking_code ?? "").toLowerCase().includes(q)) : all;
+        const filtered = query.trim() ? all.filter((o) => shipmentMatchesQuery(o, query)) : all;
         return ships.isLoading ? <Loader2 className="mt-2 animate-spin text-muted-foreground" /> : all.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido pago.</p> : filtered.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido encontrado.</p> :
       <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
         {filtered.map((o) => {
