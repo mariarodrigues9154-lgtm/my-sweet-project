@@ -90,3 +90,6 @@
 - [x] Opção no painel por loja + testes de status (4 novos, 70 no total)
 - [ ] Teste com API Key real e PIX real (depende da credencial da loja)
 - [x] Título "Quem comprou, mostrou" configurável por produto: quantidade liga/desliga, ícone (vídeo/play/câmera/gravação/filmadora) com posição, sem alterar vídeos nem layout
+
+## Busca do rastreamento Magnus Frete
+- [x] Mesma barra passa a filtrar por nome, telefone (só dígitos), número/ID do pedido e rastreio; teste em src/lib/magnus-search.test.ts
