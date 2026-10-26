@@ -527,13 +527,31 @@ export function shownSold(product: MetricsProduct): { count: number; label: stri
 }
 
 /** Selos promocionais 1 e 2 — texto do painel, com o valor antigo como padrão. */
-export function promoBadges(product: MetricsProduct): { badge1: string | null; badge2: string | null } {
+export function promoBadges(product: MetricsProduct): {
+  badge1: string | null;
+  badge2: string | null;
+  wa: { text: string; href: string | null } | null;
+} {
   const d = product.display ?? {};
   const text1 = (d.badge1_text ?? product.offer?.badge ?? "").trim();
   const text2 = (d.badge2_text ?? product.offer?.highlight ?? "").trim();
+  const waText = (d.wa_seal_text ?? "").trim() || "Atendimento via WhatsApp";
+  let wa: { text: string; href: string | null } | null = null;
+  if (d.wa_seal_show === true) {
+    let href: string | null = null;
+    if (d.wa_seal_clickable === true) {
+      const digits = (d.wa_seal_number ?? "").replace(/\D/g, "");
+      if (digits) {
+        const msg = (d.wa_seal_message ?? "").trim();
+        href = `https://wa.me/${digits}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
+      }
+    }
+    wa = { text: waText, href };
+  }
   return {
     badge1: d.badge1_show === false || !text1 ? null : text1,
     badge2: d.badge2_show === false || !text2 ? null : text2,
+    wa,
   };
 }
 
