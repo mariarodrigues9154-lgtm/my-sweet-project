@@ -52,7 +52,7 @@ export const listStoreShipments = createServerFn({ method: "GET" })
     const byOrder = new Map((ships ?? []).map((s: { order_id: string }) => [s.order_id, s]));
     return (orders ?? []).map((o: any) => ({
       id: o.id as string, order_number: o.order_number as string, paid_at: (o.paid_at ?? o.created_at) as string, total: Number(o.total),
-      customer: String(o.customer?.name ?? ""), product: String(o.product_snapshot?.title ?? ""),
+      customer: String(o.customer?.name ?? ""), phone: String(o.customer?.phone ?? ""), product: String(o.product_snapshot?.title ?? ""),
       shipment: (byOrder.get(o.id) ?? null) as null | { send_status: string; tracking_code: string | null; delivery_status: string; error: string | null; attempts: number; sent_at: string | null },
     }));
   });
