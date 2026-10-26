@@ -10,6 +10,7 @@ import { StoreMetaManager } from "@/components/admin/StoreMetaManager";
 import { StorePaymentsManager } from "@/components/admin/StorePaymentsManager";
 import { StoreWhatsappRecovery } from "@/components/admin/StoreWhatsappRecovery";
 import { StoreUtmifyManager } from "@/components/admin/StoreUtmifyManager";
+import { StoreMagnusManager } from "@/components/admin/StoreMagnusManager";
 
 export const Route = createFileRoute("/_authenticated/admin/lojas/$id")({
   head: () => ({
@@ -60,6 +61,7 @@ function EditStore() {
           />
           <StoreMetaManager storeId={id} />
           <StoreUtmifyManager storeId={id} />
+          <StoreMagnusManager storeId={id} />
           <StorePaymentsManager storeId={id} />
           <StoreWhatsappRecovery storeId={id} />
         </>
