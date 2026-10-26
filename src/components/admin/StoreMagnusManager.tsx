@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { getStoreMagnus, listStoreShipments, saveStoreMagnus, sendMagnusShipment, sendPendingMagnus, updateShipment } from "@/lib/magnus.functions";
+import { shipmentMatchesQuery } from "@/lib/magnus-search";
 
 const SEND_LABEL: Record<string, string> = { enviando: "Enviando", enviado: "Enviado", falhou: "Falhou", incerto: "Sem confirmação", manual: "Código manual" };
 const DELIVERY_LABEL: Record<string, string> = {
