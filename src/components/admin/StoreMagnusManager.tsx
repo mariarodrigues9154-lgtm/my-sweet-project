@@ -67,15 +67,8 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
         {query && <button type="button" aria-label="Limpar pesquisa" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
       </div>
       {(() => {
-        const q = query.trim().toLowerCase();
-        const qd = q.replace(/\D/g, "");
         const all = ships.data ?? [];
-        const matches = (o: (typeof all)[number]) => o.customer.toLowerCase().includes(q)
-          || o.order_number.toLowerCase().includes(q)
-          || o.id.toLowerCase().includes(q)
-          || (o.shipment?.tracking_code ?? "").toLowerCase().includes(q)
-          || (qd.length >= 2 && o.phone.replace(/\D/g, "").includes(qd));
-        const filtered = q ? all.filter(matches) : all;
+        const filtered = query.trim() ? all.filter((o) => shipmentMatchesQuery(o, query)) : all;
         return ships.isLoading ? <Loader2 className="mt-2 animate-spin text-muted-foreground" /> : all.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido pago.</p> : filtered.length === 0 ? <p className="mt-2 text-[12px] text-muted-foreground">Nenhum pedido encontrado.</p> :
       <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
         {filtered.map((o) => {
