@@ -57,6 +57,13 @@
       "when": 1792938158318,
       "tag": "0007_stop_auto_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793024177155,
+      "tag": "0008_magnus_frete",
+      "breakpoints": true
     }
   ]
 }

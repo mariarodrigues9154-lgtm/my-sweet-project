@@ -142,6 +142,75 @@ export type Database = {
           },
         ]
       }
+      order_shipments: {
+        Row: {
+          attempts: number
+          created_at: string
+          delivery_status: string
+          error: string | null
+          http_status: number | null
+          id: string
+          order_id: string
+          provider: string
+          provider_order_id: string | null
+          provider_shipment_id: string | null
+          send_status: string
+          sent_at: string | null
+          store_id: string
+          tracking_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          delivery_status?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          order_id: string
+          provider?: string
+          provider_order_id?: string | null
+          provider_shipment_id?: string | null
+          send_status?: string
+          sent_at?: string | null
+          store_id: string
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          delivery_status?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          order_id?: string
+          provider?: string
+          provider_order_id?: string | null
+          provider_shipment_id?: string | null
+          send_status?: string
+          sent_at?: string | null
+          store_id?: string
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_shipments_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           access_token: string
@@ -406,6 +475,35 @@ export type Database = {
             foreignKeyName: "products_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_magnus_settings: {
+        Row: {
+          api_token: string | null
+          enabled: boolean
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_token?: string | null
+          enabled?: boolean
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_token?: string | null
+          enabled?: boolean
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_magnus_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
             referencedRelation: "store_settings"
             referencedColumns: ["id"]
           },
