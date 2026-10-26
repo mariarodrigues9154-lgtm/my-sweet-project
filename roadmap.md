@@ -93,3 +93,7 @@
 
 ## Busca do rastreamento Magnus Frete
 - [x] Mesma barra passa a filtrar por nome, telefone (só dígitos), número/ID do pedido e rastreio; teste em src/lib/magnus-search.test.ts
+
+## Selo WhatsApp por produto
+- [x] Nova opção na seção "Selos promocionais" do produto: exibir selo WhatsApp (verde, ícone oficial), texto editável, opção clicável com número + mensagem inicial (wa.me); selos 1 e 2 intactos; testes em src/lib/promo-badges.test.ts
+- [x] Verificado no painel e na página do produto (Playwright); caracteres invisíveis no link vêm do script externo da UTMify, não do código da loja
