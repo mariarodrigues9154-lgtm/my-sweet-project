@@ -164,6 +164,12 @@ export type ProductDisplay = {
   badge1_text?: string | null;
   badge2_show?: boolean;
   badge2_text?: string | null;
+  /** Selo WhatsApp — verde, opcionalmente clicável (wa.me), por produto. */
+  wa_seal_show?: boolean;
+  wa_seal_text?: string | null;
+  wa_seal_clickable?: boolean;
+  wa_seal_number?: string | null;
+  wa_seal_message?: string | null;
   /** Seção "Avaliações dos clientes" — só exibição, nunca altera as avaliações. */
   rs_title?: string | null;
   rs_source?: MetricSource;
@@ -486,7 +492,7 @@ export function ratingText(value: number): string {
   return (Math.round((Number.isFinite(value) ? value : 0) * 10) / 10).toFixed(1).replace(".", ",");
 }
 
-type MetricsProduct = Pick<Product, "rating" | "reviews_count" | "sold_count" | "display" | "offer"> & { reviews?: Review[] };
+export type MetricsProduct = Pick<Product, "rating" | "reviews_count" | "sold_count" | "display" | "offer"> & { reviews?: Review[] };
 
 /** Nota na página do produto: "5.0", "4.8". */
 export function ratingDot(value: number): string {
@@ -521,13 +527,31 @@ export function shownSold(product: MetricsProduct): { count: number; label: stri
 }
 
 /** Selos promocionais 1 e 2 — texto do painel, com o valor antigo como padrão. */
-export function promoBadges(product: MetricsProduct): { badge1: string | null; badge2: string | null } {
+export function promoBadges(product: MetricsProduct): {
+  badge1: string | null;
+  badge2: string | null;
+  wa: { text: string; href: string | null } | null;
+} {
   const d = product.display ?? {};
   const text1 = (d.badge1_text ?? product.offer?.badge ?? "").trim();
   const text2 = (d.badge2_text ?? product.offer?.highlight ?? "").trim();
+  const waText = (d.wa_seal_text ?? "").trim() || "Atendimento via WhatsApp";
+  let wa: { text: string; href: string | null } | null = null;
+  if (d.wa_seal_show === true) {
+    let href: string | null = null;
+    if (d.wa_seal_clickable === true) {
+      const digits = (d.wa_seal_number ?? "").replace(/\D/g, "");
+      if (digits) {
+        const msg = (d.wa_seal_message ?? "").trim();
+        href = `https://wa.me/${digits}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
+      }
+    }
+    wa = { text: waText, href };
+  }
   return {
     badge1: d.badge1_show === false || !text1 ? null : text1,
     badge2: d.badge2_show === false || !text2 ? null : text2,
+    wa,
   };
 }
 
