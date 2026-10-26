@@ -164,6 +164,12 @@ export type ProductDisplay = {
   badge1_text?: string | null;
   badge2_show?: boolean;
   badge2_text?: string | null;
+  /** Selo WhatsApp — verde, opcionalmente clicável (wa.me), por produto. */
+  wa_seal_show?: boolean;
+  wa_seal_text?: string | null;
+  wa_seal_clickable?: boolean;
+  wa_seal_number?: string | null;
+  wa_seal_message?: string | null;
   /** Seção "Avaliações dos clientes" — só exibição, nunca altera as avaliações. */
   rs_title?: string | null;
   rs_source?: MetricSource;
