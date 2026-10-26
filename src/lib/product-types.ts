@@ -170,6 +170,7 @@ export type ProductDisplay = {
   wa_seal_clickable?: boolean;
   wa_seal_number?: string | null;
   wa_seal_message?: string | null;
+  wa_seal_pulse?: boolean;
   /** Seção "Avaliações dos clientes" — só exibição, nunca altera as avaliações. */
   rs_title?: string | null;
   rs_source?: MetricSource;

@@ -27,6 +27,7 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
   const discount = discountPercent(min, product.previous_price);
   const economy = savings(product.price, product.previous_price);
   const badges = promoBadges(product);
+  const waPulse = product.display?.wa_seal_pulse === true ? "wa-pulse" : "";
   const [int, cents] = brl(min).replace(/^R\$\s?/, "").split(",");
 
   return (
@@ -107,13 +108,13 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
                 href={badges.wa.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-whatsapp px-2.5 py-1 text-[14px] font-semibold leading-5 text-whatsapp-foreground"
+                className={`${waPulse} inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-whatsapp px-2.5 py-1 text-[14px] font-semibold leading-5 text-whatsapp-foreground`}
               >
                 <WhatsAppIcon size={14} />
                 {badges.wa.text}
               </a>
             ) : (
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-whatsapp px-2.5 py-1 text-[14px] font-semibold leading-5 text-whatsapp-foreground">
+              <span className={`${waPulse} inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-whatsapp px-2.5 py-1 text-[14px] font-semibold leading-5 text-whatsapp-foreground`}>
                 <WhatsAppIcon size={14} />
                 {badges.wa.text}
               </span>
