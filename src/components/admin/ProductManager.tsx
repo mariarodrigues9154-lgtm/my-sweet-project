@@ -563,6 +563,9 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                 sold_label: d.display?.sold_label?.trim() ? d.display.sold_label.trim() : null,
                 badge1_text: d.display?.badge1_text?.trim() ? d.display.badge1_text.trim() : null,
                 badge2_text: d.display?.badge2_text?.trim() ? d.display.badge2_text.trim() : null,
+                wa_seal_text: d.display?.wa_seal_text?.trim() ? d.display.wa_seal_text.trim() : null,
+                wa_seal_number: d.display?.wa_seal_number?.replace(/\D/g, "") || null,
+                wa_seal_message: d.display?.wa_seal_message?.trim() ? d.display.wa_seal_message.trim() : null,
                 rs_title: d.display?.rs_title?.trim() ? d.display.rs_title.trim() : null,
                 rs_max: d.display?.rs_max?.trim() ? d.display.rs_max.trim() : null,
               },
@@ -730,6 +733,58 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           onChange={(e) => set("display", { ...(d.display ?? {}), badge2_text: e.target.value })}
           className={inputCls}
         />
+        <label className="flex items-center gap-2 text-[13px] font-semibold">
+          <input
+            type="checkbox"
+            checked={d.display?.wa_seal_show ?? false}
+            onChange={(e) => set("display", { ...(d.display ?? {}), wa_seal_show: e.target.checked })}
+          />
+          Exibir selo WhatsApp
+        </label>
+        {(d.display?.wa_seal_show ?? false) && (
+          <>
+            <label className="text-[12px] font-semibold">
+              Texto do selo
+              <input
+                value={d.display?.wa_seal_text ?? ""}
+                placeholder="Atendimento via WhatsApp"
+                onChange={(e) => set("display", { ...(d.display ?? {}), wa_seal_text: e.target.value })}
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-[13px] font-semibold">
+              <input
+                type="checkbox"
+                checked={d.display?.wa_seal_clickable ?? false}
+                onChange={(e) => set("display", { ...(d.display ?? {}), wa_seal_clickable: e.target.checked })}
+              />
+              Tornar selo clicável
+            </label>
+            {(d.display?.wa_seal_clickable ?? false) && (
+              <>
+                <label className="text-[12px] font-semibold">
+                  Número do WhatsApp
+                  <input
+                    value={d.display?.wa_seal_number ?? ""}
+                    placeholder="5591999999999"
+                    inputMode="tel"
+                    onChange={(e) => set("display", { ...(d.display ?? {}), wa_seal_number: e.target.value })}
+                    className={inputCls}
+                  />
+                </label>
+                <label className="text-[12px] font-semibold">
+                  Mensagem inicial (opcional)
+                  <input
+                    value={d.display?.wa_seal_message ?? ""}
+                    placeholder="Olá, gostaria de tirar uma dúvida sobre o produto."
+                    onChange={(e) => set("display", { ...(d.display ?? {}), wa_seal_message: e.target.value })}
+                    className={inputCls}
+                  />
+                </label>
+              </>
+            )}
+          </>
+        )}
       </Group>
 
       <Group title="Seção de avaliações dos clientes">
