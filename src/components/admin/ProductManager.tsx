@@ -760,6 +760,14 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
               />
               Tornar selo clicável
             </label>
+            <label className="flex items-center gap-2 text-[13px] font-semibold">
+              <input
+                type="checkbox"
+                checked={d.display?.wa_seal_pulse ?? false}
+                onChange={(e) => set("display", { ...(d.display ?? {}), wa_seal_pulse: e.target.checked })}
+              />
+              Ativar efeito pulsante
+            </label>
             {(d.display?.wa_seal_clickable ?? false) && (
               <>
                 <label className="text-[12px] font-semibold">

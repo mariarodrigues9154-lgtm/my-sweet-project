@@ -654,6 +654,7 @@ const displaySchema = z
     wa_seal_clickable: z.boolean().optional(),
     wa_seal_number: optStr(20),
     wa_seal_message: optStr(200),
+    wa_seal_pulse: z.boolean().optional(),
     rs_title: optStr(80),
     rs_source: z.enum(["auto", "manual"]).optional(),
     rs_count_source: z.enum(["auto", "manual"]).optional(),

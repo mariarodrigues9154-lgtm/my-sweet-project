@@ -275,6 +275,16 @@
   animation: today-dot 1.8s ease-out infinite;
 }
 @keyframes today-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+/* Selo WhatsApp — pulso suave opcional (só transform/box-shadow, sem layout shift) */
+@utility wa-pulse {
+  animation: wa-pulse 2.4s ease-in-out infinite;
+  will-change: transform;
+  @media (prefers-reduced-motion: reduce) { animation: none; }
+}
+@keyframes wa-pulse {
+  0%, 70%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-whatsapp) 0%, transparent); }
+  35% { transform: scale(1.04); box-shadow: 0 2px 10px -2px color-mix(in srgb, var(--color-whatsapp) 45%, transparent); }
+}
 @keyframes today-shine { 0% { left: -60%; } 55%, 100% { left: 130%; } }
 @keyframes today-dot {
   0% { box-shadow: 0 0 0 0 oklch(1 0 0 / 70%); }
