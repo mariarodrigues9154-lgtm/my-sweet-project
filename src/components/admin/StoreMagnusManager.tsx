@@ -103,7 +103,7 @@ export function StoreMagnusManager({ storeId }: { storeId: string }) {
             </div>
           </li>;
         })}
-      </ul>}
+      </ul>;})()}
     </div>
   </section>;
 }
