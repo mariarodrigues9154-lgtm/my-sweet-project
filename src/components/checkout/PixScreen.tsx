@@ -157,21 +157,21 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
         )}
 
         {page.show_whatsapp && waDigits.length >= 10 && (
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-success/25 bg-success-soft p-3">
-            <span className="grid size-12 shrink-0 place-items-center rounded-full bg-success/15 text-success">
-              <WhatsAppIcon size={26} />
+          <div className="mt-4 flex items-center gap-2.5 rounded-2xl border border-success/25 bg-success-soft p-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-success/15 text-success">
+              <WhatsAppIcon size={24} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[14.5px] font-extrabold leading-tight">{page.wa_title}</p>
-              <p className="mt-1 text-[11.5px] leading-snug text-foreground/70">{page.wa_text}</p>
+              <p className="text-[14px] font-extrabold leading-tight">{page.wa_title}</p>
+              <p className="mt-1 text-[11px] leading-[1.35] text-foreground/70">{page.wa_text}</p>
             </div>
             <a
               href={waLink}
               target="_blank"
               rel="noreferrer"
-              className="flex h-11 shrink-0 items-center gap-2 rounded-lg bg-whatsapp px-3.5 text-[13.5px] font-bold text-whatsapp-foreground shadow-sm transition-opacity active:opacity-90"
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-whatsapp px-3 text-[12.5px] font-bold text-whatsapp-foreground shadow-sm transition-opacity active:opacity-90"
             >
-              <WhatsAppIcon size={18} /> {page.wa_button}
+              <WhatsAppIcon size={16} /> {page.wa_button}
             </a>
           </div>
         )}
