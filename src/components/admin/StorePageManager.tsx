@@ -93,6 +93,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
       </div>
     </Group>
 
+    <Group title="Cabeçalho das páginas de produto">
+      <Toggle label="Ativar cabeçalho estilo mobile" checked={draft.checkout?.mobile_header_enabled === true} onChange={(value) => set("checkout", { ...draft.checkout, mobile_header_enabled: value })} />
+    </Group>
+
     <Group title="Favicon da Loja">
       <p className="mb-2 text-[11.5px] text-muted-foreground">Ícone que aparece na aba do navegador nas páginas desta loja (loja, produto e checkout). Use uma imagem quadrada, de preferência 64 x 64 px (PNG, JPG, WEBP ou ICO). Sem favicon, aparece o ícone padrão do site.</p>
       <div className="grid gap-3 sm:grid-cols-2">

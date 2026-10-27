@@ -1,5 +1,6 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
 import { videosTitleSchema } from "@/lib/videos-title";
+import { productHeaderSchema } from "@/lib/product-header";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -167,6 +168,7 @@ const storeInput = z.object({
   footer_text: z.string().trim().max(1000).nullable(),
   policies: z.object({ privacy: z.string().max(30000), refund: z.string().max(30000), terms: z.string().max(30000), shipping: z.string().max(30000) }),
   checkout: z.object({
+    mobile_header_enabled: z.boolean().optional(),
     checkout_model: z.enum(["v1", "v2"]).optional().default("v1"),
     logo_url: z.string().trim().max(2000).nullish(),
     primary_color: z.union([z.string().regex(/^#[0-9a-fA-F]{6}$/), z.literal("")]).nullish(),
@@ -663,6 +665,7 @@ const displaySchema = z
     rs_rating: z.number().min(0).max(5).nullish(),
     rs_max: optStr(10),
   })
+  .extend(productHeaderSchema.shape)
   .default(() => ({}) as never);
 
 const detailsInput = z.object({

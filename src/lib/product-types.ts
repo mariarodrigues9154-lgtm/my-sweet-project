@@ -152,6 +152,8 @@ export type StoreAiSupport = {
 export type MetricSource = "auto" | "manual";
 
 export type ProductDisplay = {
+  header_mode?: "inherit" | "enabled" | "disabled";
+  header_search_text?: string | null;
   rating_source?: MetricSource;
   rating?: number | null;
   reviews_source?: MetricSource;
@@ -260,6 +262,8 @@ export type Product = {
 };
 
 export type CheckoutSettings = {
+  /** Variante opcional do cabeçalho das páginas de produto, por loja. */
+  mobile_header_enabled?: boolean;
   /** Formas de pagamento (ver lib/payment-methods). */
   payment_methods?: import("./payment-methods").PaymentMethodsConfig;
   /** Espelho público de ai_support.enabled (ausente = ligado). */
