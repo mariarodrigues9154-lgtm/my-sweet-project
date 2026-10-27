@@ -1,6 +1,7 @@
 import { imageSrcSet, sizedImage } from "@/lib/media-url";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import type { Media } from "@/lib/product-types";
 
@@ -59,22 +60,28 @@ export function Gallery({ media, title }: { media: Media[]; title: string }) {
 
       {items.length > 1 && (
         <>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             onClick={() => goTo(index - 1)}
             aria-label="Imagem anterior"
-            className="absolute left-2 top-1/2 hidden size-9 -translate-y-1/2 place-items-center rounded-full bg-card/85 text-foreground shadow-card-soft transition-opacity hover:bg-card sm:grid"
+            title="Imagem anterior"
+            className="absolute left-2 top-1/2 size-9 -translate-y-1/2 rounded-full bg-card/85 text-muted-foreground shadow-card-soft transition-opacity hover:bg-card hover:text-muted-foreground sm:text-foreground sm:hover:text-foreground [&_svg]:size-[18px]"
           >
             <ChevronLeft size={18} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             onClick={() => goTo(index + 1)}
             aria-label="Próxima imagem"
-            className="absolute right-2 top-1/2 hidden size-9 -translate-y-1/2 place-items-center rounded-full bg-card/85 text-foreground shadow-card-soft transition-opacity hover:bg-card sm:grid"
+            title="Próxima imagem"
+            className="absolute right-2 top-1/2 size-9 -translate-y-1/2 rounded-full bg-card/85 text-muted-foreground shadow-card-soft transition-opacity hover:bg-card hover:text-muted-foreground sm:text-foreground sm:hover:text-foreground [&_svg]:size-[18px]"
           >
             <ChevronRight size={18} />
-          </button>
+          </Button>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex items-center justify-center gap-1.5">
             {items.map((_, i) => (
