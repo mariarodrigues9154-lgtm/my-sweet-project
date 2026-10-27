@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouterState, Link } from "@tanstack/react-router";
-import { Check, ChevronLeft, Copy, MessageCircle, X } from "lucide-react";
+import { Check, CheckCircle2, ChevronLeft, Copy, MessageCircle, X } from "lucide-react";
 
 import { brl } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { forgetPixOrders, openOrderChat, rememberPixOrder, useStorePixOrders } from "@/lib/pix-orders";
 import { renewExpiredPixOrder, trackPixRecoveryEvent } from "@/lib/pix-recovery.functions";
 import type { PixOrderView } from "@/lib/pix-recovery.functions";
+import { noticeKind } from "@/lib/pix-notice";
 
 const HIDDEN = /^\/(pagamento|admin|auth|reset-password|pedido-confirmado)/;
 const STATE_LABEL: Record<PixOrderView["state"], string> = {
@@ -81,7 +82,13 @@ export function PendingPixLayer() {
 
   const hidden = HIDDEN.test(path);
   const visible = (o: PixOrderView) => o.store.pix.show_notice && !dismissed.includes(o.token);
-  const card = hidden ? undefined : pending.find(visible) ?? orders.find((o) => o.state === "expirado" && visible(o));
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 15000); return () => window.clearInterval(id); }, []);
+  // Status vem do servidor (webhook/consulta ao gateway); aqui só decidimos o tempo de exibição.
+  const pick = (k: string) => orders.find((o) => visible(o) && noticeKind(o, now) === k);
+  const found = hidden ? undefined : pick("pago") ?? pick("pendente") ?? pick("expirado");
+  const kind = found ? noticeKind(found, now) : null;
+  const card = found && kind ? { ...found, state: kind } as PixOrderView : undefined;
   const cardToken = card && !chat.open ? card.token : null;
   useEffect(() => {
     if (!cardToken || shown.current.has(cardToken)) return;
@@ -104,7 +111,10 @@ export function PendingPixLayer() {
             <div className="flex items-start gap-2.5 pr-6">
               <StoreAvatar o={card} />
               <div className="min-w-0">
-                {card.state === "expirado" ? <>
+                {card.state === "pago" ? <>
+                  <p className="flex items-center gap-1 text-[13px] font-semibold"><CheckCircle2 size={15} className="text-success" /> Compra concluída!</p>
+                  <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Seu pagamento foi confirmado com sucesso. Seu pedido está sendo preparado para envio. O código de rastreio será enviado para o seu e-mail assim que estiver disponível.</p>
+                </> : card.state === "expirado" ? <>
                   <p className="text-[13px] font-semibold">Seu PIX expirou</p>
                   <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">O código PIX do pedido #{card.order_number} <span className="font-semibold text-destructive">não pode mais ser usado</span>. Gere uma nova cobrança para concluir a compra.</p>
                 </> : <>
@@ -113,7 +123,7 @@ export function PendingPixLayer() {
                 </>}
               </div>
             </div>
-            {card.state === "expirado" ? <>
+            {card.state === "pago" ? null : card.state === "expirado" ? <>
               <button type="button" disabled={renew.busy} onClick={() => void renew.regenerate(card)} className="mt-2.5 flex h-9 w-full items-center justify-center rounded-lg bg-primary text-[12.5px] font-medium text-primary-foreground disabled:opacity-60">{renew.busy ? "Gerando nova cobrança..." : "Gerar nova cobrança PIX"}</button>
               {renew.err && <p className="mt-1.5 text-center text-[11.5px] text-destructive">{renew.err}</p>}
             </> : <div className={`mt-2.5 grid gap-2 ${card.store.pix.allow_copy && card.store.pix.allow_chat ? "grid-cols-2" : "grid-cols-1"}`}>
