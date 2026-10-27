@@ -12,7 +12,7 @@ export function CustomerProtectionFields({ value, onChange, original }: { value?
     {config.style === "premium" && <>
       <label className="flex items-center gap-2 text-[12px] font-semibold"><input type="checkbox" checked={config.collapsible} onChange={(e) => set({ collapsible: e.target.checked })} />Permitir expandir e recolher benefícios</label>
       <div className="grid gap-3 sm:grid-cols-2">
-        {([ ["title", "Título principal"], ["subtitle", "Subtítulo"], ...protectionBenefitKeys.map((key, i) => [key, `Texto do benefício ${i + 1}`] as const) ] as const).map(([key, label]) => <label key={key} className="block min-w-0 space-y-1"><span className="text-[11px] font-semibold text-muted-foreground">{label}</span><textarea rows={2} maxLength={600} className={cls} value={config[key]} onChange={(e) => set({ [key]: e.target.value })} /></label>)}
+        {([ ["title", "Título principal"], ["subtitle", "Subtítulo"], ...protectionBenefitKeys.map((key, i) => [key, `Texto do benefício ${i + 1}`] as const) ] as const).map(([key, label]) => <label key={key} className="block min-w-0 space-y-1"><span className="text-[11px] font-semibold text-muted-foreground">{label}</span><textarea aria-label={label} rows={2} maxLength={600} className={cls} value={config[key]} onChange={(e) => set({ [key]: e.target.value })} /></label>)}
       </div>
     </>}
     <p className="text-[11.5px] text-muted-foreground">{config.style === "original" ? "O modelo original mantém os textos cadastrados em cada produto." : "Os textos premium são usados nos produtos desta loja; os textos originais permanecem preservados."}</p>
