@@ -25,7 +25,7 @@ export const adminOverview = createServerFn({ method: "GET" })
     const [{ data: products }, { data: orders }, { data: stores }] = await Promise.all([
       supabaseAdmin
         .from("products")
-        .select("id, slug, name, title, price, previous_price, stock, active, sort_order, store_id, reviews, protection")
+        .select("id, slug, name, title, price, previous_price, stock, active, sort_order, store_id, reviews")
         .order("sort_order", { ascending: true }),
       supabaseAdmin
         .from("orders")
@@ -46,7 +46,6 @@ export const adminOverview = createServerFn({ method: "GET" })
       })),
       products: (products ?? []).map((p) => ({
         ...p,
-        protection: p.protection as import("@/lib/product-types").Product["protection"],
         price: Number(p.price),
         previous_price: Number(p.previous_price),
         reviews: (Array.isArray(p.reviews) ? p.reviews : []) as Array<{ name: string; rating: number; date?: string; text: string; confirmed?: boolean; hidden?: boolean; photos?: string[]; avatar?: string | null }>,
@@ -326,7 +325,7 @@ export const getAdminStore = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: store }, { data: products }] = await Promise.all([
       supabaseAdmin.from("store_settings").select(ADMIN_STORE_COLUMNS).eq("id", data.id).maybeSingle(),
-      supabaseAdmin.from("products").select("id, title, active").eq("store_id", data.id).order("sort_order"),
+      supabaseAdmin.from("products").select("id, title, active, protection").eq("store_id", data.id).order("sort_order"),
     ]);
     if (!store) throw new Error("Loja não encontrada.");
     return {
@@ -337,7 +336,7 @@ export const getAdminStore = createServerFn({ method: "GET" })
         checkout: (store.checkout ?? {}) as import("@/lib/product-types").CheckoutSettings,
         ai_support: (store.ai_support ?? {}) as import("@/lib/product-types").StoreAiSupport,
       },
-      products: products ?? [],
+      products: (products ?? []).map((p) => ({ ...p, protection: p.protection as import("@/lib/product-types").Product["protection"] })),
     };
   });
 
