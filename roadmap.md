@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Cabeçalho opcional por loja e produto (27/10/2026)
-- [ ] Adicionar variante compacta e configurações independentes, com apenas voltar à vitrine clicável
-- [ ] Testar herança, salvamento e larguras 320/360/375/390/412/430px sem alterar a página restante
+- [x] Adicionar variante compacta e configurações independentes, com apenas voltar à vitrine clicável
+- [x] Testar seis regras, salvamento autenticado da loja e três modos do produto, texto e larguras 320/360/375/390/412/430px; seta abre a vitrine da própria loja e escolhas anteriores restauradas
 
 ## Ícone refinado no título dos vídeos (25/10/2026)
 - [x] Refinar só o ícone e limitar sua cor personalizada, preservando título e seção
