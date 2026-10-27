@@ -3,7 +3,7 @@ import { PIX_PAGE_DEFAULTS, resolvePixPage, type PixPageSettings } from "@/lib/p
 const toggles = [
   ["show_how_to", "Explicação “Como fazer pagamentos com PIX?”"],
   ["show_info_card", "Card com três informações"],
-  ["show_whatsapp", "Bloco de suporte “Dúvidas?” no WhatsApp"],
+  ["show_whatsapp", "Exibir bloco de WhatsApp"],
   ["show_proof", "Bloco “Enviar comprovante”"],
   ["show_view_order", "Botão “Ver pedido”"],
   ["show_secure_notice", "Aviso “Seus dados estão seguros e criptografados”"],
