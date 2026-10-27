@@ -1,5 +1,9 @@
 # Roadmap
 
+## Cabeçalho opcional por loja e produto (27/10/2026)
+- [ ] Adicionar variante compacta e configurações independentes, com apenas voltar à vitrine clicável
+- [ ] Testar herança, salvamento e larguras 320/360/375/390/412/430px sem alterar a página restante
+
 ## Ícone refinado no título dos vídeos (25/10/2026)
 - [x] Refinar só o ícone e limitar sua cor personalizada, preservando título e seção
 - [x] Validar 28 testes e fluxo autenticado dos cinco ícones: salvar/reabrir, posição, cor exclusiva, atualizar e desligar; escolhas originais restauradas, sem erros de execução
