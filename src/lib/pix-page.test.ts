@@ -22,4 +22,10 @@ describe("resolvePixPage", () => {
     expect(resolvePixPage({ wa_number: "5585999999999" }).wa_number).toBe("5585999999999");
     expect(resolvePixPage({ wa_number: "   " }).wa_number).toBe("");
   });
+  it("número do WhatsApp: aceita real, recusa placeholder de zeros e curto demais", () => {
+    expect(isUsableWaNumber("5585999999999")).toBe(true);
+    expect(isUsableWaNumber("(00) 00000-0000")).toBe(false);
+    expect(isUsableWaNumber("999999999")).toBe(false);
+    expect(isUsableWaNumber(undefined)).toBe(false);
+  });
 });
