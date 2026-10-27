@@ -2,7 +2,7 @@
 
 ## Proteção premium nas proporções do original (27/10/2026)
 - [x] Compactar cabeçalho, escudo, ícones e textos do premium, preservando seis benefícios e layout original
-- [ ] Verificar leitura, altura e duas colunas no celular e funcionamento de expandir/recolher
+- [x] Verificar 320/360/375/390/412/430/1280px: duas colunas, seis benefícios legíveis sem transbordamento e expandir/recolher; altura em 390px reduzida de 245 para 197px, oito testes passaram e build OK. Aviso externo da UTMify não afetou a seção.
 
 ## Proteção premium compacta no mobile (27/10/2026)
 - [x] Manter duas colunas e três linhas no celular, reduzindo levemente ícones e espaçamentos sem alterar cores, textos ou original
