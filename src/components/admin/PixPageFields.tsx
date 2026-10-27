@@ -18,7 +18,7 @@ const texts = [
   ["proof_text", "Texto auxiliar do comprovante", true],
 ] as const;
 
-export function PixPageFields({ value, onChange }: { value?: PixPageSettings; onChange: (value: PixPageSettings) => void }) {
+export function PixPageFields({ value, onChange }: { value?: PixPageSettings | undefined; onChange: (value: PixPageSettings) => void }) {
   const r = resolvePixPage(value);
   const set = (patch: PixPageSettings) => onChange({ ...value, ...patch });
   return (

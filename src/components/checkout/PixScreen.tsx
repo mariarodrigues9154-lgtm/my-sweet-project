@@ -18,7 +18,7 @@ type Props = {
   expiresAt: number | null;
   onBack: () => void;
   onNew: () => void;
-  settings?: PixPageSettings | null;
+  settings?: PixPageSettings | null | undefined;
 };
 
 /** Tela final do PIX: usa somente os dados reais da cobrança salva no pedido. */
