@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { protectionBenefitKeys, type ResolvedCustomerProtection } from "@/lib/customer-protection";
 
 function BenefitIcon({ index }: { index: number }) {
-  const props = { className: "size-7", strokeWidth: 1.9, "aria-hidden": true as const };
+  const props = { className: "size-7", strokeWidth: 2.15, "aria-hidden": true as const };
   if (index === 0) return <svg {...props} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 10-6 10 6-10 6L3 9Zm0 0v14l10 6V15m10-6v7M8 6l10 6"/><path d="m25 20-4 4 4 4m-4-4h6a4 4 0 0 1 0 8" transform="translate(0 -3)"/></svg>;
   if (index === 1) return <LockKeyhole {...props} />;
   if (index === 2) return <svg {...props} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 3 11 5v8m-11 14C5 26 4 22 4 16V8l11-5Z"/><path d="M18 12c-1-2-6-2-6 1 0 3 6 1 6 5 0 3-5 3-7 1m4-10v14"/><circle cx="26" cy="25" r="5"/><path d="M26 22v3l2 1"/></svg>;
