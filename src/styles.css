@@ -111,8 +111,8 @@
   --protection-soft: oklch(0.976 0.031 162);
   --protection-foreground: oklch(0.2 0.035 280);
   --protection-check: oklch(1 0 0);
-  --gradient-protection: linear-gradient(145deg, oklch(0.78 0.18 160), oklch(0.52 0.14 163));
-  --shadow-protection-emblem: 0 0 0 4px oklch(0.94 0.058 166);
+  --gradient-protection: linear-gradient(145deg, oklch(0.76 0.2 157), oklch(0.61 0.18 160));
+  --shadow-protection-emblem: 0 0 0 2px oklch(0.94 0.058 166);
 
   --star: oklch(0.78 0.16 74);
   --flash: oklch(0.7 0.19 52);
@@ -186,7 +186,7 @@
   --protection-icon: oklch(0.78 0.13 163);
   --protection-soft: oklch(0.29 0.043 162);
   --protection-foreground: oklch(0.98 0.002 260);
-  --shadow-protection-emblem: 0 0 0 4px oklch(0.3 0.055 166);
+  --shadow-protection-emblem: 0 0 0 2px oklch(0.3 0.055 166);
   --star: oklch(0.82 0.15 74);
   --flash: oklch(0.72 0.18 52);
 
@@ -233,11 +233,17 @@
 .protection-emblem { background-image: var(--gradient-protection); box-shadow: var(--shadow-protection-emblem); }
 .protection-benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @container (max-width: 419px) {
-  .protection-benefits { column-gap: 12px; row-gap: 14px; margin-top: 12px; padding-top: 12px; }
-  .protection-benefit { gap: 7px; }
-  .protection-benefit-icon { width: 34px; height: 34px; border-radius: 11px; }
-  .protection-benefit-icon svg { width: 23px; height: 23px; }
-  .protection-benefit-text { font-size: 12px; line-height: 1.4; }
+  .protection-header { gap: 9px; }
+  .protection-emblem { width: 28px; height: 28px; }
+  .protection-emblem svg { width: 18px !important; height: 18px !important; }
+  .protection-title { font-size: 13.5px; line-height: 1.25; }
+  .protection-subtitle { margin-top: 2px; font-size: 11px; line-height: 1.3; }
+  .protection-chevron { width: 16px !important; height: 16px !important; }
+  .protection-benefits { column-gap: 10px; row-gap: 8px; margin-top: 8px; padding-top: 8px; }
+  .protection-benefit { gap: 6px; }
+  .protection-benefit-icon { width: 26px; height: 26px; border-radius: 8px; }
+  .protection-benefit-icon svg { width: 18px; height: 18px; }
+  .protection-benefit-text { font-size: 11.5px; font-weight: 500; line-height: 1.3; }
 }
 
 @utility offer-gradient {

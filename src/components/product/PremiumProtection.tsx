@@ -22,14 +22,14 @@ export function PremiumProtection({ config }: { config: ResolvedCustomerProtecti
       <ShieldCheck className="!size-8" strokeWidth={2} aria-hidden="true" />
     </span>
     <span className="min-w-0 flex-1">
-      <span className="block break-words text-[18px] font-extrabold leading-tight text-protection-foreground">{config.title}</span>
-      <span className="mt-1 block break-words text-[13px] font-medium leading-snug text-muted-foreground">{config.subtitle}</span>
+      <span className="protection-title block break-words text-[18px] font-extrabold leading-tight text-protection-foreground">{config.title}</span>
+      <span className="protection-subtitle mt-1 block break-words text-[13px] font-medium leading-snug text-muted-foreground">{config.subtitle}</span>
     </span>
-    {config.collapsible && <ChevronRight className={`!size-5 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${expanded ? "" : "rotate-90"}`} aria-hidden="true" />}
+    {config.collapsible && <ChevronRight className={`protection-chevron !size-5 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${expanded ? "" : "rotate-90"}`} aria-hidden="true" />}
   </>;
   return (
-    <div className="premium-protection rounded-[20px] border border-border bg-card p-3 shadow-card-soft sm:p-4">
-      {config.collapsible ? <Button type="button" variant="ghost" aria-expanded={expanded} aria-controls={id} onClick={() => setOpen((v) => !v)} className="h-auto w-full justify-start gap-3 whitespace-normal p-0 text-left hover:bg-transparent">{header}</Button> : <div className="flex items-center gap-3">{header}</div>}
+    <div className="premium-protection rounded-2xl border border-border bg-card p-3 shadow-card-soft sm:rounded-[20px] sm:p-4">
+      {config.collapsible ? <Button type="button" variant="ghost" aria-expanded={expanded} aria-controls={id} onClick={() => setOpen((v) => !v)} className="protection-header grid h-auto w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center justify-start gap-3 whitespace-normal p-0 text-left hover:bg-transparent">{header}</Button> : <div className="protection-header grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">{header}</div>}
       {expanded && <ul id={id} className="protection-benefits mt-4 grid gap-x-4 gap-y-4 border-t border-border pt-4">
         {protectionBenefitKeys.map((key, index) => <li key={key} className="protection-benefit flex min-w-0 items-center gap-3">
           <span className="protection-benefit-icon grid size-11 shrink-0 place-items-center rounded-[14px] bg-protection-soft text-protection-icon"><BenefitIcon index={index} /></span>
