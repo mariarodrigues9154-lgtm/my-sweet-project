@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Proteção premium compacta no mobile (27/10/2026)
-- [ ] Manter duas colunas e três linhas no celular, reduzindo levemente ícones e espaçamentos sem alterar cores, textos ou original
-- [ ] Conferir larguras móveis e desktop na seção real e prévia
+- [x] Manter duas colunas e três linhas no celular, reduzindo levemente ícones e espaçamentos sem alterar cores, textos ou original
+- [x] Conferir seção real em 320/360/375/390/412/430/1280px, seis benefícios sem transbordamento e expandir/recolher; oito testes passaram e build OK. Prévia reutiliza a mesma seção. Aviso de rede do Pixel UTMify externo não impediu o fluxo.
 
 ## Proteção do cliente premium (27/10/2026)
 - [x] Adicionar configuração por loja, oito textos independentes, prévia real do original e novo visual sem alterar produtos
