@@ -168,6 +168,7 @@ const storeInput = z.object({
   footer_text: z.string().trim().max(1000).nullable(),
   policies: z.object({ privacy: z.string().max(30000), refund: z.string().max(30000), terms: z.string().max(30000), shipping: z.string().max(30000) }),
   checkout: z.object({
+    mobile_header_enabled: z.boolean().optional(),
     checkout_model: z.enum(["v1", "v2"]).optional().default("v1"),
     logo_url: z.string().trim().max(2000).nullish(),
     primary_color: z.union([z.string().regex(/^#[0-9a-fA-F]{6}$/), z.literal("")]).nullish(),
