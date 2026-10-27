@@ -39,3 +39,4 @@
 - Coupon chip/bar settings live per product in products.sections.coupon_promo; a product's own countdown duration gives one persisted deadline for all its timers (`useStoreCountdown`), else store checkout.offer_countdown; why: independent products, synced timers.
 - Coupon bar emphasis comes only from explicit highlight_text and secondary_text in the existing product configuration; legacy bar_text stays intact as secondary text without keyword inference; why: arbitrary editable emphasis with backward-compatible content.
 - Magnus Frete: settings per store + order_shipments UNIQUE(order_id); sent only from sendPurchaseForOrder; network errors become "incerto", never auto-retried; why: API not idempotent.
+- PIX final-screen display toggles/texts live in store_settings.checkout.pix_page (resolvePixPage); optional payment proofs go to private storage payment-proofs/<order_id> and never change order status; why: per-store UI without touching payment logic.
