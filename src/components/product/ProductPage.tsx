@@ -56,7 +56,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
 
   return (
     <div className={`min-h-screen bg-surface ${product.sections?.coupon_promo?.bar_enabled ? "pb-36" : "pb-24"}`}>
-      <StoreHeader store={store} placement="product" />
+      <StoreHeader store={store} placement="product" product={product} />
 
       <main className="mx-auto max-w-[520px] bg-card">
         <Gallery media={product.media} title={product.name} />

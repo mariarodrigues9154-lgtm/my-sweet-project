@@ -1,5 +1,6 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
 import { videosTitleSchema } from "@/lib/videos-title";
+import { productHeaderSchema } from "@/lib/product-header";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -663,6 +664,7 @@ const displaySchema = z
     rs_rating: z.number().min(0).max(5).nullish(),
     rs_max: optStr(10),
   })
+  .extend(productHeaderSchema.shape)
   .default(() => ({}) as never);
 
 const detailsInput = z.object({

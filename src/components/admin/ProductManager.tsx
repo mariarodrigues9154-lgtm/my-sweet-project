@@ -603,6 +603,21 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
         </label>
       </Group>
 
+      <Group title="Cabeçalho da página do produto">
+        <label className="block space-y-1 text-[12px] font-semibold">
+          <span>Cabeçalho especial</span>
+          <select className={inputCls} value={d.display?.header_mode ?? "inherit"} onChange={(e) => set("display", { ...(d.display ?? {}), header_mode: e.target.value as "inherit" | "enabled" | "disabled" })}>
+            <option value="inherit">Herdar configuração da loja</option>
+            <option value="enabled">Ativar neste produto</option>
+            <option value="disabled">Desativar neste produto</option>
+          </select>
+        </label>
+        <label className="mt-3 block space-y-1 text-[12px] font-semibold">
+          <span>Texto da barra de pesquisa</span>
+          <input className={inputCls} maxLength={160} placeholder={d.name} value={d.display?.header_search_text ?? ""} onChange={(e) => set("display", { ...(d.display ?? {}), header_search_text: e.target.value })} />
+        </label>
+      </Group>
+
       <Group title="Preço e estoque">
         <div className="grid grid-cols-3 gap-2">
           <Field label="Preço atual" value={price} onChange={setPrice} />
