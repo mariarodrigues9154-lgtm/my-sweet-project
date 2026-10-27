@@ -1,8 +1,12 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { PixQr } from "@/components/checkout/PixQr";
-import { ChevronLeft, Clock, Copy, Check, QrCode, ShieldCheck } from "lucide-react";
+import { ChevronLeft, Clock, Copy, Check, QrCode, ShieldCheck, Mail, CircleCheck, Package, Upload } from "lucide-react";
 import { PixIcon } from "@/components/store/VerifiedBadge";
 import { brl, clock } from "@/lib/format";
+import { resolvePixPage, type PixPageSettings } from "@/lib/pix-page";
+import { uploadPaymentProof } from "@/lib/payment-proof.functions";
 
 type Props = {
   total: number;
@@ -14,13 +18,18 @@ type Props = {
   expiresAt: number | null;
   onBack: () => void;
   onNew: () => void;
+  settings?: PixPageSettings | null;
 };
 
 /** Tela final do PIX: usa somente os dados reais da cobrança salva no pedido. */
-export function PixScreen({ total, orderNumber, productTitle, qr, code, left, expiresAt, onBack, onNew }: Props) {
+export function PixScreen({ total, orderNumber, productTitle, qr, code, left, expiresAt, onBack, onNew, settings }: Props) {
+  const page = resolvePixPage(settings);
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [showOrder, setShowOrder] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [proofSent, setProofSent] = useState(false);
+  const upload = useServerFn(uploadPaymentProof);
   const expired = left !== null && left <= 0;
   const deadline = expiresAt
     ? new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(expiresAt)
@@ -31,6 +40,20 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
     await navigator.clipboard.writeText(code);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2500);
+  }
+
+  async function sendProof(file?: File) {
+    if (!file) return;
+    const types = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
+    if (!types.includes(file.type as (typeof types)[number])) { toast.error("Envie uma imagem (JPG, PNG, WEBP) ou PDF."); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Arquivo muito grande (máx. 5 MB)."); return; }
+    setSending(true);
+    try {
+      const base64 = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(file); });
+      const result = await upload({ data: { order_number: orderNumber, contentType: file.type as (typeof types)[number], base64 } });
+      if (result.ok) { setProofSent(true); toast.success("Comprovante enviado!"); } else toast.error(result.error);
+    } catch { toast.error("Não foi possível enviar o comprovante."); }
+    finally { setSending(false); }
   }
 
   return (
@@ -108,19 +131,53 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
           )}
         </section>
 
-        <h2 className="mt-7 text-[17px] font-bold">Como fazer pagamentos com PIX?</h2>
-        <p className="mt-2 text-[13.5px] leading-relaxed text-foreground/80">
-          Copie o código de pagamento acima, selecione Pix no seu app de internet ou de banco e cole o código.
-        </p>
+        {page.show_how_to && (
+          <>
+            <h2 className="mt-6 text-[17px] font-bold">{page.how_to_title}</h2>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-foreground/75">{page.how_to_text}</p>
+          </>
+        )}
 
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-secure-soft px-4 py-3.5">
-          <p className="text-[13px] text-secure">Seus dados estão seguros e criptografados</p>
-          <ShieldCheck size={22} strokeWidth={2} className="shrink-0 text-secure" />
-        </div>
+        {page.show_info_card && (
+          <ul className="mt-4 space-y-4 rounded-xl border border-border bg-card px-3 py-4">
+            {([[Mail, page.info_1], [CircleCheck, page.info_2], [Package, page.info_3]] as const).map(([Icon, text], i) => (
+              <li key={i} className="flex items-center gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                  <Icon size={18} strokeWidth={2.2} />
+                </span>
+                <p className="text-[12.5px] leading-snug text-foreground/75">{text}</p>
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <button type="button" onClick={() => setShowOrder((v) => !v)} className="mt-4 h-12 w-full rounded-lg bg-muted text-[15px] font-semibold text-foreground/85">
-          {showOrder ? "Ocultar pedido" : "Ver pedido"}
-        </button>
+        {page.show_secure_notice && (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-secure-soft px-4 py-3.5">
+            <p className="text-[13px] text-secure">Seus dados estão seguros e criptografados</p>
+            <ShieldCheck size={22} strokeWidth={2} className="shrink-0 text-secure" />
+          </div>
+        )}
+
+        {page.show_proof && (
+          <div className="mt-3 rounded-xl border border-border bg-muted/60 px-3 py-3 text-center">
+            <p className="text-[14px] font-bold">{page.proof_title}</p>
+            {proofSent ? (
+              <p className="mt-2 flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card text-[13px] font-semibold text-success"><Check size={16} /> Comprovante enviado</p>
+            ) : (
+              <label className={`mt-2 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-card text-[13.5px] ${sending ? "opacity-60" : ""}`}>
+                <Upload size={16} /> {sending ? "Enviando..." : "Enviar comprovante"} <span className="text-[11px] text-muted-foreground">(Opcional)</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" disabled={sending} onChange={(e) => void sendProof(e.target.files?.[0])} />
+              </label>
+            )}
+            <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{page.proof_text}</p>
+          </div>
+        )}
+
+        {page.show_view_order && (
+          <button type="button" onClick={() => setShowOrder((v) => !v)} className="mt-3 h-12 w-full rounded-lg bg-muted text-[15px] font-semibold text-foreground/85">
+            {showOrder ? "Ocultar pedido" : "Ver pedido"}
+          </button>
+        )}
 
         {showOrder && (
           <div className="mt-3 rounded-xl bg-surface p-3 text-[13px]">

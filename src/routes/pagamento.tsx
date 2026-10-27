@@ -379,6 +379,7 @@ function CheckoutRoute() {
           expiresAt={expiresAt}
           onBack={() => (product ? void navigate({ to: "/produto/$slug", params: { slug: product.slug } }) : void navigate({ to: "/" }))}
           onNew={newPix}
+          settings={store.checkout?.pix_page}
         />
       </div>
     );
