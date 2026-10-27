@@ -20,6 +20,7 @@ export type PixOrderView = {
   qr_code: string | null;
   expires_at: string | null;
   created_at: string;
+  paid_at: string | null;
 };
 
 /**
@@ -34,7 +35,7 @@ export const getPixOrders = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("orders")
-      .select("access_token, order_number, status, store_id, product_snapshot, quantity, total, payment, transaction_id, pix_expiration_date, created_at")
+      .select("access_token, order_number, status, store_id, product_snapshot, quantity, total, payment, transaction_id, pix_expiration_date, created_at, paid_at")
       .in("access_token", data.tokens);
     if (!rows?.length) return [];
 
@@ -75,6 +76,7 @@ export const getPixOrders = createServerFn({ method: "POST" })
         qr_code: state === "pendente" ? pay.qr_code ?? null : null,
         expires_at: expiresAt,
         created_at: r.created_at as string,
+        paid_at: (r.paid_at as string | null) ?? null,
       });
     }
     return out.sort((a, b) => b.created_at.localeCompare(a.created_at));
