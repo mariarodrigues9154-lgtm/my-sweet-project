@@ -1,5 +1,9 @@
 # Roadmap
 
+## Proteção premium nas proporções do original (27/10/2026)
+- [x] Compactar cabeçalho, escudo, ícones e textos do premium, preservando seis benefícios e layout original
+- [x] Verificar 320/360/375/390/412/430/1280px: duas colunas, seis benefícios legíveis sem transbordamento e expandir/recolher; altura em 390px reduzida de 245 para 197px, oito testes passaram e build OK. Aviso externo da UTMify não afetou a seção.
+
 ## Proteção premium compacta no mobile (27/10/2026)
 - [x] Manter duas colunas e três linhas no celular, reduzindo levemente ícones e espaçamentos sem alterar cores, textos ou original
 - [x] Conferir seção real em 320/360/375/390/412/430/1280px, seis benefícios sem transbordamento e expandir/recolher; oito testes passaram e build OK. Prévia reutiliza a mesma seção. Aviso de rede do Pixel UTMify externo não impediu o fluxo.
