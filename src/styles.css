@@ -43,6 +43,10 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-soft: var(--success-soft);
+  --color-protection-icon: var(--protection-icon);
+  --color-protection-soft: var(--protection-soft);
+  --color-protection-foreground: var(--protection-foreground);
+  --color-protection-check: var(--protection-check);
   --color-flash: var(--flash);
   --color-star: var(--star);
   --color-secure-soft: oklch(0.97 0.025 80);
@@ -103,6 +107,12 @@
   --success: oklch(0.55 0.13 158);
   --success-foreground: oklch(0.99 0 0);
   --success-soft: oklch(0.955 0.04 158);
+  --protection-icon: oklch(0.48 0.115 163);
+  --protection-soft: oklch(0.976 0.031 162);
+  --protection-foreground: oklch(0.2 0.035 280);
+  --protection-check: oklch(1 0 0);
+  --gradient-protection: linear-gradient(145deg, oklch(0.78 0.18 160), oklch(0.52 0.14 163));
+  --shadow-protection-emblem: 0 0 0 4px oklch(0.94 0.058 166);
 
   --star: oklch(0.78 0.16 74);
   --flash: oklch(0.7 0.19 52);
@@ -173,6 +183,10 @@
   --success: oklch(0.68 0.13 158);
   --success-foreground: oklch(0.17 0.01 260);
   --success-soft: oklch(0.3 0.05 158);
+  --protection-icon: oklch(0.78 0.13 163);
+  --protection-soft: oklch(0.29 0.043 162);
+  --protection-foreground: oklch(0.98 0.002 260);
+  --shadow-protection-emblem: 0 0 0 4px oklch(0.3 0.055 166);
   --star: oklch(0.82 0.15 74);
   --flash: oklch(0.72 0.18 52);
 
@@ -213,6 +227,12 @@
   .tnum {
     font-variant-numeric: tabular-nums;
   }
+}
+
+.premium-protection { container-type: inline-size; }
+.protection-emblem { background-image: var(--gradient-protection); box-shadow: var(--shadow-protection-emblem); }
+@container (min-width: 420px) {
+  .protection-benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @utility offer-gradient {

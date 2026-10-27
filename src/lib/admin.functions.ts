@@ -1,6 +1,7 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
 import { videosTitleSchema } from "@/lib/videos-title";
 import { productHeaderSchema } from "@/lib/product-header";
+import { customerProtectionSchema } from "@/lib/customer-protection";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export const adminOverview = createServerFn({ method: "GET" })
     const [{ data: products }, { data: orders }, { data: stores }] = await Promise.all([
       supabaseAdmin
         .from("products")
-        .select("id, slug, name, title, price, previous_price, stock, active, sort_order, store_id, reviews")
+        .select("id, slug, name, title, price, previous_price, stock, active, sort_order, store_id, reviews, protection")
         .order("sort_order", { ascending: true }),
       supabaseAdmin
         .from("orders")
@@ -45,6 +46,7 @@ export const adminOverview = createServerFn({ method: "GET" })
       })),
       products: (products ?? []).map((p) => ({
         ...p,
+        protection: p.protection as import("@/lib/product-types").Product["protection"],
         price: Number(p.price),
         previous_price: Number(p.previous_price),
         reviews: (Array.isArray(p.reviews) ? p.reviews : []) as Array<{ name: string; rating: number; date?: string; text: string; confirmed?: boolean; hidden?: boolean; photos?: string[]; avatar?: string | null }>,
@@ -168,6 +170,7 @@ const storeInput = z.object({
   footer_text: z.string().trim().max(1000).nullable(),
   policies: z.object({ privacy: z.string().max(30000), refund: z.string().max(30000), terms: z.string().max(30000), shipping: z.string().max(30000) }),
   checkout: z.object({
+    customer_protection: customerProtectionSchema.optional(),
     mobile_header_enabled: z.boolean().optional(),
     checkout_model: z.enum(["v1", "v2"]).optional().default("v1"),
     logo_url: z.string().trim().max(2000).nullish(),

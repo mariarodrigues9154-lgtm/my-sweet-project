@@ -262,6 +262,7 @@ export type Product = {
 };
 
 export type CheckoutSettings = {
+  customer_protection?: import("./customer-protection").CustomerProtectionSettings;
   /** Variante opcional do cabeçalho das páginas de produto, por loja. */
   mobile_header_enabled?: boolean;
   /** Formas de pagamento (ver lib/payment-methods). */

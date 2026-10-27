@@ -1,5 +1,6 @@
 import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
 import { PaymentMethodsFields } from "@/components/admin/PaymentMethodsFields";
+import { CustomerProtectionFields } from "@/components/admin/CustomerProtectionFields";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronUp, ImagePlus, Trash2 } from "lucide-react";
@@ -10,7 +11,7 @@ import { PopupManager } from "@/components/admin/PopupManager";
 import { uploadProductImage } from "@/lib/admin.functions";
 import { parseRatingInput, type StoreSettings } from "@/lib/product-types";
 
-type ProductChoice = { id: string; title: string; active: boolean };
+type ProductChoice = { id: string; title: string; active: boolean; protection?: import("@/lib/product-types").Product["protection"] };
 
 export type StoreDraft = StoreSettings & { active: boolean; is_default?: boolean };
 
@@ -95,6 +96,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
 
     <Group title="Cabeçalho das páginas de produto">
       <Toggle label="Ativar cabeçalho estilo mobile" checked={draft.checkout?.mobile_header_enabled === true} onChange={(value) => set("checkout", { ...draft.checkout, mobile_header_enabled: value })} />
+    </Group>
+
+    <Group title="Proteção do cliente">
+      <CustomerProtectionFields value={draft.checkout?.customer_protection} original={products.find((p) => p.protection)?.protection} onChange={(value) => set("checkout", { ...draft.checkout, customer_protection: value })} />
     </Group>
 
     <Group title="Favicon da Loja">
