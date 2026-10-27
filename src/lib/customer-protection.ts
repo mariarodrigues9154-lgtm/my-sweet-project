@@ -32,7 +32,7 @@ export const customerProtectionSchema = z.object({
 });
 
 export type CustomerProtectionSettings = z.infer<typeof customerProtectionSchema>;
-export type ResolvedCustomerProtection = Required<CustomerProtectionSettings>;
+export type ResolvedCustomerProtection = { [K in keyof CustomerProtectionSettings]-?: Exclude<CustomerProtectionSettings[K], undefined> };
 
 export function resolveCustomerProtection(value?: CustomerProtectionSettings | null): ResolvedCustomerProtection {
   const result = customerProtectionSchema.safeParse(value ?? {});
