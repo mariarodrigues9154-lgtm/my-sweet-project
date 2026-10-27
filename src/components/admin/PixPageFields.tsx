@@ -43,7 +43,7 @@ export function PixPageFields({ value, onChange }: { value?: PixPageSettings | u
           </label>
         ))}
       </div>
-      <p className="text-[11px] text-muted-foreground">Clique em salvar a loja para aplicar. O comprovante é opcional e nunca confirma o pagamento sozinho.</p>
+      <p className="text-[11px] text-muted-foreground">O bloco do WhatsApp só aparece com um número válido no campo acima (ou no WhatsApp da loja). Clique em salvar a loja para aplicar. O comprovante é opcional e nunca confirma o pagamento sozinho.</p>
     </div>
   );
 }
