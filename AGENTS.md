@@ -34,7 +34,7 @@
 - Protection settings/texts live in checkout.customer_protection with shared validation/rendering; original uses untouched product protection; why: isolate stores and preserve products.
 - Subdirectories may have their own `AGENTS.md`; read it before changing files there.
 - UTMify por loja em `store_utmify_settings` (token só no servidor); `syncUtmifyOrder` envia waiting_payment ao criar PIX e paid via `sendPurchaseForOrder`, com trava `orders.utmify_sent_status`; UTMs capturadas no navegador (`src/lib/utm-tracking.ts`) e salvas em `orders.tracking_params`; motivo: um envio por status, sem duplicar.
-- UTMify attempt diagnostics record store/order/status, attempt number, start/response UTC timestamps and duration without payloads or credentials; why: distinguish API delivery time from claim markers and phone notifications.
+- UTMify attempt logs: store/order/status, attempt, UTC start/response and duration, no payloads/credentials; why: measure real API delay.
 - Coupon chip/bar settings live per product in products.sections.coupon_promo; a product's own countdown duration gives one persisted deadline for all its timers (`useStoreCountdown`), else store checkout.offer_countdown; why: independent products, synced timers.
 - Coupon bar emphasis comes only from explicit highlight_text and secondary_text in the existing product configuration; legacy bar_text stays intact as secondary text without keyword inference; why: arbitrary editable emphasis with backward-compatible content.
 - Magnus Frete: settings per store + order_shipments UNIQUE(order_id); sent only from sendPurchaseForOrder; network errors become "incerto", never auto-retried; why: API not idempotent.
