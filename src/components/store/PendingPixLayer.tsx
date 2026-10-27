@@ -63,7 +63,7 @@ function useCopy() {
 /** Aviso flutuante + chat do pedido para recuperar o PIX depois de sair do checkout. */
 export function PendingPixLayer() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { orders, pending } = useStorePixOrders();
+  const { orders } = useStorePixOrders();
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [chat, setChat] = useState<{ open: boolean; token: string | null }>({ open: false, token: null });
   const { copied, copy } = useCopy();
