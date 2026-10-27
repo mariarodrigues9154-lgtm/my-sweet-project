@@ -57,3 +57,9 @@ export function resolvePixPage(value?: PixPageSettings | null): ResolvedPixPage 
   }
   return out as ResolvedPixPage;
 }
+
+/** Número válido para o bloco do WhatsApp: 10+ dígitos e não é placeholder de zeros. */
+export function isUsableWaNumber(value?: string | null): boolean {
+  const digits = (value ?? "").replace(/\D/g, "");
+  return digits.length >= 10 && !/^0+$/.test(digits);
+}

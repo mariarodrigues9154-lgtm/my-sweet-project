@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePixPage } from "./pix-page";
+import { isUsableWaNumber, resolvePixPage } from "./pix-page";
 
 describe("resolvePixPage", () => {
   it("começa com card, explicação, comprovante e Ver pedido ligados e aviso de dados seguros desligado", () => {
