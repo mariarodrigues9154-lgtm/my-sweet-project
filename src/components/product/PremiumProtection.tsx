@@ -19,7 +19,7 @@ export function PremiumProtection({ config }: { config: ResolvedCustomerProtecti
   const expanded = !config.collapsible || open;
   const header = <>
     <span className="protection-emblem grid size-12 shrink-0 place-items-center rounded-full text-protection-check">
-      <ShieldCheck className="!size-8" strokeWidth={2} aria-hidden="true" />
+      <ShieldCheck className="protection-emblem-icon size-8" strokeWidth={2.4} aria-hidden="true" />
     </span>
     <span className="min-w-0 flex-1">
       <span className="protection-title block break-words text-[18px] font-extrabold leading-tight text-protection-foreground">{config.title}</span>
