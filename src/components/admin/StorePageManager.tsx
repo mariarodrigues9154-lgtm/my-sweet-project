@@ -1,6 +1,7 @@
 import { ExitOfferFields } from "@/components/admin/ExitOfferFields";
 import { PaymentMethodsFields } from "@/components/admin/PaymentMethodsFields";
 import { CustomerProtectionFields } from "@/components/admin/CustomerProtectionFields";
+import { PixPageFields } from "@/components/admin/PixPageFields";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronUp, ImagePlus, Trash2 } from "lucide-react";
@@ -100,6 +101,10 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
 
     <Group title="Proteção do cliente">
       <CustomerProtectionFields value={draft.checkout?.customer_protection} original={products.find((p) => p.protection)?.protection} onChange={(value) => set("checkout", { ...draft.checkout, customer_protection: value })} />
+    </Group>
+
+    <Group title="Personalização da Página Pix">
+      <PixPageFields value={draft.checkout?.pix_page} onChange={(value) => set("checkout", { ...draft.checkout, pix_page: value })} />
     </Group>
 
     <Group title="Favicon da Loja">
