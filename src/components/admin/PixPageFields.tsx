@@ -3,6 +3,7 @@ import { PIX_PAGE_DEFAULTS, resolvePixPage, type PixPageSettings } from "@/lib/p
 const toggles = [
   ["show_how_to", "Explicação “Como fazer pagamentos com PIX?”"],
   ["show_info_card", "Card com três informações"],
+  ["show_whatsapp", "Bloco de suporte “Dúvidas?” no WhatsApp"],
   ["show_proof", "Bloco “Enviar comprovante”"],
   ["show_view_order", "Botão “Ver pedido”"],
   ["show_secure_notice", "Aviso “Seus dados estão seguros e criptografados”"],
@@ -14,6 +15,10 @@ const texts = [
   ["info_1", "Informação 1 (e-mail)", true],
   ["info_2", "Informação 2 (processamento)", true],
   ["info_3", "Informação 3 (rastreio)", true],
+  ["wa_title", "Título do WhatsApp (Dúvidas?)", false],
+  ["wa_text", "Texto do WhatsApp", true],
+  ["wa_button", "Texto do botão do WhatsApp", false],
+  ["wa_number", "Número do WhatsApp do suporte (ex.: 5585999999999)", false],
   ["proof_title", "Título “Já pagou o Pix?”", false],
   ["proof_text", "Texto auxiliar do comprovante", true],
 ] as const;
@@ -43,7 +48,7 @@ export function PixPageFields({ value, onChange }: { value?: PixPageSettings | u
           </label>
         ))}
       </div>
-      <p className="text-[11px] text-muted-foreground">Clique em salvar a loja para aplicar. O comprovante é opcional e nunca confirma o pagamento sozinho.</p>
+      <p className="text-[11px] text-muted-foreground">O bloco do WhatsApp só aparece com um número válido no campo acima (ou no WhatsApp da loja). Clique em salvar a loja para aplicar. O comprovante é opcional e nunca confirma o pagamento sozinho.</p>
     </div>
   );
 }

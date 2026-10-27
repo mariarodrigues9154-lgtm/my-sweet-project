@@ -4,8 +4,9 @@ import { toast } from "sonner";
 import { PixQr } from "@/components/checkout/PixQr";
 import { ChevronLeft, Clock, Copy, Check, QrCode, ShieldCheck, Mail, CircleCheck, Package, Upload } from "lucide-react";
 import { PixIcon } from "@/components/store/VerifiedBadge";
+import { WhatsAppIcon } from "@/components/store/WhatsAppIcon";
 import { brl, clock } from "@/lib/format";
-import { resolvePixPage, type PixPageSettings } from "@/lib/pix-page";
+import { resolvePixPage, isUsableWaNumber, type PixPageSettings } from "@/lib/pix-page";
 import { uploadPaymentProof } from "@/lib/payment-proof.functions";
 
 type Props = {
@@ -19,11 +20,16 @@ type Props = {
   onBack: () => void;
   onNew: () => void;
   settings?: PixPageSettings | null | undefined;
+  /** WhatsApp de suporte da loja (usado quando o bloco não tem número próprio). */
+  whatsapp?: string | null | undefined;
 };
 
 /** Tela final do PIX: usa somente os dados reais da cobrança salva no pedido. */
-export function PixScreen({ total, orderNumber, productTitle, qr, code, left, expiresAt, onBack, onNew, settings }: Props) {
+export function PixScreen({ total, orderNumber, productTitle, qr, code, left, expiresAt, onBack, onNew, settings, whatsapp }: Props) {
   const page = resolvePixPage(settings);
+  const waDigits = ((page.wa_number || "").trim() || (whatsapp ?? "")).replace(/\D/g, "");
+  const waOk = isUsableWaNumber(page.wa_number) || (!page.wa_number?.trim() && isUsableWaNumber(whatsapp));
+  const waLink = `https://wa.me/${waDigits}?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre o pagamento do meu pedido ${orderNumber}.`)}`;
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [showOrder, setShowOrder] = useState(false);
@@ -149,6 +155,26 @@ export function PixScreen({ total, orderNumber, productTitle, qr, code, left, ex
               </li>
             ))}
           </ul>
+        )}
+
+        {page.show_whatsapp && waOk && (
+          <div className="mt-4 flex items-center gap-2.5 rounded-2xl border border-success/25 bg-success-soft p-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-success/15 text-success">
+              <WhatsAppIcon size={24} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-extrabold leading-tight">{page.wa_title}</p>
+              <p className="mt-1 text-[11px] leading-[1.35] text-foreground/70">{page.wa_text}</p>
+            </div>
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-whatsapp px-3 text-[12.5px] font-bold text-whatsapp-foreground shadow-sm transition-opacity active:opacity-90"
+            >
+              <WhatsAppIcon size={16} /> {page.wa_button}
+            </a>
+          </div>
         )}
 
         {page.show_secure_notice && (
