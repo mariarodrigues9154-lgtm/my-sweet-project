@@ -7,7 +7,7 @@ import { brl } from "@/lib/format";
 import { SHIPPING, getEstimatedDeliveryRange } from "@/lib/shipping";
 import type { Product } from "@/lib/product-types";
 
-export function DeliveryCard({ product, protectionSettings }: { product: Product; protectionSettings?: CustomerProtectionSettings }) {
+export function DeliveryCard({ product, protectionSettings }: { product: Product; protectionSettings?: CustomerProtectionSettings | undefined }) {
   const { protection } = product;
   const [open, setOpen] = useState(false);
   // Data calculada só no navegador para não divergir entre servidor e cliente.

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { ChevronRight, Headset, LockKeyhole, PackageOpen, ShieldCheck } from "lucide-react";
+import { ChevronRight, Headset, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { protectionBenefitKeys, type ResolvedCustomerProtection } from "@/lib/customer-protection";
 

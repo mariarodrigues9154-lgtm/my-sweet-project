@@ -3,7 +3,7 @@ import { resolveCustomerProtection, type CustomerProtectionSettings } from "@/li
 import { OriginalProtection } from "./OriginalProtection";
 import { PremiumProtection } from "./PremiumProtection";
 
-export function CustomerProtection({ protection, settings }: { protection: Product["protection"]; settings?: CustomerProtectionSettings }) {
+export function CustomerProtection({ protection, settings }: { protection: Product["protection"]; settings?: CustomerProtectionSettings | undefined }) {
   const config = resolveCustomerProtection(settings);
   if (!config.enabled) return null;
   return config.style === "premium" ? <PremiumProtection config={config} /> : <OriginalProtection protection={protection} />;

@@ -2,7 +2,7 @@ import { CustomerProtection } from "@/components/product/CustomerProtection";
 import { protectionBenefitKeys, resolveCustomerProtection, type CustomerProtectionSettings } from "@/lib/customer-protection";
 import type { Product } from "@/lib/product-types";
 
-export function CustomerProtectionFields({ value, onChange, original }: { value?: CustomerProtectionSettings; onChange: (value: CustomerProtectionSettings) => void; original?: Product["protection"] }) {
+export function CustomerProtectionFields({ value, onChange, original }: { value?: CustomerProtectionSettings | undefined; onChange: (value: CustomerProtectionSettings) => void; original?: Product["protection"] | undefined }) {
   const config = resolveCustomerProtection(value);
   const set = (patch: CustomerProtectionSettings) => onChange({ ...config, ...patch });
   const cls = "w-full rounded-lg border border-input bg-card px-3 py-2.5 text-[13px] outline-none focus:border-primary";
