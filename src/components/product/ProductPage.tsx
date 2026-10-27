@@ -62,7 +62,7 @@ export function ProductPage({ product, store }: { product: Product; store: Store
         <Gallery media={product.media} title={product.name} />
         <OfferBlock product={product} store={store} />
         <ProductHeadline product={product} />
-        <DeliveryCard product={product} />
+        <DeliveryCard product={product} protectionSettings={store.checkout?.customer_protection} />
         <div className="h-3 bg-card" />
         <div className="defer-render">
         <CreatorVideos videos={product.creator_videos} sections={product.sections ?? {}} />

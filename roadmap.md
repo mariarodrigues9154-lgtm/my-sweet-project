@@ -1,5 +1,9 @@
 # Roadmap
 
+## Proteção do cliente premium (27/10/2026)
+- [x] Adicionar configuração por loja, oito textos independentes, prévia real do original e novo visual sem alterar produtos
+- [x] Validar 23 testes; salvar/reabrir oito textos no painel autenticado, ler no produto, expandir/recolher e desativar preservando frete; seis ícones em 320/390/430/1280px e duas colunas no desktop; configurações anteriores restauradas; build OK. Dois eventos genéricos de rede durante navegação não impediram o fluxo.
+
 ## Cabeçalho opcional por loja e produto (27/10/2026)
 - [x] Adicionar variante compacta e configurações independentes, com apenas voltar à vitrine clicável
 - [x] Testar seis regras, salvamento autenticado da loja e três modos do produto, texto e larguras 320/360/375/390/412/430px; seta abre a vitrine da própria loja e escolhas anteriores restauradas

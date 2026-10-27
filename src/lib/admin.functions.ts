@@ -1,6 +1,7 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
 import { videosTitleSchema } from "@/lib/videos-title";
 import { productHeaderSchema } from "@/lib/product-header";
+import { customerProtectionSchema } from "@/lib/customer-protection";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -168,6 +169,7 @@ const storeInput = z.object({
   footer_text: z.string().trim().max(1000).nullable(),
   policies: z.object({ privacy: z.string().max(30000), refund: z.string().max(30000), terms: z.string().max(30000), shipping: z.string().max(30000) }),
   checkout: z.object({
+    customer_protection: customerProtectionSchema.optional(),
     mobile_header_enabled: z.boolean().optional(),
     checkout_model: z.enum(["v1", "v2"]).optional().default("v1"),
     logo_url: z.string().trim().max(2000).nullish(),
@@ -323,7 +325,7 @@ export const getAdminStore = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: store }, { data: products }] = await Promise.all([
       supabaseAdmin.from("store_settings").select(ADMIN_STORE_COLUMNS).eq("id", data.id).maybeSingle(),
-      supabaseAdmin.from("products").select("id, title, active").eq("store_id", data.id).order("sort_order"),
+      supabaseAdmin.from("products").select("id, title, active, protection").eq("store_id", data.id).order("sort_order"),
     ]);
     if (!store) throw new Error("Loja não encontrada.");
     return {
@@ -334,7 +336,7 @@ export const getAdminStore = createServerFn({ method: "GET" })
         checkout: (store.checkout ?? {}) as import("@/lib/product-types").CheckoutSettings,
         ai_support: (store.ai_support ?? {}) as import("@/lib/product-types").StoreAiSupport,
       },
-      products: products ?? [],
+      products: (products ?? []).map((p) => ({ ...p, protection: p.protection as import("@/lib/product-types").Product["protection"] })),
     };
   });
 
