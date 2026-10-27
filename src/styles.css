@@ -231,8 +231,13 @@
 
 .premium-protection { container-type: inline-size; }
 .protection-emblem { background-image: var(--gradient-protection); box-shadow: var(--shadow-protection-emblem); }
-@container (min-width: 420px) {
-  .protection-benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.protection-benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@container (max-width: 419px) {
+  .protection-benefits { column-gap: 12px; row-gap: 14px; margin-top: 12px; padding-top: 12px; }
+  .protection-benefit { gap: 7px; }
+  .protection-benefit-icon { width: 34px; height: 34px; border-radius: 11px; }
+  .protection-benefit-icon svg { width: 23px; height: 23px; }
+  .protection-benefit-text { font-size: 12px; line-height: 1.4; }
 }
 
 @utility offer-gradient {
