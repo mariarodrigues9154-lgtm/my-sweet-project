@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Store identity lives in `store_settings`; product content/social proof stays in structured product JSON fields; why: one reusable layout for every product.
+- Product headers resolve display overrides against store checkout flags in StoreHeader; identity and content stay in existing JSON; why: reuse pages.
 - Creator verification keeps the existing enable flag and an optional style in each creator_videos JSON item, resolved by one shared badge for both card layouts; why: preserve legacy appearance and consistent per-creator editing without new tables.
 - The public store hub is `/loja`; product profile “Visitar” links always use this internal route.
 
