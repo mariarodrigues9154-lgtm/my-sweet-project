@@ -5,6 +5,7 @@ import { ArrowRight, ChevronRight, Play, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { CreatorVerification } from "@/components/product/CreatorVerification";
+import { StreamVideo } from "@/components/product/StreamVideo";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
 import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
 
