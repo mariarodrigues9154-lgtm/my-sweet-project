@@ -7,6 +7,12 @@ export const isHlsUrl = (url?: string | null) => !!url && /\.m3u8(\?|#|$)/i.test
 export const pandaThumb = (url?: string | null) =>
   url && isHlsUrl(url) && /pandavideo\.com/i.test(url) ? url.replace(/[^/]+\.m3u8([?#].*)?$/i, "thumbnail.jpg") : null;
 
+/** Arquivo de vídeo direto (480p) no CDN do Panda, usado só se o streaming falhar. */
+const pandaDirect = (url: string) => {
+  const m = url.match(/^https:\/\/b-(vz-[\w-]+)\.tv\.pandavideo\.com\.br\/([\w-]+)\/[^/]+\.m3u8/i);
+  return m ? `https://cdn.pandavideo.com/${m[1]}/${m[2]}/480p/video.m4s` : null;
+};
+
 type Props = Omit<VideoHTMLAttributes<HTMLVideoElement>, "src"> & { src: string };
 
 /**
@@ -37,10 +43,17 @@ export const StreamVideo = forwardRef<HTMLVideoElement, Props>(function StreamVi
     let instance: { destroy: () => void } | null = null;
     void import("hls.js").then(({ default: Hls }) => {
       if (destroyed) return;
-      if (!Hls.isSupported()) { v.src = src; kick(); return; }
+      const direct = pandaDirect(src);
+      const fallback = () => { instance?.destroy(); instance = null; v.src = direct ?? src; v.load(); kick(); };
+      if (!Hls.isSupported()) { fallback(); return; }
       const h = new Hls({ capLevelToPlayerSize: true, maxBufferLength: 10 });
       instance = h;
       h.on(Hls.Events.MANIFEST_PARSED, kick);
+      h.on(Hls.Events.ERROR, (_e, data) => {
+        if (!data.fatal) return;
+        console.warn("[videos] streaming falhou, usando arquivo direto:", data.details);
+        fallback();
+      });
       h.loadSource(src);
       h.attachMedia(v);
     });
