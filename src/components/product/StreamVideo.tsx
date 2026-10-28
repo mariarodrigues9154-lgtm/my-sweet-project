@@ -44,13 +44,22 @@ export const StreamVideo = forwardRef<HTMLVideoElement, Props>(function StreamVi
     void import("hls.js").then(({ default: Hls }) => {
       if (destroyed) return;
       const direct = pandaDirect(src);
-      const fallback = () => { instance?.destroy(); instance = null; v.src = direct ?? src; v.load(); kick(); };
+      let fellBack = false;
+      const fallback = () => {
+        if (fellBack) return;
+        fellBack = true;
+        instance?.destroy(); instance = null;
+        v.src = direct ?? src; v.load(); kick();
+      };
       if (!Hls.isSupported()) { fallback(); return; }
-      const h = new Hls({ capLevelToPlayerSize: true, maxBufferLength: 10 });
+      const h = new Hls({ capLevelToPlayerSize: true, maxBufferLength: 10, startLevel: 0 });
       instance = h;
+      let recovered = false;
       h.on(Hls.Events.MANIFEST_PARSED, kick);
       h.on(Hls.Events.ERROR, (_e, data) => {
         if (!data.fatal) return;
+        if (!recovered && data.type === Hls.ErrorTypes.MEDIA_ERROR) { recovered = true; h.recoverMediaError(); return; }
+        if (!recovered && data.type === Hls.ErrorTypes.NETWORK_ERROR) { recovered = true; h.startLoad(); return; }
         console.warn("[videos] streaming falhou, usando arquivo direto:", data.details);
         fallback();
       });
