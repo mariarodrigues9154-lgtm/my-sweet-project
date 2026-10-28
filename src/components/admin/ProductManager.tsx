@@ -37,6 +37,7 @@ import {
   finalizeMediaUpload,
 } from "@/lib/admin.functions";
 import { IMAGE_ACCEPT, VIDEO_ACCEPT, uploadMedia } from "@/lib/media-upload";
+import { StreamVideo, pandaThumb } from "@/components/product/StreamVideo";
 
 export type AdminProduct = {
   id: string;
@@ -1072,7 +1073,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
               </div>
               <div className="grid grid-cols-[80px_minmax(0,1fr)] gap-2">
                 <div className="aspect-[9/16] overflow-hidden rounded-lg bg-surface">
-                  {video.video ? <video src={video.video} poster={video.thumb || undefined} preload="metadata" muted playsInline className="size-full object-cover" /> : video.thumb ? <img src={video.thumb} alt="" className="size-full object-cover" /> : null}
+                  {video.video ? <StreamVideo src={video.video} poster={video.thumb || pandaThumb(video.video) || undefined} preload="metadata" muted playsInline className="size-full object-cover" /> : video.thumb ? <img src={video.thumb} alt="" className="size-full object-cover" /> : null}
                 </div>
                 <div className="space-y-2">
                   <UploadBtn label={video.video ? "Substituir vídeo" : "Enviar vídeo"} accept={VIDEO_ACCEPT} onFile={(f) => uploadOne(f, (url) => upd({ video: url }))} />
