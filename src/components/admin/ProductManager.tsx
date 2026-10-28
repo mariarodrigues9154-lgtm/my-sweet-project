@@ -1076,7 +1076,8 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                 </div>
                 <div className="space-y-2">
                   <UploadBtn label={video.video ? "Substituir vídeo" : "Enviar vídeo"} accept={VIDEO_ACCEPT} onFile={(f) => uploadOne(f, (url) => upd({ video: url }))} />
-                  <p className="text-[11px] text-muted-foreground">Prefira MP4 (H.264) ou WebM, até 100 MB. Vídeos MOV do iPhone podem não tocar em celulares Android.</p>
+                  <input value={video.video ?? ""} placeholder="ou cole o link do Panda Vídeo (HLS .m3u8)" onChange={(e) => upd({ video: e.target.value.trim() || null })} className={inputCls} />
+                  <p className="text-[11px] text-muted-foreground">Cole o link da aba HLS do Panda Vídeo, ou envie MP4/WebM até 100 MB.</p>
                   <UploadBtn label={video.thumb ? "Substituir capa" : "Enviar capa (opcional)"} accept={IMAGE_ACCEPT} onFile={(f) => uploadOne(f, (url) => upd({ thumb: url }))} />
                   <div className="flex items-center gap-2">
                     {video.avatar && <img src={video.avatar} alt="" className="size-8 rounded-full object-cover" />}

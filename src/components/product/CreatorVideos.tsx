@@ -5,6 +5,7 @@ import { ArrowRight, ChevronRight, Play, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { CreatorVerification } from "@/components/product/CreatorVerification";
+import { StreamVideo } from "@/components/product/StreamVideo";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
 import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
 
@@ -159,7 +160,7 @@ export function CreatorVideos({ videos, sections }: { videos: CreatorVideo[]; se
           className="fixed inset-0 z-[60] grid place-items-center bg-foreground/80 p-4 animate-in fade-in"
         >
           <div onClick={(e) => e.stopPropagation()} className="relative">
-            <video
+            <StreamVideo
               key={current.video}
               src={current.video}
               poster={current.thumb || undefined}
@@ -213,7 +214,7 @@ function Preview({ video }: { video: CreatorVideo }) {
       {useThumb ? (
         <img src={sizedImage(video.thumb, 480)} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
       ) : video.video && near && !previewFailed ? (
-        <video
+        <StreamVideo
           src={video.video}
           preload="metadata"
           muted
@@ -300,7 +301,7 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
     <span ref={wrap} className="absolute inset-0 block">
       {video.thumb && <img src={sizedImage(video.thumb, 480)} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
       {near && (
-        <video
+        <StreamVideo
           ref={ref}
           src={video.video}
           poster={video.thumb ? sizedImage(video.thumb, 480) : undefined}
