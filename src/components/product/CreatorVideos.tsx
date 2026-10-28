@@ -5,7 +5,7 @@ import { ArrowRight, ChevronRight, Play, X } from "lucide-react";
 
 import { Stars } from "@/components/store/Stars";
 import { CreatorVerification } from "@/components/product/CreatorVerification";
-import { StreamVideo } from "@/components/product/StreamVideo";
+import { StreamVideo, pandaThumb } from "@/components/product/StreamVideo";
 import type { CreatorVideo, ProductSections } from "@/lib/product-types";
 import { resolveVideosTitle, type VideosTitleIcon } from "@/lib/videos-title";
 
@@ -297,14 +297,15 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
   };
 
   if (!video.video || failed) return <Preview video={video} />;
+  const cover = video.thumb ? sizedImage(video.thumb, 480) : pandaThumb(video.video) ?? undefined;
   return (
     <span ref={wrap} className="absolute inset-0 block">
-      {video.thumb && <img src={sizedImage(video.thumb, 480)} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
+      {cover && <img src={cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
       {near && (
         <StreamVideo
           ref={ref}
           src={video.video}
-          poster={video.thumb ? sizedImage(video.thumb, 480) : undefined}
+          poster={cover}
           muted
           loop
           playsInline
@@ -322,7 +323,7 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
           className="pointer-events-none absolute inset-0 size-full object-cover"
         />
       )}
-      {!ready && !video.thumb && (
+      {!ready && !cover && (
         <span className="absolute inset-0 grid place-items-center">
           <span className="size-7 animate-spin rounded-full border-2 border-background/40 border-t-background" />
         </span>
