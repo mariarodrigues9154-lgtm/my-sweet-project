@@ -296,8 +296,14 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
     }
   };
 
-  if (!video.video || failed) return <Preview video={video} />;
   const cover = video.thumb ? sizedImage(video.thumb, 480) : pandaThumb(video.video) ?? undefined;
+  if (failed && cover) return (
+    <span className="absolute inset-0 block">
+      <img src={cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />
+      <PlayIcon />
+    </span>
+  );
+  if (!video.video || failed) return <Preview video={video} />;
   return (
     <span ref={wrap} className="absolute inset-0 block">
       {cover && <img src={cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
