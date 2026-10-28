@@ -208,11 +208,12 @@ function Preview({ video }: { video: CreatorVideo }) {
     return () => io.disconnect();
   }, [near]);
 
-  const useThumb = video.thumb && !thumbFailed;
+  const thumbSrc = video.thumb ? sizedImage(video.thumb, 480) : pandaThumb(video.video);
+  const useThumb = thumbSrc && !thumbFailed;
   return (
     <span ref={ref} className="absolute inset-0 block">
       {useThumb ? (
-        <img src={sizedImage(video.thumb, 480)} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
+        <img src={thumbSrc} alt={video.title || `Vídeo de ${video.handle}`} loading="lazy" decoding="async" onError={() => setThumbFailed(true)} className="size-full object-cover" />
       ) : video.video && near && !previewFailed ? (
         <StreamVideo
           src={video.video}
@@ -296,8 +297,14 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
     }
   };
 
-  if (!video.video || failed) return <Preview video={video} />;
   const cover = video.thumb ? sizedImage(video.thumb, 480) : pandaThumb(video.video) ?? undefined;
+  if (failed && cover) return (
+    <span className="absolute inset-0 block">
+      <img src={cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />
+      <PlayIcon />
+    </span>
+  );
+  if (!video.video || failed) return <Preview video={video} />;
   return (
     <span ref={wrap} className="absolute inset-0 block">
       {cover && <img src={cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
