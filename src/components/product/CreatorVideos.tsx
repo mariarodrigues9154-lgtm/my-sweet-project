@@ -323,7 +323,7 @@ function AutoVideo({ video, mode }: { video: CreatorVideo; mode: "auto" | "selec
           className="pointer-events-none absolute inset-0 size-full object-cover"
         />
       )}
-      {!ready && !video.thumb && (
+      {!ready && !cover && (
         <span className="absolute inset-0 grid place-items-center">
           <span className="size-7 animate-spin rounded-full border-2 border-background/40 border-t-background" />
         </span>
