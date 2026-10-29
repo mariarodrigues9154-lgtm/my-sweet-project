@@ -26,9 +26,13 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [testPhone, setTestPhone] = useState("");
   const [testKind, setTestKind] = useState<"pending" | "paid">("pending");
+  const [testMessage, setTestMessage] = useState("Olá! Esta é uma mensagem de teste da integração WhatsApp.");
+  const [plugsendTested, setPlugsendTested] = useState(false);
   const checkConn = useServerFn(testWhatsappConnection);
   const [conn, setConn] = useState<{ connected: boolean | null; message: string } | null>(null);
   const [busy, setBusy] = useState("");
+
+  useEffect(() => { setPlugsendTested(false); setConn(null); }, [storeId, provider, secrets]);
 
   useEffect(() => {
     if (!data) return;
@@ -44,6 +48,7 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   );
 
   async function onSave() {
+    setPlugsendTested(false);
     setBusy("save");
     try {
       const r = await save({ data: { store_id: storeId, enabled, provider, sender, message, delays, max_reminders: max, public_data: pub, secrets: secrets as never } });
@@ -55,7 +60,12 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   }
   async function onTest() {
     setBusy("test");
-    try { const r = await test({ data: { store_id: storeId, phone: testPhone, kind: testKind } }); r.ok ? toast.success(r.message) : toast.error(r.message); }
+    setPlugsendTested(false);
+    try {
+      const r = await test({ data: { store_id: storeId, phone: testPhone, kind: testKind, ...(provider === "plugsend" ? { message: testMessage } : {}) } });
+      if (r.ok) { toast.success(r.message); if (provider === "plugsend") setPlugsendTested(true); }
+      else toast.error(r.message);
+    } catch { toast.error("Não foi possível enviar a mensagem."); }
     finally { setBusy(""); }
   }
 
@@ -120,12 +130,21 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
           <p className="text-[11px] text-muted-foreground sm:col-span-2">O token fica salvo só no servidor e nunca aparece na página da loja. O envio usa a instância já conectada na sua conta PlugSend.</p>
         </>}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+      {provider === "plugsend" ? <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <Field label="Número para teste" value={testPhone} placeholder="(94) 99999-9999" onChange={setTestPhone} />
+        <label className="grid gap-1 text-[11.5px] font-semibold">Mensagem para teste
+          <textarea rows={3} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={testMessage} onChange={(e) => setTestMessage(e.target.value)} />
+        </label>
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+          <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone.trim() || !testMessage.trim() || data?.settings.provider !== "plugsend" || !data?.settings.secrets_set["plugsend_token"] || !!secrets["plugsend_token"]?.trim()}>{busy === "test" ? <><Loader2 className="animate-spin" />Enviando...</> : "ENVIAR MENSAGEM DE TESTE"}</Button>
+          <span className="text-[12px]">Status da integração: {plugsendTested ? "🟢 Testada com sucesso" : "não testada"}</span>
+        </div>
+      </div> : <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
         <span className="font-bold">Status do WhatsApp:</span>
         <span>{!conn ? "não verificado" : conn.connected === true ? "🟢 Conectado" : conn.connected === false ? "🔴 Desconectado" : "—"}</span>
         <Button size="sm" variant="outline" onClick={onConn} disabled={!!busy}>{busy === "conn" ? <Loader2 className="animate-spin" /> : "Testar conexão"}</Button>
         {conn && <span className="text-muted-foreground">{conn.message}</span>}
-      </div>
+      </div>}
       {provider === "meta" && <p className="mt-2 text-[11px] text-muted-foreground">Na API oficial a mensagem enviada é o modelo aprovado pela Meta; o texto abaixo é usado nas APIs Z-API/Evolution e como referência.</p>}
 
       <label className="mt-4 grid gap-1 text-[11.5px] font-semibold">Mensagem automática
@@ -143,9 +162,9 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
 
       <div className="mt-4 flex flex-wrap items-end gap-2">
         <Button onClick={onSave} disabled={!!busy}>{busy === "save" ? <Loader2 className="animate-spin" /> : "Salvar"}</Button>
-        <div className="flex-1 min-w-[180px]"><Field label="Testar envio para o número" value={testPhone} placeholder="(85) 99999-9999" onChange={setTestPhone} /></div>
+        {provider !== "plugsend" && <><div className="flex-1 min-w-[180px]"><Field label="Testar envio para o número" value={testPhone} placeholder="(85) 99999-9999" onChange={setTestPhone} /></div>
         <select className="rounded-lg border border-border bg-background px-3 py-2 text-[12px]" value={testKind} onChange={(e) => setTestKind(e.target.value as never)}><option value="pending">PIX pendente</option><option value="paid">Pedido pago</option></select>
-        <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone}>{busy === "test" ? <Loader2 className="animate-spin" /> : "Enviar teste"}</Button>
+        <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone}>{busy === "test" ? <Loader2 className="animate-spin" /> : "Enviar teste"}</Button></>}
       </div>
 
       <h3 className="mt-5 text-[13px] font-extrabold">Histórico de mensagens</h3>
