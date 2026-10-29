@@ -1,9 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { economyBannerSchema, economyBannerText } from "./economy-banner";
+import { economyBannerSchema, economyBannerText, toggleBold, editBold } from "./economy-banner";
 
 const clean = (s: string | null) => s?.replace(/\u00a0/g, " ");
 
 describe("faixa Economize", () => {
+  it("destaca separadamente as duas economias", () => {
+    const text = "Leve 1 e economize R$ 38 | Leve 2 e economize R$ 92";
+    const a = text.indexOf("economize R$ 38"), b = text.indexOf("economize R$ 92");
+    const ranges = toggleBold(toggleBold([], a, a + 15, text.length), b, b + 15, text.length);
+    expect(ranges.map(r => text.slice(r.start, r.end))).toEqual(["economize R$ 38", "economize R$ 92"]);
+  });
+  it("remove só o destaque selecionado", () => {
+    expect(toggleBold([{ start: 8, end: 23 }, { start: 35, end: 50 }], 8, 23, 50)).toEqual([{ start: 35, end: 50 }]);
+  });
+  it("salva pulsação e alvo junto com negritos", () => {
+    const settings = { mode: "manual", text: "Economize", bold: [{ start: 0, end: 9 }], pulse: true, pulse_target: "bold" };
+    expect(economyBannerSchema.parse(JSON.parse(JSON.stringify(settings)))).toEqual(settings);
+  });
+  it("produtos existentes não ativam pulsação", () => {
+    expect(economyBannerSchema.parse({ text: "Oferta" })?.pulse).toBeUndefined();
+  });
+  it("editar antes do destaque preserva palavras destacadas", () => {
+    expect(editBold([{ start: 4, end: 12 }], "Oi, economize", "Olá! Oi, economize")).toEqual([{ start: 9, end: 17 }]);
+  });
   it("automático calcula R$ 38,00 com 147 e 109", () => {
     expect(clean(economyBannerText(109, 147))).toBe("Economize R$ 38,00");
   });
