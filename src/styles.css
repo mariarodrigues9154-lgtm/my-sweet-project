@@ -306,6 +306,12 @@
   animation: today-dot 1.8s ease-out infinite;
 }
 @keyframes today-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@utility economy-pulse {
+  animation: economy-pulse 2.8s ease-in-out infinite;
+  transform-origin: center;
+  @media (prefers-reduced-motion: reduce) { animation: none; }
+}
+@keyframes economy-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
 /* Selo WhatsApp — pulso suave opcional (só transform/box-shadow, sem layout shift) */
 @utility wa-pulse {
   animation: wa-pulse 2.4s ease-in-out infinite;
