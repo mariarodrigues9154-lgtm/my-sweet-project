@@ -394,6 +394,10 @@ export const createPixCharge = createServerFn({ method: "POST" })
       return { ...notConfigured, configured: true as const, provider: "westpay", retry_blocked: true, error: "A geração do seu PIX ainda precisa ser confirmada pela WestPay. Não faça outro pagamento antes dessa confirmação." };
     }
 
+    if (order.payment_provider === "venuspay" && !order.transaction_id && order.provider_status === "venuspay_uncertain") {
+      return { ...notConfigured, configured: true as const, provider: "venuspay", retry_blocked: true, error: "A geração do seu PIX ainda precisa ser confirmada pela VenusPay. Não faça outro pagamento antes dessa confirmação." };
+    }
+
     // Se a cobrança já existe, devolvemos a mesma — sem duplicar no provedor.
     const saved = (order.payment ?? {}) as { qr_code?: string; copy_paste?: string; expires_in?: number; provider?: string };
     if (order.transaction_id && (saved.qr_code || saved.copy_paste)) {
@@ -463,7 +467,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       .update({ provider_status: "creating", updated_at: new Date().toISOString(), ...(row.provider === "westpay" ? { payment_provider: "westpay" } : {}) } as never)
       .eq("id", order.id)
       .is("transaction_id", null)
-      .or(row.provider === "westpay" ? "provider_status.is.null,and(provider_status.neq.creating,provider_status.neq.westpay_uncertain)" : `provider_status.is.null,provider_status.neq.creating,updated_at.lt.${staleIso}`)
+      .or(row.provider === "westpay" ? "provider_status.is.null,and(provider_status.neq.creating,provider_status.neq.westpay_uncertain)" : row.provider === "venuspay" ? `provider_status.is.null,and(provider_status.neq.venuspay_uncertain,or(provider_status.neq.creating,updated_at.lt.${staleIso}))` : `provider_status.is.null,provider_status.neq.creating,updated_at.lt.${staleIso}`)
       .select("id");
     if (!locked || locked.length === 0) {
       return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay", error: "Seu PIX já está sendo gerado. Aguarde alguns segundos." };
@@ -476,7 +480,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
       checkoutUrl = `${origin}/pagamento`;
-      if (origin.startsWith("https://")) postbackUrl = row.provider === "westpay" ? `${origin}/api/public/webhooks/westpay` : row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "freepay" ? `${origin}/api/public/webhooks/freepay` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : row.provider === "invictuspay" ? `${origin}/api/public/webhooks/invictuspay` : row.provider === "codefy" ? `${origin}/api/public/webhooks/codefy` : row.provider === "umbrellapag" ? `${origin}/api/public/webhooks/umbrellapag` : `${origin}/api/public/pagamentos/webhook`;
+      if (origin.startsWith("https://")) postbackUrl = row.provider === "venuspay" ? `${origin}/api/public/webhooks/venuspay` : row.provider === "westpay" ? `${origin}/api/public/webhooks/westpay` : row.provider === "wappi" ? `${origin}/api/public/webhooks/wappi` : row.provider === "freepay" ? `${origin}/api/public/webhooks/freepay` : row.provider === "pinpay" ? `${origin}/api/public/webhooks/pinpay` : row.provider === "blackcat" ? `${origin}/api/public/webhooks/blackcat` : row.provider === "invictuspay" ? `${origin}/api/public/webhooks/invictuspay` : row.provider === "codefy" ? `${origin}/api/public/webhooks/codefy` : row.provider === "umbrellapag" ? `${origin}/api/public/webhooks/umbrellapag` : `${origin}/api/public/pagamentos/webhook`;
     } catch {
       postbackUrl = undefined;
     }
@@ -528,7 +532,9 @@ export const createPixCharge = createServerFn({ method: "POST" })
       // para que um novo clique imediato não gere um segundo PIX.
       if (!charge.uncertain) await release();
       else if (row.provider === "westpay") await supabaseAdmin.from("orders").update({ provider_status: "westpay_uncertain" } as never).eq("id", order.id).eq("provider_status", "creating");
-      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay" && Boolean(charge.uncertain), error: charge.error };
+      // VenusPay has no idempotency key or lookup by reference: never auto-retry an ambiguous POST.
+      else if (row.provider === "venuspay") await supabaseAdmin.from("orders").update({ provider_status: "venuspay_uncertain", payment_provider: "venuspay" } as never).eq("id", order.id).eq("provider_status", "creating");
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: (row.provider === "westpay" || row.provider === "venuspay") && Boolean(charge.uncertain), error: charge.error };
     }
 
     // Prazo de pagamento da loja: 15 minutos a partir da criação. A Wappi só aceita validade em

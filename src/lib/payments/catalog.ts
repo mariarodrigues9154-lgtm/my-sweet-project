@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "venuspay" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -32,6 +32,14 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
     fields: [
       { key: "public_key", label: "PUBLIC_KEY", secret: true, required: true },
       { key: "secret_key", label: "SECRET_KEY", secret: true, required: true },
+    ],
+  },
+  {
+    id: "venuspay", name: "VenusPay", supportsPix: true, singleEnvironment: true,
+    docs: "Painel da VenusPay > Dashboard > API",
+    fields: [
+      { key: "api_key", label: "Chave secreta", secret: true, required: true, hint: "Começa com sk_live_" },
+      { key: "webhook_secret", label: "Secret do webhook (opcional)", secret: true, required: false, hint: "Mostrado ao criar o webhook em Dashboard > API > Webhooks; valida X-Venuspay-Signature" },
     ],
   },
   {
