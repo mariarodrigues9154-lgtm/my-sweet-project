@@ -3,7 +3,7 @@ import { brl } from "./format";
 import { savings } from "./product-types";
 
 export type BoldRange = { start: number; end: number };
-export type EconomyBannerSettings = { mode?: "auto" | "manual"; text?: string; bold?: BoldRange[]; pulse?: boolean; pulse_target?: "bold" | "all" };
+export type EconomyBannerSettings = { mode?: "auto" | "manual" | undefined; text?: string | undefined; bold?: BoldRange[] | undefined; pulse?: boolean | undefined; pulse_target?: "bold" | "all" | undefined };
 
 export const economyBannerSchema = z
   .object({

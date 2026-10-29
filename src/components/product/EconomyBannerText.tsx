@@ -1,6 +1,6 @@
 import { normalizeBold, type EconomyBannerSettings } from "@/lib/economy-banner";
 
-export function EconomyBannerText({ text, settings }: { text: string; settings?: EconomyBannerSettings }) {
+export function EconomyBannerText({ text, settings }: { text: string; settings?: EconomyBannerSettings | undefined }) {
   const ranges = settings?.mode === "manual" ? normalizeBold(settings.bold ?? [], text.length) : [];
   const parts: { text: string; bold: boolean; start: number }[] = [];
   let cursor = 0;

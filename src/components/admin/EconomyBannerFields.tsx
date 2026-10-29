@@ -7,7 +7,7 @@ import { economyBannerText, editBold, toggleBold, type EconomyBannerSettings } f
 
 const inputCls = "w-full rounded-lg border border-input bg-card px-3 py-2 text-[13px] outline-none focus:border-primary";
 
-export function EconomyBannerFields({ value = {}, price, previous, onChange }: { value?: EconomyBannerSettings; price: number; previous: number; onChange: (v: EconomyBannerSettings) => void }) {
+export function EconomyBannerFields({ value = {}, price, previous, onChange }: { value?: EconomyBannerSettings | undefined; price: number; previous: number; onChange: (v: EconomyBannerSettings) => void }) {
   const editor = useRef<HTMLTextAreaElement>(null);
   const selection = useRef({ start: 0, end: 0 });
   const text = value.text ?? "";
