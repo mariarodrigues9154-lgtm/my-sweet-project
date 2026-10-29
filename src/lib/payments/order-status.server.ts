@@ -10,8 +10,8 @@ export async function checkOrderPaymentStatus(orderNumber: string): Promise<{ fo
   const current = { found: true, status: row.status as string, paid_at: (row.paid_at as string | null) ?? null };
   if (row.status !== "aguardando_pagamento" || !row.transaction_id || !row.store_id) return current;
 
-  const { loadStorePayment, toGatewayConfig } = await import("./resolve.server");
-  const settings = await loadStorePayment(row.store_id as string);
+  const { loadOrderPayment, toGatewayConfig } = await import("./resolve.server");
+  const settings = await loadOrderPayment(row.store_id as string, row);
   if (!settings || settings.provider === "none") return current;
   if ((row.payment_provider === "westpay" || settings.provider === "westpay") && row.payment_provider !== settings.provider) return current;
   const { getProvider } = await import("./providers.server");
