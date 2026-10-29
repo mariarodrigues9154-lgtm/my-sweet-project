@@ -77,6 +77,19 @@ export const saveWhatsappRecovery = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Isolated PlugSend test, with the current store's saved token; no settings/order writes. */
+export const testPlugSendMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ store_id: z.string().uuid(), phone: z.string().max(100), message: z.string().max(2000) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin.from("store_whatsapp_settings").select("provider, secret_data").eq("store_id", data.store_id).maybeSingle();
+    if (error || row?.provider !== "plugsend") return { ok: false, message: "Falha ao enviar mensagem pela PlugSend.", detail: "Salve PlugSend como provedor desta loja antes de testar.", httpStatus: null, messageId: null, testedAt: new Date().toISOString() };
+    const { sendPlugSendTest } = await import("./plugsend-test.server");
+    return sendPlugSendTest({ storeId: data.store_id, phone: data.phone, message: data.message, token: ((row.secret_data ?? {}) as Record<string, string>)["plugsend_token"] ?? "" });
+  });
+
 /** Envia uma mensagem de teste para um número informado pelo administrador. */
 export const testWhatsappRecovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
