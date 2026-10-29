@@ -13,6 +13,9 @@ describe("faixa Economize", () => {
   it("automático oculta economia zero", () => {
     expect(economyBannerText(109, 109)).toBeNull();
   });
+  it("automático nunca exibe economia negativa", () => {
+    expect(economyBannerText(147, 109)).toBeNull();
+  });
   it("manual mostra exatamente o texto e ignora preços", () => {
     const s = { mode: "manual" as const, text: "  Desconto exclusivo  " };
     expect(economyBannerText(109, 147, s)).toBe("  Desconto exclusivo  ");
@@ -20,5 +23,11 @@ describe("faixa Economize", () => {
   });
   it("salva modo e texto individuais", () => {
     expect(economyBannerSchema.parse({ mode: "manual", text: "Preço especial para você" })).toEqual({ mode: "manual", text: "Preço especial para você" });
+  });
+  it("configurações sobrevivem recarga e ficam isoladas", () => {
+    const a = economyBannerSchema.parse(JSON.parse(JSON.stringify({ mode: "manual", text: "Oferta especial por tempo limitado" })));
+    const b = economyBannerSchema.parse(JSON.parse(JSON.stringify({ mode: "auto", text: "Outro produto" })));
+    expect(economyBannerText(109, 147, a)).toBe("Oferta especial por tempo limitado");
+    expect(clean(economyBannerText(109, 147, b))).toBe("Economize R$ 38,00");
   });
 });
