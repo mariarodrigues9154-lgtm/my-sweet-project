@@ -30,7 +30,7 @@
 - PIX recovery toggles per store live in store_settings.checkout.pix_recovery, resolved by resolvePixRecovery and enforced server-side in getPixOrders; why: OFF hides UI without touching orders.
 - Product photos are resized on demand via `/api/public/media/<path>?w=` (allowed widths in `IMG_WIDTHS`, storage transform delivers WebP) and components use `sizedImage`/`imageSrcSet` from `src/lib/media-url.ts`; why: originals stay untouched while phones download small files.
 - WhatsApp: store_whatsapp_settings secrets stay server-only; cron calls token-authenticated /api/public/hooks/pix-whatsapp; whatsapp_pix_reminders UNIQUE(order_id, step); providers meta/zapi/evolution/plugsend; why: no duplicates or mixed stores.
-- PlugSend tests use isolated server helper, saved store token and sanitized logs; UI success is session-local, not connection status; why: preserve reminders/orders.
+- PlugSend tests use isolated RPC/helper, saved store token, exact text and safe result DTOs; last-test UI is session-local; why: preserve orders/secrets.
 - Store payment_methods live in checkout JSON; payOrderWithCard validates totals/installments server-side and keeps card data in memory; only gateway confirms status. switchOrderToPix converts the same order and reuses createPixCharge; why: no browser pricing or double charges.
 - Protection settings/texts live in checkout.customer_protection with shared validation/rendering; original uses untouched product protection; why: isolate stores and preserve products.
 - Subdirectories may have their own `AGENTS.md`; read it before changing files there.
