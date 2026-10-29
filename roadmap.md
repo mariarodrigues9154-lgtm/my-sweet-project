@@ -1,5 +1,9 @@
 # Roadmap
 
+## Texto da faixa Economize (29/10/2026)
+- [ ] Adicionar modo automático/manual e prévia em Preço e estoque, salvando por produto sem alterar as faixas
+- [ ] Testar cálculo, texto exato, persistência, isolamento e visual móvel/desktop
+
 ## Teste real PlugSend (29/10/2026)
 - [x] Completar resultados com HTTP, ID, horário e falhas; adicionar teste do texto exato de cada mensagem sem alterar configurações
 - [x] Adicionar número destinatário e mensagem livre, usando token salvo da própria loja; esconder teste de conexão para PlugSend sem alterar automação
