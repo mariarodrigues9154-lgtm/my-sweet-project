@@ -80,14 +80,19 @@ export const saveWhatsappRecovery = createServerFn({ method: "POST" })
 /** Envia uma mensagem de teste para um número informado pelo administrador. */
 export const testWhatsappRecovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ store_id: z.string().uuid(), phone: z.string().max(30), kind: z.enum(["pending", "paid"]).default("pending") }).parse(d))
+  .inputValidator((d: unknown) => z.object({ store_id: z.string().uuid(), phone: z.string().max(30), message: z.string().max(2000).optional(), kind: z.enum(["pending", "paid"]).default("pending") }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { normalizeBrPhone, sendWhatsApp, fillTemplate } = await import("./whatsapp-recovery.server");
     const to = normalizeBrPhone(data.phone);
-    if (!to) return { ok: false, message: "Telefone inválido." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin.from("store_whatsapp_settings").select("*").eq("store_id", data.store_id).maybeSingle();
+    if (data.message !== undefined) {
+      if (row?.provider !== "plugsend") return { ok: false, message: "Não foi possível enviar a mensagem." };
+      const { sendPlugSendTest } = await import("./plugsend-test.server");
+      return sendPlugSendTest({ storeId: data.store_id, phone: data.phone, message: data.message, token: ((row.secret_data ?? {}) as Record<string, string>)["plugsend_token"] ?? "" });
+    }
+    if (!to) return { ok: false, message: "Telefone inválido." };
     if (!row) return { ok: false, message: "Salve a configuração primeiro." };
     const vars = { nome: "Teste", pedido: "TESTE", produto: "Produto de teste", valor: "R$ 1,00", pix: "", link_pagamento: "https://www.achados-tik.shop", nome_loja: "Loja" };
     try {
@@ -107,7 +112,7 @@ export const testWhatsappConnection = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin.from("store_whatsapp_settings").select("provider, public_data, secret_data").eq("store_id", data.store_id).maybeSingle();
     if (!row) return { connected: false, message: "Salve a configuração primeiro." };
-    if (row.provider !== "zapi") return { connected: null, message: "Teste de conexão disponível para Z-API. Use o envio de teste." };
+    if (row.provider !== "zapi") return { connected: null, message: "Valide esta integração pelo envio de uma mensagem de teste." };
     const pub = (row.public_data ?? {}) as Record<string, string>;
     const sec = (row.secret_data ?? {}) as Record<string, string>;
     const tok = sec["instance_token"] || pub["instance_token"];
