@@ -2,7 +2,8 @@
 
 ## Teste real PlugSend (29/10/2026)
 - [x] Adicionar número destinatário e mensagem livre, usando token salvo da própria loja; esconder teste de conexão para PlugSend sem alterar automação
-- [ ] Validar testes e painel autenticado; envio real depende de número destinatário autorizado pela usuária
+- [x] Validar 12 testes, build OK e campos/status no painel autenticado sem salvar mudanças; lojas consultadas não tinham PlugSend selecionada
+- [ ] Confirmar recebimento real: depende de PlugSend salva na loja e número destinatário autorizado pela usuária
 
 ## Proteção premium nas proporções do original (27/10/2026)
 - [x] Compactar cabeçalho, escudo, ícones e textos do premium, preservando seis benefícios e layout original
