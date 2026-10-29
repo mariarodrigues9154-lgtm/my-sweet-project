@@ -136,7 +136,7 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
           <textarea rows={3} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={testMessage} onChange={(e) => setTestMessage(e.target.value)} />
         </label>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-          <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone.trim() || !testMessage.trim() || data?.settings.provider !== "plugsend" || !data?.settings.secrets_set.plugsend_token || !!secrets.plugsend_token?.trim()}>{busy === "test" ? <><Loader2 className="animate-spin" />Enviando...</> : "ENVIAR MENSAGEM DE TESTE"}</Button>
+          <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone.trim() || !testMessage.trim() || data?.settings.provider !== "plugsend" || !data?.settings.secrets_set["plugsend_token"] || !!secrets["plugsend_token"]?.trim()}>{busy === "test" ? <><Loader2 className="animate-spin" />Enviando...</> : "ENVIAR MENSAGEM DE TESTE"}</Button>
           <span className="text-[12px]">Status da integração: {plugsendTested ? "🟢 Testada com sucesso" : "não testada"}</span>
         </div>
       </div> : <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
