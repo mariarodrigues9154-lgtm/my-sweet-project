@@ -1,6 +1,6 @@
 /** Recuperação de PIX pendente via WhatsApp — somente servidor. */
 
-export type WaProvider = "meta" | "zapi" | "evolution";
+export type WaProvider = "meta" | "zapi" | "evolution" | "plugsend";
 
 export const DEFAULT_SITE = "https://www.achados-tik.shop";
 
@@ -78,6 +78,18 @@ export async function sendWhatsApp(i: SendInput): Promise<string | null> {
     if (!res.ok) throw new Error(`Z-API (${res.status}): ${await body(res)}`);
     const j = (await res.json().catch(() => ({}))) as { messageId?: string; zaapId?: string };
     return j.messageId ?? j.zaapId ?? null;
+  }
+  if (i.provider === "plugsend") {
+    const token = i.secrets["plugsend_token"];
+    if (!token) throw new Error("Integração incompleta (token PlugSend).");
+    const res = await fetch("https://plugsend.uazapi.com/send/text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", token },
+      body: JSON.stringify({ number: i.to, text: i.text, linkPreview: true }),
+    });
+    if (!res.ok) throw new Error(`PlugSend (${res.status}): ${await body(res)}`);
+    const j = (await res.json().catch(() => ({}))) as { messageid?: string; id?: string };
+    return j.messageid ?? j.id ?? null;
   }
   const base = (i.pub["base_url"] || "").replace(/\/+$/, "");
   const inst = i.pub["instance"];
@@ -171,7 +183,7 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
         link_pagamento: link,
         nome_loja: (store?.name as string) ?? "",
       };
-      const text = fillTemplate(cfg.message || "Olá, {nome}! Seu pedido #{pedido} ainda está aguardando pagamento. Valor: {valor}. Pague com PIX: {link_pagamento}", vars);
+      const text = fillTemplate(cfg.message || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.", vars);
       try {
         const id = await sendWhatsApp({ provider: cfg.provider as WaProvider, secrets: (cfg.secret_data ?? {}) as Record<string, string>, pub, to: phone, text, vars, token: o.access_token as string });
         await finish("enviada", expired ? "PIX expirado — link para gerar nova cobrança" : null, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });

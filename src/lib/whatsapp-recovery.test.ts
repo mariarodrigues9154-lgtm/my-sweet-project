@@ -9,6 +9,13 @@ describe("recuperação PIX via WhatsApp", () => {
   it("telefone inválido retorna null", () => {
     expect(normalizeBrPhone("1234")).toBeNull();
   });
+  it("normaliza (49) 99938-2747 para 5549999382747", () => {
+    expect(normalizeBrPhone("(49) 99938-2747")).toBe("5549999382747");
+  });
+  it("não duplica o DDI 55 quando o número já começa com 55", () => {
+    expect(normalizeBrPhone("5549999382747")).toBe("5549999382747");
+    expect(normalizeBrPhone("+55 (49) 99938-2747")).toBe("5549999382747");
+  });
   it("padrão é 1 lembrete aos 15 minutos", () => {
     expect(reminderDelays(undefined, 1)).toEqual([15]);
   });

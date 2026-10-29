@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getWhatsappRecovery, saveWhatsappRecovery, testWhatsappConnection, testWhatsappRecovery } from "@/lib/whatsapp-recovery.functions";
 
-type Provider = "meta" | "zapi" | "evolution";
+type Provider = "meta" | "zapi" | "evolution" | "plugsend";
 const VARS = ["{nome}", "{pedido}", "{produto}", "{valor}", "{pix}", "{link_pagamento}", "{nome_loja}"];
 const STATUS: Record<string, string> = { enviada: "Enviada", nao_enviada: "Não enviada", falha: "Falha", processando: "Processando" };
 
@@ -93,6 +93,7 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
             <option value="meta">WhatsApp Business (oficial Meta)</option>
             <option value="zapi">Z-API</option>
             <option value="evolution">Evolution API</option>
+            <option value="plugsend">PlugSend</option>
           </select>
         </label>
         <Field label="Número/remetente (referência)" value={sender} placeholder="5585999999999" onChange={setSender} />
@@ -113,6 +114,10 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
           <Field label="URL do servidor (https://...)" value={P("base_url")} onChange={setP("base_url")} />
           <Field label="Nome da instância" value={P("instance")} onChange={setP("instance")} />
           {S("api_key", "API key")}
+        </>}
+        {provider === "plugsend" && <>
+          {S("plugsend_token", "Token PlugSend")}
+          <p className="text-[11px] text-muted-foreground sm:col-span-2">O token fica salvo só no servidor e nunca aparece na página da loja. O envio usa a instância já conectada na sua conta PlugSend.</p>
         </>}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">

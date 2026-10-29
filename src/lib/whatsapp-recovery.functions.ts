@@ -8,7 +8,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
 
-const SECRET_KEYS = ["access_token", "client_token", "instance_token", "api_key"] as const;
+const SECRET_KEYS = ["access_token", "client_token", "instance_token", "api_key", "plugsend_token"] as const;
 
 export const getWhatsappRecovery = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -31,7 +31,7 @@ export const getWhatsappRecovery = createServerFn({ method: "GET" })
         enabled: row?.enabled ?? false,
         provider: (row?.provider as string) ?? "meta",
         sender: (row?.sender as string) ?? "",
-        message: (row?.message as string) || "Olá, {nome}! 👋\nVimos que o pagamento via PIX do seu pedido #{pedido} ainda está pendente.\nValor: {valor}\nVocê pode continuar de onde parou por aqui: {link_pagamento}",
+        message: (row?.message as string) || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.",
         delays: ((row?.delays as number[]) ?? [15, 60, 180]).concat([15, 60, 180]).slice(0, 3),
         max_reminders: (row?.max_reminders as number) ?? 1,
         public_data: (row?.public_data ?? {}) as Record<string, string>,
@@ -51,7 +51,7 @@ export const saveWhatsappRecovery = createServerFn({ method: "POST" })
     z.object({
       store_id: z.string().uuid(),
       enabled: z.boolean(),
-      provider: z.enum(["meta", "zapi", "evolution"]),
+      provider: z.enum(["meta", "zapi", "evolution", "plugsend"]),
       sender: z.string().trim().max(40),
       message: z.string().max(2000),
       delays: z.array(z.number().int().min(1).max(10080)).min(1).max(3),
