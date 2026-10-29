@@ -1,4 +1,5 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
+import { economyBannerSchema } from "@/lib/economy-banner";
 import { videosTitleSchema } from "@/lib/videos-title";
 import { productHeaderSchema } from "@/lib/product-header";
 import { customerProtectionSchema } from "@/lib/customer-protection";
@@ -557,6 +558,7 @@ const sectionsSchema = z
         bg_color: z.string().trim().max(20).optional(),
     }).partial().optional(),
     coupon_promo: z.unknown().optional().transform((v) => (v === undefined ? undefined : sanitizeCouponPromo(v))),
+    economy_banner: economyBannerSchema,
   })
   .extend(videosTitleSchema.shape)
   .nullish()

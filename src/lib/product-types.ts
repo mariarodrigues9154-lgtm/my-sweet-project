@@ -131,6 +131,7 @@ export type ProductSections = {
   product_exit_offer_mode?: "store" | "on" | "off";
   product_exit_offer?: import("./exit-offer").ExitOfferSettings;
   coupon_promo?: import("./coupon-promo").CouponPromoSettings;
+  economy_banner?: import("./economy-banner").EconomyBannerSettings;
 };
 
 /** Atendimento por IA e suporte humano — por loja, lido só no servidor. */
