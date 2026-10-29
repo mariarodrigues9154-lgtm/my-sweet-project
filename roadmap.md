@@ -1,5 +1,9 @@
 # Roadmap
 
+## Negrito e pulsação da faixa Economize (29/10/2026)
+- [ ] Adicionar seleção com B, remoção individual, pulsação opcional e prévia por produto
+- [ ] Validar salvamento, automático e visual/animação móvel e desktop
+
 ## Texto da faixa Economize (29/10/2026)
 - [x] Adicionar modo automático/manual e prévia em Preço e estoque, salvando por produto sem alterar a faixa COMPRE 2
 - [x] Validar automático R$ 38,00 e manual salvar/reabrir/ler na página com acesso autorizado; visualizar celular/desktop sem transbordamento, restaurar configuração original; testes de isolamento e persistência
