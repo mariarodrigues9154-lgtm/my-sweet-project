@@ -3,7 +3,7 @@ import { CouponChip } from "./CouponPromo";
 import { ChevronRight, Ticket, Zap } from "lucide-react";
 
 import { brl, clock } from "@/lib/format";
-import { discountPercent, promoBadges, savings, variantPriceRange, type Product } from "@/lib/product-types";
+import { discountPercent, promoBadges, variantPriceRange, type Product } from "@/lib/product-types";
 import { economyBannerText } from "@/lib/economy-banner";
 
 /** Ícone oficial do WhatsApp (lucide não tem marcas). */
@@ -80,12 +80,12 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
 
       {economyText && (
         <div className="bg-card px-3 pt-3">
-          <div className="flex h-10 items-center justify-between rounded-2xl border border-primary/45 bg-card px-3.5">
-            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-primary">
-              <Ticket size={15} />
-              {economyText}
+          <div className="flex min-h-10 items-center justify-between gap-2 rounded-2xl border border-primary/45 bg-card px-3.5 py-2">
+            <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold text-primary">
+              <Ticket size={15} className="shrink-0" />
+              <span className="min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{economyText}</span>
             </span>
-            <ChevronRight size={16} className="text-primary/80" />
+            <ChevronRight size={16} className="shrink-0 text-primary/80" />
           </div>
         </div>
       )}

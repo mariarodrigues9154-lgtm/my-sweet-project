@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { brl } from "@/lib/format";
-import { allComboKeys, discountPercent, parseRatingInput, type CreatorVideo, type DescriptionBlock, type Media, type Review, type VariantCombo, type VariantGroup } from "@/lib/product-types";
+import { allComboKeys, discountPercent, savings, parseRatingInput, type CreatorVideo, type DescriptionBlock, type Media, type Review, type VariantCombo, type VariantGroup } from "@/lib/product-types";
 import { VariantsEditor } from "@/components/admin/VariantsEditor";
 import { economyBannerText } from "@/lib/economy-banner";
 import { ReviewsCsvImport } from "@/components/admin/ReviewsCsvImport";
@@ -627,7 +627,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           <Field label="Estoque" value={stock} onChange={setStock} />
         </div>
         <p className="text-[12px] text-muted-foreground">
-          Desconto calculado: <b>{off}%</b> · Economia: <b>{brl(Math.max(0, num(previous) - num(price)))}</b>
+          Desconto calculado: <b>{off}%</b> · Economia: <b>{brl(savings(num(price), num(previous)))}</b>
         </p>
         <div className="space-y-2 rounded-lg border border-border p-3">
           <p className="text-[12px] font-bold">Texto da faixa “Economize”</p>
