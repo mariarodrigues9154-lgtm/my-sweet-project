@@ -31,7 +31,7 @@ export const getWhatsappRecovery = createServerFn({ method: "GET" })
         enabled: row?.enabled ?? false,
         provider: (row?.provider as string) ?? "meta",
         sender: (row?.sender as string) ?? "",
-        message: (row?.message as string) || "Olá, {nome}! 👋\nVimos que o pagamento via PIX do seu pedido #{pedido} ainda está pendente.\nValor: {valor}\nVocê pode continuar de onde parou por aqui: {link_pagamento}",
+        message: (row?.message as string) || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.",
         delays: ((row?.delays as number[]) ?? [15, 60, 180]).concat([15, 60, 180]).slice(0, 3),
         max_reminders: (row?.max_reminders as number) ?? 1,
         public_data: (row?.public_data ?? {}) as Record<string, string>,

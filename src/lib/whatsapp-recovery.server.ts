@@ -183,7 +183,7 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
         link_pagamento: link,
         nome_loja: (store?.name as string) ?? "",
       };
-      const text = fillTemplate(cfg.message || "Olá, {nome}! Seu pedido #{pedido} ainda está aguardando pagamento. Valor: {valor}. Pague com PIX: {link_pagamento}", vars);
+      const text = fillTemplate(cfg.message || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.", vars);
       try {
         const id = await sendWhatsApp({ provider: cfg.provider as WaProvider, secrets: (cfg.secret_data ?? {}) as Record<string, string>, pub, to: phone, text, vars, token: o.access_token as string });
         await finish("enviada", expired ? "PIX expirado — link para gerar nova cobrança" : null, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
