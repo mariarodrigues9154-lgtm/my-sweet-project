@@ -5,7 +5,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { getWhatsappRecovery, saveWhatsappRecovery, testWhatsappConnection, testWhatsappRecovery } from "@/lib/whatsapp-recovery.functions";
+import { PlugSendTestResult, type PlugSendResult } from "./PlugSendTestResult";
+import { getWhatsappRecovery, saveWhatsappRecovery, testWhatsappConnection, testWhatsappRecovery, testPlugSendMessage } from "@/lib/whatsapp-recovery.functions";
 
 type Provider = "meta" | "zapi" | "evolution" | "plugsend";
 const VARS = ["{nome}", "{pedido}", "{produto}", "{valor}", "{pix}", "{link_pagamento}", "{nome_loja}"];
@@ -15,6 +16,7 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   const load = useServerFn(getWhatsappRecovery);
   const save = useServerFn(saveWhatsappRecovery);
   const test = useServerFn(testWhatsappRecovery);
+  const testPlugSend = useServerFn(testPlugSendMessage);
   const { data, isLoading, refetch } = useQuery({ queryKey: ["admin-wa", storeId], queryFn: () => load({ data: { store_id: storeId } }) });
   const [enabled, setEnabled] = useState(false);
   const [provider, setProvider] = useState<Provider>("meta");
@@ -26,13 +28,15 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [testPhone, setTestPhone] = useState("");
   const [testKind, setTestKind] = useState<"pending" | "paid">("pending");
-  const [testMessage, setTestMessage] = useState("Olá! Esta é uma mensagem de teste da integração WhatsApp.");
-  const [plugsendTested, setPlugsendTested] = useState(false);
+  const [testMessage, setTestMessage] = useState("Olá! Esta é uma mensagem de teste da integração PlugSend.");
+  const [testResult, setTestResult] = useState<PlugSendResult | null>(null);
+  const [manualPhone, setManualPhone] = useState("");
+  const [manualResults, setManualResults] = useState<Record<string, PlugSendResult>>({});
   const checkConn = useServerFn(testWhatsappConnection);
   const [conn, setConn] = useState<{ connected: boolean | null; message: string } | null>(null);
   const [busy, setBusy] = useState("");
 
-  useEffect(() => { setPlugsendTested(false); setConn(null); }, [storeId, provider, secrets]);
+  useEffect(() => { setTestResult(null); setManualResults({}); setConn(null); }, [storeId, provider, secrets]);
 
   useEffect(() => {
     if (!data) return;
@@ -48,7 +52,7 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   );
 
   async function onSave() {
-    setPlugsendTested(false);
+    setTestResult(null); setManualResults({});
     setBusy("save");
     try {
       const r = await save({ data: { store_id: storeId, enabled, provider, sender, message, delays, max_reminders: max, public_data: pub, secrets: secrets as never } });
@@ -60,13 +64,30 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
   }
   async function onTest() {
     setBusy("test");
-    setPlugsendTested(false);
     try {
-      const r = await test({ data: { store_id: storeId, phone: testPhone, kind: testKind, ...(provider === "plugsend" ? { message: testMessage } : {}) } });
-      if (r.ok) { toast.success(r.message); if (provider === "plugsend") setPlugsendTested(true); }
+      const r = await test({ data: { store_id: storeId, phone: testPhone, kind: testKind } });
+      if (r.ok) { toast.success(r.message); }
       else toast.error(r.message);
     } catch { toast.error("Não foi possível enviar a mensagem."); }
     finally { setBusy(""); }
+  }
+
+  const canTestPlugSend = provider === "plugsend" && data?.settings.provider === "plugsend" && !!data?.settings.secrets_set["plugsend_token"];
+  async function onPlugSendTest(key = "free", text = testMessage, phone = testPhone) {
+    setBusy(key);
+    let result: PlugSendResult;
+    try { result = await testPlugSend({ data: { store_id: storeId, phone, message: text } }); }
+    catch { result = { ok: false, message: "Falha ao enviar mensagem pela PlugSend.", detail: "Não foi possível concluir o teste. Tente novamente.", httpStatus: null, messageId: null, testedAt: new Date().toISOString() }; }
+    setTestResult(result);
+    if (key !== "free") setManualResults((previous) => ({ ...previous, [key]: result }));
+    if (result.ok) toast.success(result.message); else toast.error(result.message);
+    setBusy("");
+  }
+  function manualTest(key: string, text: string) {
+    return provider === "plugsend" && <div className="mt-2 space-y-2">
+      <Button variant="outline" onClick={() => onPlugSendTest(key, text, manualPhone)} disabled={!!busy || !canTestPlugSend || !manualPhone.trim() || !text.trim()}>{busy === key ? <><Loader2 className="animate-spin" />Enviando...</> : "ENVIAR TESTE DESTA MENSAGEM"}</Button>
+      {manualResults[key] && <PlugSendTestResult result={manualResults[key]} />}
+    </div>;
   }
 
   async function onConn() {
@@ -131,14 +152,16 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
         </>}
       </div>
       {provider === "plugsend" ? <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <Field label="Número para teste" value={testPhone} placeholder="(94) 99999-9999" onChange={setTestPhone} />
-        <label className="grid gap-1 text-[11.5px] font-semibold">Mensagem para teste
+        <h3 className="text-[13px] font-extrabold sm:col-span-2">TESTAR INTEGRAÇÃO PLUGSEND</h3>
+        <Field label="Número que receberá o teste" value={testPhone} placeholder="(94) 99999-9999" onChange={setTestPhone} />
+        <label className="grid gap-1 text-[11.5px] font-semibold">Mensagem
           <textarea rows={3} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={testMessage} onChange={(e) => setTestMessage(e.target.value)} />
         </label>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-          <Button variant="outline" onClick={onTest} disabled={!!busy || !testPhone.trim() || !testMessage.trim() || data?.settings.provider !== "plugsend" || !data?.settings.secrets_set["plugsend_token"] || !!secrets["plugsend_token"]?.trim()}>{busy === "test" ? <><Loader2 className="animate-spin" />Enviando...</> : "ENVIAR MENSAGEM DE TESTE"}</Button>
-          <span className="text-[12px]">Status da integração: {plugsendTested ? "🟢 Testada com sucesso" : "não testada"}</span>
+          <Button variant="outline" onClick={() => onPlugSendTest()} disabled={!!busy || !testPhone.trim() || !testMessage.trim() || !canTestPlugSend}>{busy === "free" ? <><Loader2 className="animate-spin" />Enviando...</> : "ENVIAR TESTE"}</Button>
         </div>
+        {!canTestPlugSend && <p className="text-[12px] text-muted-foreground sm:col-span-2">Salve PlugSend e o token nesta loja antes de testar.</p>}
+        <div className="sm:col-span-2"><PlugSendTestResult result={testResult} /></div>
       </div> : <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
         <span className="font-bold">Status do WhatsApp:</span>
         <span>{!conn ? "não verificado" : conn.connected === true ? "🟢 Conectado" : conn.connected === false ? "🔴 Desconectado" : "—"}</span>
@@ -152,12 +175,15 @@ export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {
       </label>
       <p className="mt-1 text-[11px] text-muted-foreground">Variáveis: {VARS.join("  ")}</p>
       <h3 className="mt-5 text-[13px] font-extrabold">Mensagens do WhatsApp (envio manual)</h3>
+      {provider === "plugsend" && <div className="mt-2"><Field label="Número para receber" value={manualPhone} placeholder="(94) 99999-9999" onChange={setManualPhone} /></div>}
       <label className="mt-2 grid gap-1 text-[11.5px] font-semibold">Mensagem 1 — PIX pendente
         <textarea rows={6} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={P("manual_message")} placeholder="Vazio = usa a mensagem automática" onChange={(e) => setP("manual_message")(e.target.value)} />
       </label>
+      {manualTest("pending", P("manual_message") || message)}
       <label className="mt-3 grid gap-1 text-[11.5px] font-semibold">Mensagem 2 — Pagamento confirmado
         <textarea rows={6} maxLength={2000} className="rounded-lg border border-border bg-background px-3 py-2 font-normal" value={P("paid_message")} placeholder={"Olá, {nome}! ✅\nRecebemos o pagamento do seu pedido #{pedido} com sucesso!\nValor: {valor}\nObrigado pela compra! 💚"} onChange={(e) => setP("paid_message")(e.target.value)} />
       </label>
+      {manualTest("paid", P("paid_message"))}
       <p className="mt-1 text-[11px] text-muted-foreground">Variáveis: {VARS.join("  ")}</p>
 
       <div className="mt-4 flex flex-wrap items-end gap-2">
