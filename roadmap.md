@@ -1,5 +1,9 @@
 # Roadmap
 
+## Negrito e pulsação da faixa Economize (29/10/2026)
+- [x] Adicionar seleção com B, remoção individual, pulsação opcional e prévia por produto
+- [x] Validar 28 testes, salvar/reabrir e exibir dois negritos, remoção individual, pulso 2,8s em trechos/texto completo, movimento reduzido e 320/390/430/1280px; configuração original restaurada
+
 ## Texto da faixa Economize (29/10/2026)
 - [x] Adicionar modo automático/manual e prévia em Preço e estoque, salvando por produto sem alterar a faixa COMPRE 2
 - [x] Validar automático R$ 38,00 e manual salvar/reabrir/ler na página com acesso autorizado; visualizar celular/desktop sem transbordamento, restaurar configuração original; testes de isolamento e persistência

@@ -23,7 +23,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { brl } from "@/lib/format";
 import { allComboKeys, discountPercent, savings, parseRatingInput, type CreatorVideo, type DescriptionBlock, type Media, type Review, type VariantCombo, type VariantGroup } from "@/lib/product-types";
 import { VariantsEditor } from "@/components/admin/VariantsEditor";
-import { economyBannerText } from "@/lib/economy-banner";
+import { EconomyBannerFields } from "@/components/admin/EconomyBannerFields";
 import { ReviewsCsvImport } from "@/components/admin/ReviewsCsvImport";
 import {
   bulkUpdateProducts,
@@ -629,33 +629,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
         <p className="text-[12px] text-muted-foreground">
           Desconto calculado: <b>{off}%</b> · Economia: <b>{brl(savings(num(price), num(previous)))}</b>
         </p>
-        <div className="space-y-2 rounded-lg border border-border p-3">
-          <p className="text-[12px] font-bold">Texto da faixa “Economize”</p>
-          <select
-            aria-label="Modo do texto da faixa Economize"
-            className={inputCls}
-            value={d.sections?.economy_banner?.mode ?? "auto"}
-            onChange={(e) => set("sections", { ...(d.sections ?? {}), economy_banner: { ...(d.sections?.economy_banner ?? {}), mode: e.target.value as "auto" | "manual" } })}
-          >
-            <option value="auto">Automático (calculado pelos preços)</option>
-            <option value="manual">Manual (texto personalizado)</option>
-          </select>
-          {d.sections?.economy_banner?.mode === "manual" && (
-            <label className="block text-[12px] font-semibold">
-              Texto personalizado da faixa
-              <input
-                className={inputCls}
-                maxLength={160}
-                placeholder="Economize R$ 38,00"
-                value={d.sections?.economy_banner?.text ?? ""}
-                onChange={(e) => set("sections", { ...(d.sections ?? {}), economy_banner: { mode: "manual", text: e.target.value } })}
-              />
-            </label>
-          )}
-          <p className="text-[11.5px] text-muted-foreground">
-            Prévia: <b className="text-primary">{economyBannerText(num(price), num(previous), d.sections?.economy_banner) ?? "faixa oculta"}</b>
-          </p>
-        </div>
+        <EconomyBannerFields value={d.sections?.economy_banner} price={num(price)} previous={num(previous)} onChange={v => set("sections", { ...(d.sections ?? {}), economy_banner: v })} />
       </Group>
 
       <Group title="Textos e métricas exibidas">
