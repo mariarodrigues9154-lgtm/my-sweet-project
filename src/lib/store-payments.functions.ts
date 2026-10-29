@@ -42,7 +42,7 @@ export const saveStorePaymentSettings = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const spec = providerSpec(data.provider);
     const publicData = Object.fromEntries(spec.fields.filter((f) => !f.secret).map((f) => [f.key, data.public_data[f.key] ?? ""]));
-    const secrets = Object.fromEntries(spec.fields.filter((f) => f.secret && data.secret_data[f.key]).map((f) => [f.key, data.secret_data[f.key]]));
+    const secrets = Object.fromEntries(spec.fields.filter((f) => f.secret && data.secret_data[f.key]).map((f) => [f.key, data.secret_data[f.key] ?? ""]));
     const { loadStorePayment } = await import("@/lib/payments/resolve.server");
     const current = await loadStorePayment(data.store_id, data.provider);
     const missing = missingGatewayFields({ provider: data.provider, environment: data.environment, public_data: publicData, secret_data: { ...current?.secret_data, ...secrets } });
