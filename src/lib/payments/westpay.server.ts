@@ -81,17 +81,36 @@ export function westpayMatchesOrder(confirmed: { amount_cents?: number | null; m
 
 const friendly = (status: number) => status === 401 || status === 403 ? "Não foi possível autenticar. Verifique as credenciais da WestPay." : status === 400 || status === 422 ? "Alguns dados do pedido não foram aceitos. Confira seus dados e tente novamente." : "Não foi possível gerar o PIX neste momento. Aguarde a confirmação antes de tentar novamente.";
 
+/** WestPay wraps successful GET responses in `{ data: {...} }` (verified live 2026-10-29). */
+export function unwrapWestpay(body: unknown): unknown {
+  return body && typeof body === "object" && "data" in body ? (body as { data: unknown }).data : body;
+}
+
+/** Short provider message from `error_messages[].message` / `error`, credentials never included. */
+export function westpayErrorMessage(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as { error_messages?: { message?: unknown }[]; error?: unknown };
+  const msg = Array.isArray(b.error_messages) ? b.error_messages.map(e => e?.message).filter(m => typeof m === "string").join("; ") : typeof b.error === "string" ? b.error : "";
+  return msg ? msg.slice(0, 200) : null;
+}
+
 export const westpay: PaymentProvider = {
   id: "westpay",
   async testConnection(config) {
     const h = headers(config);
     if (!h) return { ok: false, error: "Informe PUBLIC_KEY e SECRET_KEY." };
     try {
+      // GET /v1/company: read-only account lookup, no charge is created.
       const response = await fetch(`${WESTPAY_BASE}/v1/company`, { headers: h, signal: AbortSignal.timeout(10000) });
-      if (!response.ok) return { ok: false, error: friendly(response.status) };
-      const company = z.object({ id: z.string().min(1), fantasy_name: z.string().optional(), status: z.string().optional() }).safeParse(await response.json());
-      return company.success ? { ok: true, company: company.data } : { ok: false, error: "A WestPay não retornou uma confirmação válida." };
-    } catch { return { ok: false, error: "Não foi possível falar com a WestPay agora." }; }
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        const detail = westpayErrorMessage(body);
+        console.warn("[westpay] test", JSON.stringify({ http_status: response.status, detail }));
+        return { ok: false, error: `${friendly(response.status)} (HTTP ${response.status}${detail ? `: ${detail}` : ""})` };
+      }
+      const company = z.object({ id: z.string().min(1), fantasy_name: z.string().optional(), status: z.string().optional() }).safeParse(unwrapWestpay(body));
+      return company.success ? { ok: true, company: { id: company.data.id, fantasy_name: company.data.fantasy_name, status: company.data.status } } : { ok: false, error: "A WestPay respondeu, mas em formato inesperado." };
+    } catch { return { ok: false, error: "Não foi possível falar com a WestPay agora (tempo esgotado ou rede)." }; }
   },
   async createPix(config, input) {
     const h = headers(config);
@@ -118,7 +137,7 @@ export const westpay: PaymentProvider = {
     if (!h) throw new Error("WestPay sem credenciais.");
     const response = await fetch(`${WESTPAY_BASE}/v1/payment-transaction/info/${encodeURIComponent(transactionId)}`, { headers: h, signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error(`WestPay consulta HTTP ${response.status}`);
-    const tx = transaction.parse(await response.json());
+    const tx = transaction.parse(unwrapWestpay(await response.json()));
     if (tx.id !== transactionId || tx.payment_method !== "pix") throw new Error("WestPay transação divergente.");
     const status = mapWestpayStatus(tx.status);
     return { paid: status === "paid", status, amount_cents: tx.amount, metadata: metadata(tx.metadata), paid_at: tx.paid_at && !tx.paid_at.startsWith("0001-") && Number.isFinite(Date.parse(tx.paid_at)) ? tx.paid_at : null };
