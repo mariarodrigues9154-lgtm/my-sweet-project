@@ -1,9 +1,11 @@
 # Roadmap
 
 ## Teste real PlugSend (29/10/2026)
+- [x] Completar resultados com HTTP, ID, horário e falhas; adicionar teste do texto exato de cada mensagem sem alterar configurações
 - [x] Adicionar número destinatário e mensagem livre, usando token salvo da própria loja; esconder teste de conexão para PlugSend sem alterar automação
 - [x] Validar 12 testes, build OK e campos/status no painel autenticado sem salvar mudanças; lojas consultadas não tinham PlugSend selecionada
 - [ ] Confirmar recebimento real: depende de PlugSend salva na loja e número destinatário autorizado pela usuária
+- [x] Validar 18 testes e painel autenticado: campos e dois testes manuais presentes; três lojas ainda usam Meta, portanto envio bloqueado sem salvar PlugSend/token. Nenhuma configuração foi alterada.
 
 ## Proteção premium nas proporções do original (27/10/2026)
 - [x] Compactar cabeçalho, escudo, ícones e textos do premium, preservando seis benefícios e layout original
