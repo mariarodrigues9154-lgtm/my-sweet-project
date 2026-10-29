@@ -1,10 +1,10 @@
 # Roadmap
 
 ## Central de múltiplos gateways (29/10/2026)
-- [ ] Preservar configuração existente e adicionar registros independentes por provedor com ativação atômica por loja
-- [ ] Atualizar painel para cadastrar, editar, testar e ativar gateways sem sobrescrever credenciais
-- [ ] Garantir que consultas e webhooks de pedidos antigos usem o provedor original
-- [ ] Validar regras, painel autenticado, persistência e preservação das lojas sem criar cobranças reais
+- [x] Preservar configuração existente e adicionar registros independentes por provedor com ativação atômica por loja
+- [x] Atualizar painel para cadastrar, editar, testar e ativar gateways sem sobrescrever credenciais
+- [x] Garantir que consultas e webhooks de pedidos antigos usem o provedor original
+- [x] Validar 81 testes e painel autenticado: dois gateways em loja temporária desativada, três trocas exclusivas, persistência, teste inativo e recusa de configuração incompleta; loja temporária removida, lojas reais preservadas e nenhuma cobrança criada
 
 ## Negrito e pulsação da faixa Economize (29/10/2026)
 - [x] Adicionar seleção com B, remoção individual, pulsação opcional e prévia por produto
