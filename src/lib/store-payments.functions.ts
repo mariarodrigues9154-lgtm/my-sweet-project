@@ -9,7 +9,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
-const providerId = z.enum(["wappi", "freepay", "pinpay", "blackcat", "invictuspay", "codefy", "umbrellapag", "westpay", "mercadopago", "asaas"]);
+const providerId = z.enum(["wappi", "freepay", "pinpay", "blackcat", "invictuspay", "codefy", "umbrellapag", "westpay", "venuspay", "mercadopago", "asaas"]);
 const storeInput = z.object({ store_id: z.string().uuid() });
 const gatewayInput = storeInput.extend({ provider: providerId });
 const settingsInput = gatewayInput.extend({
@@ -92,7 +92,7 @@ export const testStoreGateway = createServerFn({ method: "POST" })
         const detail = result.error ?? "";
         const error = /autentic|credencia|chave|token|key/i.test(detail) ? "Falha de autenticação. Confira as credenciais deste gateway." : /tentativ|limite|aguarde/i.test(detail) ? "Limite de consultas do provedor. Aguarde antes de testar novamente." : "O provedor recusou a consulta ou está indisponível. Tente novamente.";
         // WestPay builds a credential-free message with the real HTTP status/provider text.
-        return { ok: false as const, error: data.provider === "westpay" && detail ? detail : error };
+        return { ok: false as const, error: (data.provider === "westpay" || data.provider === "venuspay") && detail ? detail : error };
       }
       return { ok: true as const };
     } catch {
