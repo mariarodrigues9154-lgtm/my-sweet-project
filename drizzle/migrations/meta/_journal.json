@@ -64,6 +64,13 @@
       "when": 1793024177155,
       "tag": "0008_magnus_frete",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793264688903,
+      "tag": "0009_multi_gateway_store_registry",
+      "breakpoints": true
     }
   ]
 }

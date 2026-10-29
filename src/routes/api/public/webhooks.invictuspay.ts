@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/webhooks/invictuspay")({
         if (!order || !order.store_id) return new Response("ok");
 
         const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-        const settings = await loadStorePayment(order.store_id as string);
+        const settings = await loadStorePayment(order.store_id as string, "invictuspay");
         if (!settings || settings.provider !== "invictuspay") return new Response("ok");
 
         const { getProvider } = await import("@/lib/payments/providers.server");

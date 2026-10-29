@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/public/webhooks/westpay")({
     if (error) return new Response("indisponível", { status: 503 });
     if (!order?.store_id) return new Response("ok");
     const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-    const settings = await loadStorePayment(order.store_id);
+    const settings = await loadStorePayment(order.store_id, "westpay");
     if (!settings || settings.provider !== "westpay") return new Response("indisponível", { status: 503 });
     try {
       const { westpay } = await import("@/lib/payments/westpay.server");

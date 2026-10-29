@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/webhooks/pinpay")({
         if (!order || !order.store_id) return new Response("ok");
 
         const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-        const settings = await loadStorePayment(order.store_id as string);
+        const settings = await loadStorePayment(order.store_id as string, "pinpay");
         if (!settings || settings.provider !== "pinpay") return new Response("ok");
 
         // Webhook da conta assinado: se veio assinatura e a loja tem o Signing Secret, ela precisa bater.
