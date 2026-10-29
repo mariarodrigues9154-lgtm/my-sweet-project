@@ -14,7 +14,7 @@
 - The public store hub is `/loja`; product profile “Visitar” links always use this internal route.
 
 - Large media (videos) upload browser-direct via signed upload URLs (createMediaUpload/finalizeMediaUpload) to the private product-images bucket; why: server-fn base64 limits.
-- Per-product section texts/toggles live in products.sections; per-store checkout flags in store_settings.checkout; why: no page-specific tables.
+- Product settings use sections (economy_banner uses shared savings/schema/resolver); store flags use checkout; why: isolated edits, no new tables.
 - Video-title fields use shared videosTitleSchema on save; CreatorVideos scopes color to its title SVG; why: preserve icon settings without coloring sibling text or changing videos.
 
 - Cada loja tem seu próprio gateway de pagamento em `store_payment_settings`; credenciais só no servidor, cobrança PIX criada pelo gateway da loja dona do produto e status confirmado por webhook/consulta ao provedor; motivo: lojas independentes sem fallback entre elas.

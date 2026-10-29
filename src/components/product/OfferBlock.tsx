@@ -3,7 +3,8 @@ import { CouponChip } from "./CouponPromo";
 import { ChevronRight, Ticket, Zap } from "lucide-react";
 
 import { brl, clock } from "@/lib/format";
-import { discountPercent, promoBadges, savings, variantPriceRange, type Product } from "@/lib/product-types";
+import { discountPercent, promoBadges, variantPriceRange, type Product } from "@/lib/product-types";
+import { economyBannerText } from "@/lib/economy-banner";
 
 /** Ícone oficial do WhatsApp (lucide não tem marcas). */
 function WhatsAppIcon({ size = 14 }: { size?: number }) {
@@ -25,7 +26,7 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
   const varies = range.multiple;
 
   const discount = discountPercent(min, product.previous_price);
-  const economy = savings(product.price, product.previous_price);
+  const economyText = economyBannerText(product.price, product.previous_price, product.sections?.economy_banner);
   const badges = promoBadges(product);
   const waPulse = product.display?.wa_seal_pulse === true ? "wa-pulse" : "";
   const [int, cents] = brl(min).replace(/^R\$\s?/, "").split(",");
@@ -77,14 +78,14 @@ export function OfferBlock({ product, store }: { product: Product; store?: { id?
 
       <CouponChip product={product} />
 
-      {economy > 0 && (
+      {economyText && (
         <div className="bg-card px-3 pt-3">
-          <div className="flex h-10 items-center justify-between rounded-2xl border border-primary/45 bg-card px-3.5">
-            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-primary">
-              <Ticket size={15} />
-              Economize {brl(economy)}
+          <div className="flex min-h-10 items-center justify-between gap-2 rounded-2xl border border-primary/45 bg-card px-3.5 py-2">
+            <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-semibold text-primary">
+              <Ticket size={15} className="shrink-0" />
+              <span className="min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{economyText}</span>
             </span>
-            <ChevronRight size={16} className="text-primary/80" />
+            <ChevronRight size={16} className="shrink-0 text-primary/80" />
           </div>
         </div>
       )}
