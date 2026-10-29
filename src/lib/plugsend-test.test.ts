@@ -26,10 +26,14 @@ describe("teste isolado PlugSend", () => {
     expect((await sendPlugSendTest({ ...input, message: " " })).ok).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
-  it("registra status e resposta sanitizada sem devolver diagnóstico ao navegador", async () => {
+  it("mostra HTTP 401 útil sem expor token no resultado ou nos logs", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "recusado", token: input.token, detail: input.token }), { status: 401 })));
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect((await sendPlugSendTest(input)).ok).toBe(false);
+    const result = await sendPlugSendTest(input);
+    expect(result.ok).toBe(false);
+    expect(result.httpStatus).toBe(401);
+    expect(result.detail).toContain("Token inválido");
+    expect(JSON.stringify(result)).not.toContain(input.token);
     expect(log.mock.calls[0]?.[1]).toEqual({ store_id: "store-test", http_status: 401, response: { error: "recusado", token: "[redacted]", detail: "[redacted]" } });
   });
   it("falha de rede não repete envio", async () => {
@@ -37,5 +41,45 @@ describe("teste isolado PlugSend", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect((await sendPlugSendTest(input)).ok).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("retorna ID e horário do envio aceito", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('{"messageid":"MSG_123"}', { status: 201 })));
+    const result = await sendPlugSendTest(input);
+    expect(result.ok).toBe(true);
+    expect(result.httpStatus).toBe(201);
+    expect(result.messageId).toBe("MSG_123");
+    expect(Number.isNaN(Date.parse(result.testedAt))).toBe(false);
+  });
+  it("preserva texto exato de recuperação incluindo variáveis e espaços", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}'));
+    vi.stubGlobal("fetch", fetchMock);
+    const message = "  Oi, {nome}!\nPIX pendente #{pedido}\n{pix}  ";
+    await sendPlugSendTest({ ...input, message });
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1].body).text).toBe(message);
+  });
+  it("indisponibilidade HTTP 500 retorna falha sem repetir envio", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('unavailable', { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await sendPlugSendTest(input);
+    expect(result.ok).toBe(false);
+    expect(result.httpStatus).toBe(500);
+    expect(result.detail).toContain("indisponível");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("timeout retorna diagnóstico sem repetir", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new DOMException("fixture", "TimeoutError"));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await sendPlugSendTest(input)).detail).toContain("Timeout");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("não aceita rejeição no corpo mesmo com HTTP 200", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('{"success":false,"error":"rejected"}')));
+    expect((await sendPlugSendTest(input)).ok).toBe(false);
+  });
+  it("não devolve ID contendo token ou conteúdo arbitrário", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: input.token }))));
+    expect((await sendPlugSendTest(input)).messageId).toBeNull();
   });
 });
