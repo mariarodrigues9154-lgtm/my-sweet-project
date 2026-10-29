@@ -556,6 +556,50 @@ export type Database = {
           },
         ]
       }
+      store_payment_gateways: {
+        Row: {
+          created_at: string
+          environment: string
+          id: string
+          pix_config: Json
+          provider: string
+          public_data: Json
+          secret_data: Json
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          environment?: string
+          id?: string
+          pix_config?: Json
+          provider: string
+          public_data?: Json
+          secret_data?: Json
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          id?: string
+          pix_config?: Json
+          provider?: string
+          public_data?: Json
+          secret_data?: Json
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_payment_gateways_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_payment_settings: {
         Row: {
           created_at: string
@@ -913,12 +957,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_store_payment_gateway: {
+        Args: { p_provider: string; p_store_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      save_store_payment_gateway: {
+        Args: {
+          p_environment: string
+          p_provider: string
+          p_public_data: Json
+          p_secret_data: Json
+          p_store_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
