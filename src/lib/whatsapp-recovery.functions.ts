@@ -8,7 +8,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
 
-const SECRET_KEYS = ["access_token", "client_token", "instance_token", "api_key"] as const;
+const SECRET_KEYS = ["access_token", "client_token", "instance_token", "api_key", "plugsend_token"] as const;
 
 export const getWhatsappRecovery = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -51,7 +51,7 @@ export const saveWhatsappRecovery = createServerFn({ method: "POST" })
     z.object({
       store_id: z.string().uuid(),
       enabled: z.boolean(),
-      provider: z.enum(["meta", "zapi", "evolution"]),
+      provider: z.enum(["meta", "zapi", "evolution", "plugsend"]),
       sender: z.string().trim().max(40),
       message: z.string().max(2000),
       delays: z.array(z.number().int().min(1).max(10080)).min(1).max(3),

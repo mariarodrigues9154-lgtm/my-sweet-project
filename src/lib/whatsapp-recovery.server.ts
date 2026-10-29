@@ -1,6 +1,6 @@
 /** Recuperação de PIX pendente via WhatsApp — somente servidor. */
 
-export type WaProvider = "meta" | "zapi" | "evolution";
+export type WaProvider = "meta" | "zapi" | "evolution" | "plugsend";
 
 export const DEFAULT_SITE = "https://www.achados-tik.shop";
 
@@ -78,6 +78,18 @@ export async function sendWhatsApp(i: SendInput): Promise<string | null> {
     if (!res.ok) throw new Error(`Z-API (${res.status}): ${await body(res)}`);
     const j = (await res.json().catch(() => ({}))) as { messageId?: string; zaapId?: string };
     return j.messageId ?? j.zaapId ?? null;
+  }
+  if (i.provider === "plugsend") {
+    const token = i.secrets["plugsend_token"];
+    if (!token) throw new Error("Integração incompleta (token PlugSend).");
+    const res = await fetch("https://plugsend.uazapi.com/send/text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", token },
+      body: JSON.stringify({ number: i.to, text: i.text, linkPreview: true }),
+    });
+    if (!res.ok) throw new Error(`PlugSend (${res.status}): ${await body(res)}`);
+    const j = (await res.json().catch(() => ({}))) as { messageid?: string; id?: string };
+    return j.messageid ?? j.id ?? null;
   }
   const base = (i.pub["base_url"] || "").replace(/\/+$/, "");
   const inst = i.pub["instance"];
