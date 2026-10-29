@@ -46,8 +46,8 @@ export const Route = createFileRoute("/api/public/pagamentos/webhook")({
         if (!order || !order.store_id) return new Response("ok");
         if (order.status === "pago") return new Response("ok");
 
-        const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-        const row = await loadStorePayment(order.store_id as string);
+        const { loadOrderPayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+        const row = await loadOrderPayment(order.store_id as string, order);
         if (!row || row.provider === "none") return new Response("ok");
 
         const { getProvider } = await import("@/lib/payments/providers.server");

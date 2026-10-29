@@ -39,7 +39,7 @@ export const Route = createFileRoute("/api/public/webhooks/wappi")({
         if (!order || !order.store_id) return new Response("ok");
 
         const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-        const settings = await loadStorePayment(order.store_id as string);
+        const settings = await loadStorePayment(order.store_id as string, "wappi");
         if (!settings || settings.provider !== "wappi") return new Response("ok");
 
         const { getProvider } = await import("@/lib/payments/providers.server");

@@ -750,7 +750,7 @@ export const switchOrderToPix = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, store_id, quantity, unit_price, shipping_price, payment, transaction_id, provider_status, updated_at, product_snapshot, access_token")
+      .select("id, order_number, status, store_id, quantity, unit_price, shipping_price, payment, transaction_id, provider_status, updated_at, product_snapshot, access_token, payment_provider")
       .eq("order_number", data.order_number)
       .maybeSingle();
     if (!order || !order.store_id) return { ok: false as const, reason: "not_found" as const };
@@ -768,9 +768,9 @@ export const switchOrderToPix = createServerFn({ method: "POST" })
       let st = String(order.provider_status ?? "").toLowerCase();
       if (!FAILED.includes(st)) {
         try {
-          const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+          const { loadOrderPayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
           const { getProvider } = await import("@/lib/payments/providers.server");
-          const cfgRow = await loadStorePayment(order.store_id as string);
+          const cfgRow = await loadOrderPayment(order.store_id as string, order);
           const gw = cfgRow ? getProvider(cfgRow.provider) : null;
           if (!cfgRow || !gw) return { ok: false as const, reason: "card_pending" as const };
           st = String((await gw.getStatus(toGatewayConfig(cfgRow), order.transaction_id as string)).status ?? "").toLowerCase();

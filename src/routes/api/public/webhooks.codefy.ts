@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/public/webhooks/codefy")({
         if (!order || !order.store_id) return new Response("ok");
 
         const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-        const settings = await loadStorePayment(order.store_id as string);
+        const settings = await loadStorePayment(order.store_id as string, "codefy");
         if (!settings || settings.provider !== "codefy") return new Response("ok");
 
         const { getProvider, verifyCodefySignature } = await import("@/lib/payments/providers.server");

@@ -79,9 +79,9 @@ export const requestRefund = createServerFn({ method: "POST" })
     if (insErr || !created) return { ok: false as const, error: "Não foi possível registrar o reembolso." };
     const refundId = (created as { id: string }).id;
 
-    const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+    const { loadOrderPayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
     const { getProvider } = await import("@/lib/payments/providers.server");
-    const settings = await loadStorePayment(order.store_id as string);
+    const settings = await loadOrderPayment(order.store_id as string, order);
     const gateway = settings ? getProvider(settings.provider) : null;
     const update = (patch: Record<string, unknown>) => supabaseAdmin.from("order_refunds" as never).update(patch as never).eq("id", refundId);
 
@@ -116,7 +116,7 @@ export const refreshRefunds = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, status, store_id, transaction_id, total, total_amount_cents")
+      .select("id, status, store_id, transaction_id, total, total_amount_cents, payment_provider")
       .eq("order_number", data.order_number)
       .maybeSingle();
     if (!order?.transaction_id || !order.store_id) return { ok: true };
@@ -128,9 +128,9 @@ export const refreshRefunds = createServerFn({ method: "POST" })
       return { ok: true };
     }
     if (pending.length === 0) return { ok: true };
-    const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+    const { loadOrderPayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
     const { getProvider } = await import("@/lib/payments/providers.server");
-    const settings = await loadStorePayment(order.store_id as string);
+    const settings = await loadOrderPayment(order.store_id as string, order);
     const gateway = settings ? getProvider(settings.provider) : null;
     if (!settings || !gateway) return { ok: true };
     try {
