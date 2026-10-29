@@ -10,7 +10,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
   const filters: Record<string,string> = {};
   const query = { select: () => query, eq: (key: string, value: string) => { filters[key] = value; return query; }, maybeSingle: async () => {
     state.calls.push({ table, filters });
-    return { error: null, data: table === "store_payment_settings" ? { provider: state.active, enabled: state.enabled } : state.rows.find((row) => row.store_id === filters.store_id && row.provider === filters.provider) ?? null };
+    return { error: null, data: table === "store_payment_settings" ? { provider: state.active, enabled: state.enabled } : state.rows.find((row) => row.store_id === filters["store_id"] && row.provider === filters["provider"]) ?? null };
   } }; return query;
 } } }));
 import { loadStorePayment, loadOrderPayment, toGatewayConfig } from "./resolve.server";
@@ -19,23 +19,23 @@ beforeEach(() => { state.calls = []; state.active = "westpay"; state.enabled = t
 describe("Gerenciador de gateways por loja", () => {
   it("mantém duas credenciais independentes e seleciona WestPay para compras novas", async () => {
     const active = await loadStorePayment("loja-a");
-    expect(active?.provider).toBe("westpay"); expect(active?.secret_data.secret_key).toBe("west-a");
-    const inactive = await loadStorePayment("loja-a", "umbrellapag"); expect(inactive?.secret_data.api_key).toBe("segredo-a");
+    expect(active?.provider).toBe("westpay"); expect(active?.secret_data["secret_key"]).toBe("west-a");
+    const inactive = await loadStorePayment("loja-a", "umbrellapag"); expect(inactive?.secret_data["api_key"]).toBe("segredo-a");
   });
   it("troca o seletor sem redigitar credenciais e permite voltar", async () => {
-    state.active = "umbrellapag"; expect((await loadStorePayment("loja-a"))?.secret_data.api_key).toBe("segredo-a");
-    state.active = "westpay"; expect((await loadStorePayment("loja-a"))?.secret_data.secret_key).toBe("west-a");
+    state.active = "umbrellapag"; expect((await loadStorePayment("loja-a"))?.secret_data["api_key"]).toBe("segredo-a");
+    state.active = "westpay"; expect((await loadStorePayment("loja-a"))?.secret_data["secret_key"]).toBe("west-a");
   });
   it("pedido PIX antigo usa UmbrellaPag mesmo depois de ativar WestPay", async () => {
     const old = await loadOrderPayment("loja-a", { payment_provider: "umbrellapag" });
-    expect(old?.provider).toBe("umbrellapag"); expect(old && toGatewayConfig(old).secrets.api_key).toBe("segredo-a");
+    expect(old?.provider).toBe("umbrellapag"); expect(old && toGatewayConfig(old).secrets["api_key"]).toBe("segredo-a");
   });
   it("webhook de gateway inativo obtém suas próprias credenciais mesmo com pagamentos desligados", async () => {
     state.enabled = false; const old = await loadStorePayment("loja-a", "umbrellapag");
-    expect(old?.provider).toBe("umbrellapag"); expect(old?.enabled).toBe(false); expect(old?.secret_data.api_key).toBe("segredo-a");
+    expect(old?.provider).toBe("umbrellapag"); expect(old?.enabled).toBe(false); expect(old?.secret_data["api_key"]).toBe("segredo-a");
   });
   it("lojas nunca compartilham credenciais", async () => {
-    expect((await loadStorePayment("loja-b", "umbrellapag"))?.secret_data.api_key).toBe("segredo-b");
+    expect((await loadStorePayment("loja-b", "umbrellapag"))?.secret_data["api_key"]).toBe("segredo-b");
     expect(await loadStorePayment("loja-b", "westpay")).toBeNull();
   });
   it("provedor inexistente não usa fallback para o gateway ativo", async () => {
@@ -49,7 +49,7 @@ describe("Gerenciador de gateways por loja", () => {
     expect(originalOrderProvider({ payment_provider: "westpay", payment: { provider: "umbrellapag" } })).toBe("westpay");
   });
   it("resposta do painel não expõe nenhuma parte dos segredos", () => {
-    const dto = gatewaySettingsDto(state.rows[1]); expect(JSON.stringify(dto)).not.toContain("west-a"); expect(JSON.stringify(dto)).not.toContain("public-a"); expect(dto.secrets_masked.secret_key).toBe("••••••••••••••");
+    const row = state.rows[1]; if (!row) throw new Error("Fixture ausente"); const dto = gatewaySettingsDto(row); expect(JSON.stringify(dto)).not.toContain("west-a"); expect(JSON.stringify(dto)).not.toContain("public-a"); expect(dto.secrets_masked["secret_key"]).toBe("••••••••••••••");
   });
   it("ativação exige as duas credenciais WestPay", () => {
     expect(missingGatewayFields({ provider: "westpay", environment: "production", public_data: {}, secret_data: { public_key: "pk" } })).toEqual(["SECRET_KEY"]);

@@ -17,7 +17,7 @@
 - Product settings use sections; economy_banner has shared resolver/schema, bold ranges and safe text renderer; store flags use checkout; why: isolation without HTML.
 - Video-title fields use shared videosTitleSchema on save; CreatorVideos scopes color to its title SVG; why: preserve icon settings without coloring sibling text or changing videos.
 
-- Cada loja tem seu próprio gateway de pagamento em `store_payment_settings`; credenciais só no servidor, cobrança PIX criada pelo gateway da loja dona do produto e status confirmado por webhook/consulta ao provedor; motivo: lojas independentes sem fallback entre elas.
+- `store_payment_gateways` holds server-only store/provider credentials; `store_payment_settings` selects one PIX provider plus enabled flag/legacy snapshot. Locked RPCs save/activate; old transactions use original provider. Why: safe switching.
 - O modelo de checkout é salvo em `store_settings.checkout.checkout_model`; `/pagamento` permanece o Checkout 1 e `/pagamento-2` é apenas uma segunda interface sobre as mesmas funções de pedido e PIX.
 - Meta Pixel por loja em `store_meta_settings` (token CAPI só no servidor); navegador via `src/lib/meta-pixel.ts`; Purchase server-side em `sendPurchaseForOrder` com trava `orders.meta_purchase_sent_at`; motivo: sem compras duplicadas.
 - Store favicon (`store_settings.favicon_url`) is applied client-side by `useStoreFavicon` inside StoreLogo/StoreHeader; why: every store page and checkout already renders them, so no per-route head wiring.
