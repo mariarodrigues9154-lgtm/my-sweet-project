@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Texto da faixa Economize (29/10/2026)
-- [ ] Adicionar modo automático/manual e prévia em Preço e estoque, salvando por produto sem alterar as faixas
-- [ ] Testar cálculo, texto exato, persistência, isolamento e visual móvel/desktop
+- [x] Adicionar modo automático/manual e prévia em Preço e estoque, salvando por produto sem alterar a faixa COMPRE 2
+- [x] Validar automático R$ 38,00 e manual salvar/reabrir/ler na página com acesso autorizado; visualizar celular/desktop sem transbordamento, restaurar configuração original; testes de isolamento e persistência
 
 ## Teste real PlugSend (29/10/2026)
 - [x] Completar resultados com HTTP, ID, horário e falhas; adicionar teste do texto exato de cada mensagem sem alterar configurações
