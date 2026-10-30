@@ -12,11 +12,9 @@
 - Product headers resolve display overrides against store checkout flags in StoreHeader; identity and content stay in existing JSON; why: reuse pages.
 - Creator verification keeps the existing enable flag and an optional style in each creator_videos JSON item, resolved by one shared badge for both card layouts; why: preserve legacy appearance and consistent per-creator editing without new tables.
 - The public store hub is `/loja`; product profile “Visitar” links always use this internal route.
-
 - Large media (videos) upload browser-direct via signed upload URLs (createMediaUpload/finalizeMediaUpload) to the private product-images bucket; why: server-fn base64 limits.
 - Product settings use sections; economy_banner has shared resolver/schema, bold ranges and safe text renderer; store flags use checkout; why: isolation without HTML.
 - Video-title fields use shared videosTitleSchema on save; CreatorVideos scopes color to its title SVG; why: preserve icon settings without coloring sibling text or changing videos.
-
 - `store_payment_gateways` holds server-only store/provider credentials; `store_payment_settings` selects one PIX provider plus enabled flag/legacy snapshot. Locked RPCs save/activate; old transactions use original provider. Why: safe switching.
 - O modelo de checkout é salvo em `store_settings.checkout.checkout_model`; `/pagamento` permanece o Checkout 1 e `/pagamento-2` é apenas uma segunda interface sobre as mesmas funções de pedido e PIX.
 - Meta Pixel por loja em `store_meta_settings` (token CAPI só no servidor); navegador via `src/lib/meta-pixel.ts`; Purchase server-side em `sendPurchaseForOrder` com trava `orders.meta_purchase_sent_at`; motivo: sem compras duplicadas.
@@ -34,8 +32,7 @@
 - Store payment_methods live in checkout JSON; payOrderWithCard validates totals/installments server-side and keeps card data in memory; only gateway confirms status. switchOrderToPix converts the same order and reuses createPixCharge; why: no browser pricing or double charges.
 - Protection settings/texts live in checkout.customer_protection with shared validation/rendering; original uses untouched product protection; why: isolate stores and preserve products.
 - Subdirectories may have their own `AGENTS.md`; read it before changing files there.
-- UTMify por loja em `store_utmify_settings` (token só no servidor); `syncUtmifyOrder` envia waiting_payment ao criar PIX e paid via `sendPurchaseForOrder`, com trava `orders.utmify_sent_status`; UTMs capturadas no navegador (`src/lib/utm-tracking.ts`) e salvas em `orders.tracking_params`; motivo: um envio por status, sem duplicar.
-- UTMify attempt logs: store/order/status, attempt, UTC start/response and duration, no payloads/credentials; why: measure real API delay.
+- UTMify por loja em `store_utmify_settings` (token só no servidor); `syncUtmifyOrder` envia waiting_payment ao criar PIX e paid via `sendPurchaseForOrder`, com trava `orders.utmify_sent_status`; UTMs do navegador (`src/lib/utm-tracking.ts`) em `orders.tracking_params`; logs guardam só status/tempos, sem payloads; motivo: um envio por status, sem duplicar.
 - Coupon chip/bar settings live per product in products.sections.coupon_promo; a product's own countdown duration gives one persisted deadline for all its timers (`useStoreCountdown`), else store checkout.offer_countdown; why: independent products, synced timers.
 - Coupon bar emphasis comes only from explicit highlight_text and secondary_text in the existing product configuration; legacy bar_text stays intact as secondary text without keyword inference; why: arbitrary editable emphasis with backward-compatible content.
 - Magnus Frete: settings per store + order_shipments UNIQUE(order_id); sent only from sendPurchaseForOrder; network errors become "incerto", never auto-retried; why: API not idempotent.
