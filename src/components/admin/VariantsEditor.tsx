@@ -274,7 +274,7 @@ function PromoBadgeFields({
   onChange,
 }: {
   combo: VariantCombo;
-  onChange: (badge: VariantCombo["promo_badge"]) => void;
+  onChange: (badge: NonNullable<VariantCombo["promo_badge"]>) => void;
 }) {
   const badge = combo.promo_badge ?? {};
   const enabled = badge.enabled === true;
