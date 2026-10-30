@@ -1,0 +1,4 @@
+ALTER TABLE public.store_payment_settings DROP CONSTRAINT store_payment_provider_valid;
+ALTER TABLE public.store_payment_settings ADD CONSTRAINT store_payment_provider_valid CHECK (provider = ANY (ARRAY['none','wappi','freepay','pinpay','blackcat','invictuspay','codefy','umbrellapag','westpay','venuspay','pixxblack','medusapay','mercadopago','asaas']));
+ALTER TABLE public.store_payment_gateways DROP CONSTRAINT store_payment_gateways_provider_check;
+ALTER TABLE public.store_payment_gateways ADD CONSTRAINT store_payment_gateways_provider_check CHECK (provider = ANY (ARRAY['wappi','freepay','pinpay','blackcat','invictuspay','codefy','umbrellapag','westpay','venuspay','pixxblack','medusapay','mercadopago','asaas']));

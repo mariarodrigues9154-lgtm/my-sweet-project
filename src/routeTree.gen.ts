@@ -36,6 +36,7 @@ import { Route as ApiPublicWebhooksBlackcatRouteImport } from './routes/api/publ
 import { Route as ApiPublicWebhooksCodefyRouteImport } from './routes/api/public/webhooks.codefy'
 import { Route as ApiPublicWebhooksFreepayRouteImport } from './routes/api/public/webhooks.freepay'
 import { Route as ApiPublicWebhooksInvictuspayRouteImport } from './routes/api/public/webhooks.invictuspay'
+import { Route as ApiPublicWebhooksMedusapayRouteImport } from './routes/api/public/webhooks.medusapay'
 import { Route as ApiPublicWebhooksPinpayRouteImport } from './routes/api/public/webhooks.pinpay'
 import { Route as ApiPublicWebhooksPixxblackRouteImport } from './routes/api/public/webhooks.pixxblack'
 import { Route as ApiPublicWebhooksUmbrellapagRouteImport } from './routes/api/public/webhooks.umbrellapag'
@@ -185,6 +186,12 @@ const ApiPublicWebhooksInvictuspayRoute =
     path: '/api/public/webhooks/invictuspay',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksMedusapayRoute =
+  ApiPublicWebhooksMedusapayRouteImport.update({
+    id: '/api/public/webhooks/medusapay',
+    path: '/api/public/webhooks/medusapay',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksPinpayRoute = ApiPublicWebhooksPinpayRouteImport.update({
   id: '/api/public/webhooks/pinpay',
   path: '/api/public/webhooks/pinpay',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/api/public/webhooks/codefy': typeof ApiPublicWebhooksCodefyRoute
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
+  '/api/public/webhooks/medusapay': typeof ApiPublicWebhooksMedusapayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/pixxblack': typeof ApiPublicWebhooksPixxblackRoute
   '/api/public/webhooks/umbrellapag': typeof ApiPublicWebhooksUmbrellapagRoute
@@ -287,6 +295,7 @@ export interface FileRoutesByTo {
   '/api/public/webhooks/codefy': typeof ApiPublicWebhooksCodefyRoute
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
+  '/api/public/webhooks/medusapay': typeof ApiPublicWebhooksMedusapayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/pixxblack': typeof ApiPublicWebhooksPixxblackRoute
   '/api/public/webhooks/umbrellapag': typeof ApiPublicWebhooksUmbrellapagRoute
@@ -324,6 +333,7 @@ export interface FileRoutesById {
   '/api/public/webhooks/codefy': typeof ApiPublicWebhooksCodefyRoute
   '/api/public/webhooks/freepay': typeof ApiPublicWebhooksFreepayRoute
   '/api/public/webhooks/invictuspay': typeof ApiPublicWebhooksInvictuspayRoute
+  '/api/public/webhooks/medusapay': typeof ApiPublicWebhooksMedusapayRoute
   '/api/public/webhooks/pinpay': typeof ApiPublicWebhooksPinpayRoute
   '/api/public/webhooks/pixxblack': typeof ApiPublicWebhooksPixxblackRoute
   '/api/public/webhooks/umbrellapag': typeof ApiPublicWebhooksUmbrellapagRoute
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/codefy'
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
+    | '/api/public/webhooks/medusapay'
     | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/pixxblack'
     | '/api/public/webhooks/umbrellapag'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/codefy'
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
+    | '/api/public/webhooks/medusapay'
     | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/pixxblack'
     | '/api/public/webhooks/umbrellapag'
@@ -431,6 +443,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/codefy'
     | '/api/public/webhooks/freepay'
     | '/api/public/webhooks/invictuspay'
+    | '/api/public/webhooks/medusapay'
     | '/api/public/webhooks/pinpay'
     | '/api/public/webhooks/pixxblack'
     | '/api/public/webhooks/umbrellapag'
@@ -464,6 +477,7 @@ export interface RootRouteChildren {
   ApiPublicWebhooksCodefyRoute: typeof ApiPublicWebhooksCodefyRoute
   ApiPublicWebhooksFreepayRoute: typeof ApiPublicWebhooksFreepayRoute
   ApiPublicWebhooksInvictuspayRoute: typeof ApiPublicWebhooksInvictuspayRoute
+  ApiPublicWebhooksMedusapayRoute: typeof ApiPublicWebhooksMedusapayRoute
   ApiPublicWebhooksPinpayRoute: typeof ApiPublicWebhooksPinpayRoute
   ApiPublicWebhooksPixxblackRoute: typeof ApiPublicWebhooksPixxblackRoute
   ApiPublicWebhooksUmbrellapagRoute: typeof ApiPublicWebhooksUmbrellapagRoute
@@ -664,6 +678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksInvictuspayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/medusapay': {
+      id: '/api/public/webhooks/medusapay'
+      path: '/api/public/webhooks/medusapay'
+      fullPath: '/api/public/webhooks/medusapay'
+      preLoaderRoute: typeof ApiPublicWebhooksMedusapayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/pinpay': {
       id: '/api/public/webhooks/pinpay'
       path: '/api/public/webhooks/pinpay'
@@ -766,6 +787,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebhooksCodefyRoute: ApiPublicWebhooksCodefyRoute,
   ApiPublicWebhooksFreepayRoute: ApiPublicWebhooksFreepayRoute,
   ApiPublicWebhooksInvictuspayRoute: ApiPublicWebhooksInvictuspayRoute,
+  ApiPublicWebhooksMedusapayRoute: ApiPublicWebhooksMedusapayRoute,
   ApiPublicWebhooksPinpayRoute: ApiPublicWebhooksPinpayRoute,
   ApiPublicWebhooksPixxblackRoute: ApiPublicWebhooksPixxblackRoute,
   ApiPublicWebhooksUmbrellapagRoute: ApiPublicWebhooksUmbrellapagRoute,
