@@ -43,7 +43,7 @@ describe("pixxblackIdempotencyKey", () => {
   });
 
   it("substitui caracteres fora de [A-Za-z0-9_-] e garante o mínimo de 8", () => {
-    expect(pixxblackIdempotencyKey("ped 1/2")).toBe("ped-1-20");
+    expect(pixxblackIdempotencyKey("ped 1/2")).toBe("pix-ped-1-2");
     expect(pixxblackIdempotencyKey("ab")).toBe("pix-ab00");
   });
 });
