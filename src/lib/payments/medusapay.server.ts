@@ -93,10 +93,10 @@ export function parseMedusapayCreate(body: unknown): PixChargeResult {
     qr_code: qr,
     provider_status: mapMedusapayStatus(p.data.venda.status),
     expiration_date: Number.isFinite(expiry) ? new Date(expiry).toISOString() : null,
-    expires_in: Number.isFinite(expiry) ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : null,
+    expires_in: Number.isFinite(expiry) ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : 900, // sem pixExpiresAt: janela da loja (15 min)
     e2e: null,
     amount_cents: toCents(p.data.venda.valor),
-  } as PixChargeResult;
+  };
 }
 
 async function qrFromPayload(payload: string): Promise<string | null> {

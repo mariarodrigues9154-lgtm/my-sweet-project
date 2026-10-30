@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "venuspay" | "pixxblack" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "venuspay" | "pixxblack" | "medusapay" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -48,6 +48,14 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
     fields: [
       { key: "api_key", label: "Chave de API", secret: true, required: true, hint: "Começa com pxb_live_ — Integrações > Gerar chave de API (aparece uma única vez)" },
       { key: "webhook_secret", label: "Segredo do webhook (opcional)", secret: true, required: false, hint: "Começa com whsec_ — mostrado ao cadastrar o webhook em Integrações > Webhooks; valida X-PixBlack-Signature" },
+    ],
+  },
+  {
+    id: "medusapay", name: "MedusaPay", supportsPix: true, singleEnvironment: true,
+    docs: "Painel da MedusaPay > Configurações > API e Integrações",
+    fields: [
+      { key: "api_key", label: "API Key", secret: true, required: true, hint: "Começa com mk_live_" },
+      { key: "webhook_secret", label: "Secret do webhook (opcional)", secret: true, required: false, hint: "Mostrado ao cadastrar o webhook em Configurações > API e Integrações > Webhook; valida X-Medusa-Signature" },
     ],
   },
   {
