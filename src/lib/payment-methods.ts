@@ -3,13 +3,14 @@
  * Arquivo seguro para navegador e servidor: só configuração e cálculos, nunca dados de cartão.
  */
 
-export type CardProviderId = "none" | "blackcat" | "freepay" | "pinpay";
+export type CardProviderId = "none" | "blackcat" | "freepay" | "pinpay" | "wappi";
 
 export const CARD_PROVIDERS: Array<{ id: CardProviderId; name: string; ready: boolean }> = [
   { id: "none", name: "Nenhum", ready: false },
   { id: "blackcat", name: "Blackcat", ready: false },
   { id: "freepay", name: "FreePay", ready: true },
   { id: "pinpay", name: "PinPay", ready: false },
+  { id: "wappi", name: "Wappi Brasil", ready: true },
 ];
 
 export type PaymentMethodsConfig = {
@@ -177,6 +178,8 @@ export const CARD_STATUS_MAP: Record<CardProviderId, { paid: string[]; pending: 
   // Status oficiais da FreePay (docs: criar/buscar transação).
   freepay: { paid: ["paid"], pending: ["pending"], refused: ["refused", "failed", "error"] },
   pinpay: { paid: [], pending: [], refused: [] },
+  // Status oficiais da Wappi Brasil (docs: criar/buscar transação e webhooks).
+  wappi: { paid: ["paid"], pending: ["pending"], refused: ["refused", "failed", "error", "expired"] },
 };
 
 export function normalizeCardStatus(provider: CardProviderId, status: string | null | undefined): CardResult {
