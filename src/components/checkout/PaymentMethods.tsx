@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Loader2, XCircle, ChevronLeft, ChevronRight, CreditCard, Info, ShieldCheck, X } from "lucide-react";
 
@@ -203,6 +203,10 @@ function luhn(d: string) {
  */
 export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPayPix, prepareOrder, onPaid }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; customerName?: string; onPayPix?: (orderNo: string | null) => void; prepareOrder?: () => Promise<string | null>; onPaid?: (orderNumber: string) => void }) {
   const payCard = useServerFn(payOrderWithCard);
+  const wappiConfig = useServerFn(getWappiCardConfig);
+  const wappiConfirm = useServerFn(confirmWappiCardPayment);
+  const [wappiSettings, setWappiSettings] = useState<WappiThreeDSSettings | null>(null);
+  const iframeRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [installments, setInstallments] = useState(1);
   const [orderNo, setOrderNo] = useState<string | null>(null);
