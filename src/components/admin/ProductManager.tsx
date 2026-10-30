@@ -25,6 +25,7 @@ import { allComboKeys, discountPercent, savings, parseRatingInput, type CreatorV
 import { VariantsEditor } from "@/components/admin/VariantsEditor";
 import { EconomyBannerFields } from "@/components/admin/EconomyBannerFields";
 import { ReviewsCsvImport } from "@/components/admin/ReviewsCsvImport";
+import { SheetBadgesFields } from "@/components/admin/SheetBadgesFields";
 import {
   bulkUpdateProducts,
   createBlankProduct,
@@ -751,7 +752,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           onChange={(e) => set("display", { ...(d.display ?? {}), badge2_text: e.target.value })}
           className={inputCls}
         />
-        <SheetBadgesFields d={d} set={set} inputCls={inputCls} />
+        <SheetBadgesFields display={d.display ?? {}} pageBadge1={d.display?.badge1_show === false ? "" : (d.display?.badge1_text ?? d.offer?.badge ?? "")} pageBadge2={d.display?.badge2_show === false ? "" : (d.display?.badge2_text ?? d.offer?.highlight ?? "")} onChange={(v) => set("display", v)} inputCls={inputCls} />
 
         <label className="flex items-center gap-2 text-[13px] font-semibold">
           <input

@@ -10,7 +10,7 @@ import { bumpCart, readDraft, writeDraft, emptyDraft } from "@/lib/checkout-stor
 import {
   discountPercent,
   optionSelectable,
-  promoBadges,
+  sheetBadges,
   variantPriceRange,
   variantPricing,
   variantImage,
