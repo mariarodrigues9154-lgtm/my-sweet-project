@@ -430,6 +430,35 @@ export function comboActive(combo: VariantCombo | null | undefined): boolean {
   return !combo || combo.active !== false;
 }
 
+/**
+ * Selo promocional da opção de um grupo: procura a combinação que usa essa
+ * opção respeitando o que já foi escolhido nos outros grupos (mesma regra de
+ * optionSelectable). Retorna null quando não há selo ativo com texto.
+ */
+export function optionPromoBadge(
+  product: Pick<Product, "variants" | "variant_combos">,
+  selection: Record<string, string>,
+  groupName: string,
+  value: string,
+): VariantPromoBadge | null {
+  const groups = product.variants ?? [];
+  const combos = product.variant_combos ?? [];
+  const combo = combos.find((c) => {
+    const values = c.key.split(COMBO_SEP);
+    return groups.every((group, index) => {
+      const comboValue = values[index] ?? "";
+      if (group.name === groupName) return comboValue === value;
+      const chosen = selection[group.name];
+      return !chosen || chosen === comboValue;
+    });
+  });
+  const badge = combo?.promo_badge;
+  if (!badge || badge.enabled !== true) return null;
+  const text = (badge.text ?? "").trim();
+  if (!text) return null;
+  return { ...badge, text };
+}
+
 /** Preço, preço antigo, estoque e código internos válidos para a escolha atual. */
 export function variantPricing(
   product: Pick<Product, "price" | "previous_price" | "stock" | "variants" | "variant_combos">,
