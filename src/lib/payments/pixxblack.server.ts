@@ -133,7 +133,7 @@ export const pixxblack: PaymentProvider = {
     if (!h) return { ok: false, error: "Informe a chave de API (pxb_live_)." };
     try {
       // Consulta read-only de uma cobrança inexistente: 404 = chave aceita, sem criar cobrança.
-      const res = await fetch(`${PIXXBLACK_BASE}/charges/teste-conexao`, { headers: h, signal: AbortSignal.timeout(10000) });
+      const res = await fetch(`${PIXXBLACK_BASE}/charges/00000000-0000-4000-8000-000000000000`, { headers: h, signal: AbortSignal.timeout(10000) });
       const body: unknown = await res.json().catch(() => null);
       const detail = pixxblackErrorMessage(body);
       console.info("[pixxblack] test", JSON.stringify({ http_status: res.status }));
