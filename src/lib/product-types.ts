@@ -22,6 +22,15 @@ export type VariantGroup = {
   options: VariantOption[];
 };
 
+/** Selo promocional exibido no cartão da variante no pop-up de compra. */
+export type VariantPromoBadge = {
+  enabled?: boolean;
+  text?: string;
+  pulse?: boolean;
+  bg_color?: string;
+  text_color?: string;
+};
+
 /** Combinação de variações (ex.: Preto + 40/41) com preço e estoque próprios. */
 export type VariantCombo = {
   /** Chave da combinação: valores na ordem dos grupos, unidos por "|". */
@@ -33,6 +42,8 @@ export type VariantCombo = {
   /** Imagem própria da combinação (opcional). */
   image?: string | null;
   active?: boolean;
+  /** Selo promocional opcional do cartão dessa variante no pop-up. */
+  promo_badge?: VariantPromoBadge | null;
 };
 
 
