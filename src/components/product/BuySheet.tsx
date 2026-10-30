@@ -10,7 +10,7 @@ import { bumpCart, readDraft, writeDraft, emptyDraft } from "@/lib/checkout-stor
 import {
   discountPercent,
   optionSelectable,
-  promoBadges,
+  sheetBadges,
   variantPriceRange,
   variantPricing,
   variantImage,
@@ -99,7 +99,7 @@ export function BuySheet({
   const discount = discountPercent(shownPrice, shownPrevious);
   const maxQty = Math.max(1, Math.min(missing.length ? product.stock || 1 : pricing.stock || 1, 20));
   const countdownSeconds = product.offer.countdown_seconds ?? 0;
-  const badges = promoBadges(product);
+  const badges = sheetBadges(product);
 
   useEffect(() => {
     if (quantity > maxQty) setQuantity(maxQty);
