@@ -284,7 +284,7 @@ export function BuySheet({
                               style={{
                                 backgroundColor: badge.bg_color || undefined,
                                 color: badge.text_color || undefined,
-                                background: badge.bg_color ? undefined : "var(--gradient-primary, var(--color-primary))",
+                                background: badge.bg_color ? undefined : "var(--color-primary)",
                               }}
                             >
                               <Zap size={10} className="fill-current" />
@@ -327,7 +327,7 @@ export function BuySheet({
                               style={{
                                 backgroundColor: badge.bg_color || undefined,
                                 color: badge.text_color || undefined,
-                                background: badge.bg_color ? undefined : "var(--gradient-primary, var(--color-primary))",
+                                background: badge.bg_color ? undefined : "var(--color-primary)",
                               }}
                             >
                               <Zap size={9} className="fill-current" />
