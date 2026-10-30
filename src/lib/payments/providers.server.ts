@@ -8,6 +8,7 @@ import { isValidCpfCnpj, isValidPhone } from "@/lib/format";
 import type { PaymentEnvironment, PaymentProviderId } from "./catalog";
 import { westpay } from "./westpay.server";
 import { venuspay } from "./venuspay.server";
+import { pixxblack } from "./pixxblack.server";
 
 export type GatewayConfig = {
   provider: PaymentProviderId;
@@ -1173,7 +1174,7 @@ const umbrellapag: PaymentProvider = {
   },
 };
 
-const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, umbrellapag, westpay, venuspay, mercadopago, asaas };
+const REGISTRY: Record<string, PaymentProvider> = { wappi, freepay, pinpay, blackcat, invictuspay, codefy, umbrellapag, westpay, venuspay, pixxblack, mercadopago, asaas };
 
 export function getProvider(id: string): PaymentProvider | null {
   return REGISTRY[id] ?? null;

@@ -9,7 +9,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
-const providerId = z.enum(["wappi", "freepay", "pinpay", "blackcat", "invictuspay", "codefy", "umbrellapag", "westpay", "venuspay", "mercadopago", "asaas"]);
+const providerId = z.enum(["wappi", "freepay", "pinpay", "blackcat", "invictuspay", "codefy", "umbrellapag", "westpay", "venuspay", "pixxblack", "mercadopago", "asaas"]);
 const storeInput = z.object({ store_id: z.string().uuid() });
 const gatewayInput = storeInput.extend({ provider: providerId });
 const settingsInput = gatewayInput.extend({

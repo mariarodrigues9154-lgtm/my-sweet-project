@@ -3,7 +3,7 @@
  * Descreve apenas quais campos cada provedor precisa; nunca contém credenciais.
  */
 
-export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "venuspay" | "mercadopago" | "asaas";
+export type PaymentProviderId = "none" | "wappi" | "freepay" | "pinpay" | "blackcat" | "invictuspay" | "codefy" | "umbrellapag" | "westpay" | "venuspay" | "pixxblack" | "mercadopago" | "asaas";
 export type PaymentEnvironment = "sandbox" | "production";
 
 export type ProviderField = {
@@ -40,6 +40,14 @@ export const PAYMENT_PROVIDERS: ProviderSpec[] = [
     fields: [
       { key: "api_key", label: "Chave secreta", secret: true, required: true, hint: "Começa com sk_live_" },
       { key: "webhook_secret", label: "Secret do webhook (opcional)", secret: true, required: false, hint: "Mostrado ao criar o webhook em Dashboard > API > Webhooks; valida X-Venuspay-Signature" },
+    ],
+  },
+  {
+    id: "pixxblack", name: "PixxBlack", supportsPix: true, singleEnvironment: true,
+    docs: "Painel da PixxBlack > Integrações",
+    fields: [
+      { key: "api_key", label: "Chave de API", secret: true, required: true, hint: "Começa com pxb_live_ — Integrações > Gerar chave de API (aparece uma única vez)" },
+      { key: "webhook_secret", label: "Segredo do webhook (opcional)", secret: true, required: false, hint: "Começa com whsec_ — mostrado ao cadastrar o webhook em Integrações > Webhooks; valida X-PixBlack-Signature" },
     ],
   },
   {
