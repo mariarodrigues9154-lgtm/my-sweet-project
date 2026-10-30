@@ -259,6 +259,7 @@ export function VariantsEditor({
                   />
                 </label>
               </div>
+              <PromoBadgeFields combo={row} onChange={(badge) => patchCombo(row.key, { promo_badge: badge })} />
             </div>
           ))}
         </div>
