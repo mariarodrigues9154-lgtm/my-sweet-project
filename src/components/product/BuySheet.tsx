@@ -278,7 +278,7 @@ export function BuySheet({
                         >
                           {badge && (
                             <span
-                              className={`absolute -top-2 left-1/2 z-10 inline-flex max-w-[92%] -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-bold leading-4 text-white shadow-sm ${
+                              className={`absolute -top-2 left-1/2 z-10 inline-flex max-w-[94%] -translate-x-1/2 items-center gap-0.5 overflow-hidden whitespace-nowrap rounded-full px-1.5 py-px text-[9px] font-bold leading-4 text-white shadow-sm sm:max-w-[92%] sm:gap-1 sm:px-2 sm:py-0.5 sm:text-[10.5px] ${
                                 badge.pulse ? "badge-pulse" : ""
                               }`}
                               style={{
@@ -287,8 +287,8 @@ export function BuySheet({
                                 background: badge.bg_color ? undefined : "var(--color-primary)",
                               }}
                             >
-                              <Zap size={10} className="fill-current" />
-                              {badge.text}
+                              <Zap className="size-2.5 shrink-0 fill-current sm:size-3" />
+                              <span className="truncate">{badge.text}</span>
                             </span>
                           )}
                           <div className="aspect-square w-full overflow-hidden rounded-t-[10px] bg-surface">
