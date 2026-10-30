@@ -9,6 +9,7 @@ import { trackAddToCart, trackInitiateCheckout } from "@/lib/meta-pixel";
 import { bumpCart, readDraft, writeDraft, emptyDraft } from "@/lib/checkout-store";
 import {
   discountPercent,
+  optionPromoBadge,
   optionSelectable,
   sheetBadges,
   variantPriceRange,
