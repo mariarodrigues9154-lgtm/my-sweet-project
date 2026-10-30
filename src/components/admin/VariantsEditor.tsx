@@ -259,9 +259,92 @@ export function VariantsEditor({
                   />
                 </label>
               </div>
+              <PromoBadgeFields combo={row} onChange={(badge) => patchCombo(row.key, { promo_badge: badge })} />
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Selo promocional da variante: exibido no topo do cartão dela no pop-up de compra. */
+function PromoBadgeFields({
+  combo,
+  onChange,
+}: {
+  combo: VariantCombo;
+  onChange: (badge: NonNullable<VariantCombo["promo_badge"]>) => void;
+}) {
+  const badge = combo.promo_badge ?? {};
+  const enabled = badge.enabled === true;
+  const patch = (p: Partial<NonNullable<VariantCombo["promo_badge"]>>) =>
+    onChange({ ...badge, ...p });
+  return (
+    <div className="mt-3 space-y-2 rounded-lg border border-dashed border-input p-2.5">
+      <label className="flex items-center gap-2 text-[12px] font-medium">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => patch({ enabled: e.target.checked })}
+        />
+        Exibir selo promocional nesta variante
+      </label>
+      {enabled && (
+        <>
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">Texto do selo</span>
+            <input
+              value={badge.text ?? ""}
+              maxLength={60}
+              placeholder="Ex.: LEVE 2 E ECONOMIZE"
+              onChange={(e) => patch({ text: e.target.value })}
+              className={inputCls}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-[12px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={badge.pulse === true}
+              onChange={(e) => patch({ pulse: e.target.checked })}
+            />
+            Ativar efeito pulsante
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block">
+              <span className="text-[11px] text-muted-foreground">Cor do selo</span>
+              <input
+                type="color"
+                value={badge.bg_color || "#e8304f"}
+                onChange={(e) => patch({ bg_color: e.target.value })}
+                className="h-9 w-full cursor-pointer rounded-lg border border-input bg-card p-1"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] text-muted-foreground">Cor do texto</span>
+              <input
+                type="color"
+                value={badge.text_color || "#ffffff"}
+                onChange={(e) => patch({ text_color: e.target.value })}
+                className="h-9 w-full cursor-pointer rounded-lg border border-input bg-card p-1"
+              />
+            </label>
+          </div>
+          {(badge.text ?? "").trim() && (
+            <div className="flex justify-center pt-1">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm ${badge.pulse ? "badge-pulse" : ""}`}
+                style={{
+                  backgroundColor: badge.bg_color || undefined,
+                  color: badge.text_color || undefined,
+                  background: badge.bg_color ? undefined : "var(--color-primary)",
+                }}
+              >
+                {badge.text}
+              </span>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

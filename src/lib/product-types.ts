@@ -22,6 +22,15 @@ export type VariantGroup = {
   options: VariantOption[];
 };
 
+/** Selo promocional exibido no cartão da variante no pop-up de compra. */
+export type VariantPromoBadge = {
+  enabled?: boolean;
+  text?: string;
+  pulse?: boolean;
+  bg_color?: string;
+  text_color?: string;
+};
+
 /** Combinação de variações (ex.: Preto + 40/41) com preço e estoque próprios. */
 export type VariantCombo = {
   /** Chave da combinação: valores na ordem dos grupos, unidos por "|". */
@@ -33,6 +42,8 @@ export type VariantCombo = {
   /** Imagem própria da combinação (opcional). */
   image?: string | null;
   active?: boolean;
+  /** Selo promocional opcional do cartão dessa variante no pop-up. */
+  promo_badge?: VariantPromoBadge | null;
 };
 
 
@@ -417,6 +428,35 @@ export function findCombo(
 
 export function comboActive(combo: VariantCombo | null | undefined): boolean {
   return !combo || combo.active !== false;
+}
+
+/**
+ * Selo promocional da opção de um grupo: procura a combinação que usa essa
+ * opção respeitando o que já foi escolhido nos outros grupos (mesma regra de
+ * optionSelectable). Retorna null quando não há selo ativo com texto.
+ */
+export function optionPromoBadge(
+  product: Pick<Product, "variants" | "variant_combos">,
+  selection: Record<string, string>,
+  groupName: string,
+  value: string,
+): VariantPromoBadge | null {
+  const groups = product.variants ?? [];
+  const combos = product.variant_combos ?? [];
+  const combo = combos.find((c) => {
+    const values = c.key.split(COMBO_SEP);
+    return groups.every((group, index) => {
+      const comboValue = values[index] ?? "";
+      if (group.name === groupName) return comboValue === value;
+      const chosen = selection[group.name];
+      return !chosen || chosen === comboValue;
+    });
+  });
+  const badge = combo?.promo_badge;
+  if (!badge || badge.enabled !== true) return null;
+  const text = (badge.text ?? "").trim();
+  if (!text) return null;
+  return { ...badge, text };
 }
 
 /** Preço, preço antigo, estoque e código internos válidos para a escolha atual. */
