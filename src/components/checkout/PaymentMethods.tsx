@@ -314,6 +314,15 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
     }
   }
 
+  // Wappi com 3DS tipo IFRAME: embute o iframe da adquirente dentro do formulário.
+  useEffect(() => {
+    if (wappiSettings?.threeDSSecurityType === "IFRAME" && iframeRef.current) {
+      try {
+        mountWappiIframe(wappiSettings, iframeRef.current);
+      } catch { /* SDK indisponível: o finishThreeDS ainda tenta conduzir a autenticação */ }
+    }
+  }, [wappiSettings]);
+
   const field = (err?: string) => `h-12 w-full rounded-xl px-3.5 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
   const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1 flex items-center gap-1 text-[12.5px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
 
