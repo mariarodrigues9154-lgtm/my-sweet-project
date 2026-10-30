@@ -612,13 +612,18 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
 const cardPayInput = z.object({
   order_number: z.string().min(4).max(64),
   installments: z.number().int().min(1).max(12),
-  card: z.object({
-    number: z.string().regex(/^\d{13,19}$/),
-    holder_name: z.string().trim().min(3).max(60),
-    expiration_month: z.number().int().min(1).max(12),
-    expiration_year: z.number().int().min(2024).max(2100),
-    cvv: z.string().regex(/^\d{3,4}$/),
-  }),
+  // Cartão aberto: apenas para gateways sem tokenização no navegador (hoje FreePay).
+  card: z
+    .object({
+      number: z.string().regex(/^\d{13,19}$/),
+      holder_name: z.string().trim().min(3).max(60),
+      expiration_month: z.number().int().min(1).max(12),
+      expiration_year: z.number().int().min(2024).max(2100),
+      cvv: z.string().regex(/^\d{3,4}$/),
+    })
+    .optional(),
+  // Token do SDK da Wappi (encrypt no navegador): o cartão aberto nunca chega ao servidor.
+  card_hash: z.string().min(10).max(4000).optional(),
 });
 
 /**
