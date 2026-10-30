@@ -111,6 +111,11 @@ export function PaymentMethodsFields({ value, onChange }: { value: unknown; onCh
         <p className={`rounded-md px-3 py-2 text-[12px] font-semibold ${ready ? "bg-success-soft text-success" : "bg-surface text-muted-foreground"}`}>
           Status: {ready ? "Pronto para cobrar" : "Aguardando integração com gateway — quando ativado, o cartão aparece para clientes, mas não realiza cobranças."}
         </p>
+        {cfg.card.provider === "wappi" && (
+          <p className="rounded-md bg-surface px-3 py-2 text-[11.5px] text-muted-foreground">
+            A Wappi Brasil usa as mesmas credenciais (PUBLIC_KEY e SECRET_KEY) salvas em <strong>Checkout e Pagamentos</strong>, onde você também testa a conexão. O cartão é tokenizado no navegador do cliente pelo SDK oficial com autenticação 3DS — os dados do cartão nunca passam pelo nosso servidor. O gateway de PIX continua independente.
+          </p>
+        )}
         {cfg.card.enabled && !ready && <p className="text-[11.5px] text-muted-foreground">Ao selecionar cartão, o cliente verá um aviso de indisponibilidade e poderá voltar para pagar com PIX, sem informar dados do cartão.</p>}
         <div className="grid grid-cols-2 gap-2">
           <div className="col-span-2"><Field label="Título"><input className={input} value={cfg.card.title} onChange={(e) => card({ title: e.target.value })} /></Field></div>

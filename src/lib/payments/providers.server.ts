@@ -232,9 +232,9 @@ const asaas: PaymentProvider = {
 
 // ----------------------------------------------------------------- Wappi Brasil
 
-const WAPPI_BASE = "https://api.wappibrasil.com.br";
+export const WAPPI_BASE = "https://api.wappibrasil.com.br";
 
-function wappiHeaders(config: GatewayConfig): Record<string, string> | null {
+export function wappiHeaders(config: GatewayConfig): Record<string, string> | null {
   const publicKey = config.publicData["public_key"] ?? "";
   const secretKey = config.secrets["secret_key"] ?? "";
   if (!publicKey || !secretKey) return null;
@@ -247,15 +247,16 @@ const pixOf = (tx: WappiTx | null): WappiPix | null => (!tx?.pix ? null : Array.
 /** A Wappi devolve "0001-01-01T00:00:00" quando não há data; tratamos como ausente. */
 const validDate = (v: string | null | undefined): string | null => (v && Date.parse(v) > Date.parse("2000-01-01") ? v : null);
 
-type WappiTx = {
+export type WappiTx = {
   id?: string | number;
   amount?: number;
   payment_method?: string;
   status?: string;
   pix?: WappiPix | WappiPix[] | null;
+  three_ds?: { required?: boolean; session_id?: string | null; type?: string | null; redirect_url?: string | null } | null;
 };
 
-function firstTx(body: unknown): WappiTx | null {
+export function firstTx(body: unknown): WappiTx | null {
   if (!body || typeof body !== "object") return null;
   const data = (body as { data?: unknown }).data;
   if (Array.isArray(data)) return (data[0] as WappiTx) ?? null;
@@ -325,7 +326,7 @@ export function classifyWappiError(status: number, detail?: string | null): Wapp
   return "HTTP_4XX";
 }
 
-function wappiError(status: number, detail?: string | null): string {
+export function wappiError(status: number, detail?: string | null): string {
   if (status === 401 || status === 403) return "Não foi possível autenticar. Verifique suas credenciais.";
   if (status === 400) {
     if (detail) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Loader2, XCircle, ChevronLeft, ChevronRight, CreditCard, Info, ShieldCheck, X } from "lucide-react";
 
@@ -8,7 +8,8 @@ import { brl } from "@/lib/format";
 import { cardProviderReady, fillDeclineMessage, installmentPlan, pixDiscountLabel, type PaymentMethodsConfig } from "@/lib/payment-methods";
 import { sizedImage, stableMediaUrl } from "@/lib/media-url";
 import { useServerFn } from "@tanstack/react-start";
-import { payOrderWithCard } from "@/lib/store.functions";
+import { confirmWappiCardPayment, getWappiCardConfig, payOrderWithCard } from "@/lib/store.functions";
+import { finishWappiThreeDS, mountWappiIframe, prepareWappiThreeDS, tokenizeWappiCard, wappiCardSettings, type WappiThreeDSSettings } from "@/lib/wappi-card.client";
 import sealMastercard from "@/assets/seal-45.png.asset.json";
 import sealVisa from "@/assets/seal-47.png.asset.json";
 import sealSafekey from "@/assets/seal-46.png.asset.json";
@@ -202,6 +203,10 @@ function luhn(d: string) {
  */
 export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPayPix, prepareOrder, onPaid }: { cfg: PaymentMethodsConfig; totalCents: number; onClose: () => void; customerName?: string; onPayPix?: (orderNo: string | null) => void; prepareOrder?: () => Promise<string | null>; onPaid?: (orderNumber: string) => void }) {
   const payCard = useServerFn(payOrderWithCard);
+  const wappiConfig = useServerFn(getWappiCardConfig);
+  const wappiConfirm = useServerFn(confirmWappiCardPayment);
+  const [wappiSettings, setWappiSettings] = useState<WappiThreeDSSettings | null>(null);
+  const iframeRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [installments, setInstallments] = useState(1);
   const [orderNo, setOrderNo] = useState<string | null>(null);
@@ -237,6 +242,43 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
     return Object.keys(e).length === 0;
   }
 
+  /** Wappi Brasil: tokeniza no SDK oficial, cria a transação e conclui o 3DS no navegador. */
+  async function submitWappi(no: string) {
+    const cfgRes = await wappiConfig({ data: { order_number: no } });
+    if (!cfgRes.available || !cfgRes.publicKey) { setErrors({}); setUnavailable(true); return; }
+    const settings = await wappiCardSettings(cfgRes.publicKey);
+    setWappiSettings(settings);
+    const plan = installmentPlan(totalCents, cfg).find((p) => p.n === installments);
+    await prepareWappiThreeDS(plan?.totalCents ?? totalCents, installments);
+    const m = /^(\d{2})\/(\d{2})$/.exec(expiry)!;
+    // O cartão aberto vai só para o SDK da Wappi; o nosso servidor recebe apenas o token.
+    const hash = await tokenizeWappiCard({ number: digits, holderName: holder.trim(), expMonth: Number(m[1]), expYear: 2000 + Number(m[2]), cvv });
+    setCvv("");
+    const res = await payCard({ data: { order_number: no, installments, card_hash: hash } });
+    if (res.status === "paid") { setNumber(""); onPaid!(no); return; }
+    if (res.status === "refused") { setNumber(""); setExpiry(""); setErrors({}); setDeclined(true); return; }
+    if (res.status === "unavailable" || res.status === "error") {
+      if (res.status === "error") console.error("[card] falha no pagamento", res.error);
+      setErrors({}); setUnavailable(true);
+      return;
+    }
+    // Pendente: quando há 3DS, o SDK conduz a autenticação com a transação criada.
+    const tx = (res as { transaction?: unknown }).transaction;
+    if (tx) {
+      try {
+        await finishWappiThreeDS(tx);
+      } catch {
+        // Desafio interrompido: o status real será confirmado pela reconsulta abaixo.
+      }
+    }
+    // A resposta do navegador é só experiência: o servidor reconfirma na API da Wappi.
+    const final = await wappiConfirm({ data: { order_number: no } });
+    if (final.status === "paid") { setNumber(""); onPaid!(no); return; }
+    if (final.status === "refused") { setNumber(""); setExpiry(""); setErrors({}); setDeclined(true); return; }
+    if (final.status === "error") { console.error("[card] confirmação falhou", final.error); setErrors({}); setUnavailable(true); return; }
+    setErrors({ form: "Pagamento em análise pelo banco. Você receberá a confirmação assim que for aprovado." });
+  }
+
   async function submit() {
     if (busy || !validate()) return;
     if (!ready) { setErrors({ form: "O pagamento com cartão ainda não está disponível nesta loja. Escolha Pix para concluir." }); return; }
@@ -247,6 +289,10 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
       const no = orderNo ?? (await prepareOrder());
       if (!no) return;
       setOrderNo(no);
+      if (cfg.card.provider === "wappi") {
+        await submitWappi(no);
+        return;
+      }
       const m = /^(\d{2})\/(\d{2})$/.exec(expiry)!;
       const res = await payCard({ data: { order_number: no, installments, card: { number: digits, holder_name: holder.trim(), expiration_month: Number(m[1]), expiration_year: 2000 + Number(m[2]), cvv } } });
       if (res.status === "paid") { setNumber(""); setCvv(""); onPaid(no); return; }
@@ -267,6 +313,15 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
       setBusy(false);
     }
   }
+
+  // Wappi com 3DS tipo IFRAME: embute o iframe da adquirente dentro do formulário.
+  useEffect(() => {
+    if (wappiSettings?.threeDSSecurityType === "IFRAME" && iframeRef.current) {
+      try {
+        mountWappiIframe(wappiSettings, iframeRef.current);
+      } catch { /* SDK indisponível: o finishThreeDS ainda tenta conduzir a autenticação */ }
+    }
+  }, [wappiSettings]);
 
   const field = (err?: string) => `h-12 w-full rounded-xl px-3.5 text-[16px] outline-none ${err ? "border-2 border-destructive bg-card" : "bg-surface focus:ring-2 focus:ring-primary/30"}`;
   const Err = ({ k }: { k: keyof Errs }) => (errors[k] ? <p className="mt-1 flex items-center gap-1 text-[12.5px] font-semibold text-destructive"><AlertTriangle size={14} /> {errors[k]}</p> : null);
@@ -372,6 +427,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
           <input id="cc-name" autoComplete="cc-name" placeholder="Nome completo" value={holder} onChange={(e) => setHolder(e.target.value.slice(0, 60))} className={field(errors.holder)} />
           <Err k="holder" />
         </div>
+        {wappiSettings?.threeDSSecurityType === "IFRAME" && <div ref={iframeRef} className="overflow-hidden rounded-xl" />}
         <div>
           <label htmlFor="cc-inst" className="mb-1.5 block text-[14px] font-bold">Parcelas</label>
           <select id="cc-inst" value={installments} onChange={(e) => setInstallments(Number(e.target.value))} className={field()}>
