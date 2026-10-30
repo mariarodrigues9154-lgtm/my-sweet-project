@@ -31,8 +31,8 @@ describe("privacidade dos telefones PIX", () => {
     const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
     const rows = await list({ data: { store_id: "store-1" }, context: { userId: "admin-1", supabase: { rpc } } });
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: "admin-1", _role: "admin" });
-    expect(rows[0]?.phone).toBe(fixtures.phone);
-    expect(rows[0]?.phone_digits).toBe("22999995552");
+    expect(rows[0]?.["phone"]).toBe(fixtures.phone);
+    expect(rows[0]?.["phone_digits"]).toBe("22999995552");
   });
   it("usuário não administrador é recusado antes de consultar pedidos", async () => {
     await expect(list({ data: { store_id: "store-1" }, context: { userId: "user-1", supabase: { rpc: vi.fn().mockResolvedValue({ data: false, error: null }) } } })).rejects.toThrow("Acesso restrito");
