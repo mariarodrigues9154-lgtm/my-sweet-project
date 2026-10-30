@@ -9,7 +9,7 @@ import { cardProviderReady, fillDeclineMessage, installmentPlan, pixDiscountLabe
 import { sizedImage, stableMediaUrl } from "@/lib/media-url";
 import { useServerFn } from "@tanstack/react-start";
 import { confirmWappiCardPayment, getWappiCardConfig, payOrderWithCard } from "@/lib/store.functions";
-import { finishWappiThreeDS, mountWappiIframe, prepareWappiThreeDS, tokenizeWappiCard, wappiCardSettings, type WappiThreeDSSettings } from "@/lib/wappi-card.client";
+import { finishWappiThreeDS, mountWappiIframe, prepareWappiThreeDS, tokenizeWappiCard, wappiCardSettings, type WappiThreeDSSettings } from "@/lib/wappi-card-browser";
 import sealMastercard from "@/assets/seal-45.png.asset.json";
 import sealVisa from "@/assets/seal-47.png.asset.json";
 import sealSafekey from "@/assets/seal-46.png.asset.json";
