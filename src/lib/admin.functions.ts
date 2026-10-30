@@ -640,6 +640,16 @@ const variantComboSchema = z.object({
   stock: z.number().int().min(0).nullable().optional(),
   sku: optStr(80),
   active: z.boolean().optional().default(true),
+  promo_badge: z
+    .object({
+      enabled: z.boolean().optional(),
+      text: z.string().trim().max(60).optional(),
+      pulse: z.boolean().optional(),
+      bg_color: z.string().trim().max(20).optional(),
+      text_color: z.string().trim().max(20).optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /** Textos e métricas exibidas na página do produto, popup e checkout. */
