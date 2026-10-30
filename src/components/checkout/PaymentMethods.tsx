@@ -242,6 +242,43 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
     return Object.keys(e).length === 0;
   }
 
+  /** Wappi Brasil: tokeniza no SDK oficial, cria a transação e conclui o 3DS no navegador. */
+  async function submitWappi(no: string) {
+    const cfgRes = await wappiConfig({ data: { order_number: no } });
+    if (!cfgRes.available || !cfgRes.publicKey) { setErrors({}); setUnavailable(true); return; }
+    const settings = await wappiCardSettings(cfgRes.publicKey);
+    setWappiSettings(settings);
+    const plan = installmentPlan(totalCents, cfg).find((p) => p.n === installments);
+    await prepareWappiThreeDS(plan?.totalCents ?? totalCents, installments);
+    const m = /^(\d{2})\/(\d{2})$/.exec(expiry)!;
+    // O cartão aberto vai só para o SDK da Wappi; o nosso servidor recebe apenas o token.
+    const hash = await tokenizeWappiCard({ number: digits, holderName: holder.trim(), expMonth: Number(m[1]), expYear: 2000 + Number(m[2]), cvv });
+    setCvv("");
+    const res = await payCard({ data: { order_number: no, installments, card_hash: hash } });
+    if (res.status === "paid") { setNumber(""); onPaid!(no); return; }
+    if (res.status === "refused") { setNumber(""); setExpiry(""); setErrors({}); setDeclined(true); return; }
+    if (res.status === "unavailable" || res.status === "error") {
+      if (res.status === "error") console.error("[card] falha no pagamento", res.error);
+      setErrors({}); setUnavailable(true);
+      return;
+    }
+    // Pendente: quando há 3DS, o SDK conduz a autenticação com a transação criada.
+    const tx = (res as { transaction?: unknown }).transaction;
+    if (tx) {
+      try {
+        await finishWappiThreeDS(tx);
+      } catch {
+        // Desafio interrompido: o status real será confirmado pela reconsulta abaixo.
+      }
+    }
+    // A resposta do navegador é só experiência: o servidor reconfirma na API da Wappi.
+    const final = await wappiConfirm({ data: { order_number: no } });
+    if (final.status === "paid") { setNumber(""); onPaid!(no); return; }
+    if (final.status === "refused") { setNumber(""); setExpiry(""); setErrors({}); setDeclined(true); return; }
+    if (final.status === "error") { console.error("[card] confirmação falhou", final.error); setErrors({}); setUnavailable(true); return; }
+    setErrors({ form: "Pagamento em análise pelo banco. Você receberá a confirmação assim que for aprovado." });
+  }
+
   async function submit() {
     if (busy || !validate()) return;
     if (!ready) { setErrors({ form: "O pagamento com cartão ainda não está disponível nesta loja. Escolha Pix para concluir." }); return; }
@@ -252,6 +289,10 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
       const no = orderNo ?? (await prepareOrder());
       if (!no) return;
       setOrderNo(no);
+      if (cfg.card.provider === "wappi") {
+        await submitWappi(no);
+        return;
+      }
       const m = /^(\d{2})\/(\d{2})$/.exec(expiry)!;
       const res = await payCard({ data: { order_number: no, installments, card: { number: digits, holder_name: holder.trim(), expiration_month: Number(m[1]), expiration_year: 2000 + Number(m[2]), cvv } } });
       if (res.status === "paid") { setNumber(""); setCvv(""); onPaid(no); return; }
