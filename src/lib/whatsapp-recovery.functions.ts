@@ -222,7 +222,7 @@ export const listPixRecoveryOrders = createServerFn({ method: "POST" })
         id: o.id as string,
         order_number: o.order_number as string,
         customer: String((o.customer as { name?: string })?.name ?? ""),
-        phone: phone ? `(${phone.slice(-11, -9) || "--"}) *****-${phone.slice(-4)}` : "—",
+        phone: String((o.customer as { phone?: string })?.phone ?? "").trim(),
         phone_digits_tail: phone.slice(-4),
         phone_digits: phone,
         total: Number(o.total),
