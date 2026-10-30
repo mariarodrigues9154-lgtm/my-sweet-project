@@ -40,3 +40,4 @@
 - Coupon bar emphasis comes only from explicit highlight_text and secondary_text in the existing product configuration; legacy bar_text stays intact as secondary text without keyword inference; why: arbitrary editable emphasis with backward-compatible content.
 - Magnus Frete: settings per store + order_shipments UNIQUE(order_id); sent only from sendPurchaseForOrder; network errors become "incerto", never auto-retried; why: API not idempotent.
 - PIX final-screen display toggles/texts live in store_settings.checkout.pix_page (resolvePixPage); optional payment proofs go to private storage payment-proofs/<order_id> and never change order status; why: per-store UI without touching payment logic.
+- Per-variant promo badge lives in `variant_combos[].promo_badge` (enabled/text/pulse/colors), resolved by `optionPromoBadge` in product-types and rendered only in BuySheet cards; why: visual-only highlight that never touches price/discount logic.
