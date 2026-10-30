@@ -434,6 +434,8 @@ export function comboActive(combo: VariantCombo | null | undefined): boolean {
  * Selo promocional da opção de um grupo: procura a combinação que usa essa
  * opção respeitando o que já foi escolhido nos outros grupos (mesma regra de
  * optionSelectable). Retorna null quando não há selo ativo com texto.
+ * O selo só existe em grupos visuais com card de imagem; grupos de botões
+ * simples (voltagem, tamanho, cor em chip) nunca exibem selo.
  */
 export function optionPromoBadge(
   product: Pick<Product, "variants" | "variant_combos">,
@@ -443,6 +445,10 @@ export function optionPromoBadge(
 ): VariantPromoBadge | null {
   const groups = product.variants ?? [];
   const combos = product.variant_combos ?? [];
+  const group = groups.find((g) => g.name === groupName);
+  const hasImageCards =
+    group != null && (group.use_image === true || (group.options ?? []).some((o) => Boolean(o.image)));
+  if (!hasImageCards) return null;
   const combo = combos.find((c) => {
     const values = c.key.split(COMBO_SEP);
     return groups.every((group, index) => {
