@@ -684,34 +684,46 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
 
     const customer = (order.customer ?? {}) as { name?: string; email?: string; document?: string; phone?: string };
     const address = (order.address ?? {}) as { cep?: string; street?: string; number?: string; complement?: string; district?: string; city?: string; state?: string };
+    const cardProvider = methods.card.provider;
     let postbackUrl: string | undefined;
     let ip: string | undefined;
     try {
       const { getRequest, getRequestHeader } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
-      if (origin.startsWith("https://")) postbackUrl = `${origin}/api/public/webhooks/freepay`;
+      if (origin.startsWith("https://")) postbackUrl = `${origin}/api/public/webhooks/${cardProvider}`;
       ip = (getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "").split(",")[0]?.trim() || undefined;
     } catch { /* sem request */ }
 
-    const { createFreepayCardCharge } = await import("@/lib/payments/providers.server");
     const logFail = (kind: string, extra: Record<string, unknown>) =>
       console.error("[card] falha", { kind, store_id: order.store_id, order_id: order.id, order_number: order.order_number, provider: row.provider, payment_method: "card", at: new Date().toISOString(), ...extra });
-    let charge: Awaited<ReturnType<typeof createFreepayCardCharge>>;
+
+    const chargeInput = {
+      orderNumber: order.order_number as string,
+      amountCents,
+      installments: data.installments,
+      customer: { name: customer.name ?? "Cliente", email: customer.email ?? "", document: customer.document ?? "", ...(customer.phone ? { phone: customer.phone } : {}) },
+      items: [{ title: product.title, unit_price: Math.round(amountCents / quantity), quantity, tangible: true, external_ref: product.id }],
+      shipping: {
+        fee: 0,
+        address: { street: address.street ?? "", street_number: address.number ?? "", complement: address.complement ?? "", zip_code: (address.cep ?? "").replace(/\D/g, ""), neighborhood: address.district ?? "", city: address.city ?? "", state: (address.state ?? "").toUpperCase(), country: "BR" },
+      },
+      ...(postbackUrl ? { postbackUrl } : {}),
+      ...(ip ? { ip } : {}),
+    };
+
+    type Charge = { ok: true; transaction_id: string; status: string; transaction?: unknown } | { ok: false; error: string; status?: string | undefined; unavailable?: boolean };
+    let charge: Charge;
     try {
-      charge = await createFreepayCardCharge(toGatewayConfig(row), {
-        orderNumber: order.order_number as string,
-        amountCents,
-        installments: data.installments,
-        card: data.card,
-        customer: { name: customer.name ?? "Cliente", email: customer.email ?? "", document: customer.document ?? "", ...(customer.phone ? { phone: customer.phone } : {}) },
-        items: [{ title: product.title, unit_price: Math.round(amountCents / quantity), quantity, tangible: true, external_ref: product.id }],
-        shipping: {
-          fee: 0,
-          address: { street: address.street ?? "", street_number: address.number ?? "", complement: address.complement ?? "", zip_code: (address.cep ?? "").replace(/\D/g, ""), neighborhood: address.district ?? "", city: address.city ?? "", state: (address.state ?? "").toUpperCase(), country: "BR" },
-        },
-        ...(postbackUrl ? { postbackUrl } : {}),
-        ...(ip ? { ip } : {}),
-      });
+      if (cardProvider === "wappi") {
+        // Wappi Brasil: o cartão foi tokenizado no navegador pelo SDK oficial (3DS).
+        if (!data.card_hash) return fail("Pagamento com cartão indisponível nesta loja.");
+        const { createWappiCardCharge } = await import("@/lib/payments/wappi-card.server");
+        charge = await createWappiCardCharge(toGatewayConfig(row), { ...chargeInput, cardHash: data.card_hash });
+      } else {
+        if (!data.card) return fail("Pagamento com cartão indisponível nesta loja.");
+        const { createFreepayCardCharge } = await import("@/lib/payments/providers.server");
+        charge = await createFreepayCardCharge(toGatewayConfig(row), { ...chargeInput, card: data.card });
+      }
     } catch (e) {
       // Exceção inesperada: libera a trava e oferece a recuperação pelo PIX.
       logFail("exception", { error: e instanceof Error ? e.message : String(e) });
@@ -720,7 +732,7 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
     }
 
     if (!charge.ok) {
-      const refused = normalizeCardStatus("freepay", charge.status) === "refused";
+      const refused = normalizeCardStatus(cardProvider, charge.status) === "refused";
       await supabaseAdmin.from("orders").update({ provider_status: refused ? "refused" : null } as never).eq("id", order.id);
       logFail(refused ? "refused" : "technical", { provider_status: charge.status ?? null, error: charge.error });
       if (refused) return { status: "refused" as const, error: null };
@@ -730,7 +742,7 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
       return { status: "unavailable" as const, error: null };
     }
 
-    const result = normalizeCardStatus("freepay", charge.status);
+    const result = normalizeCardStatus(cardProvider, charge.status);
     const internal = charge.status.toLowerCase() || "pending";
     const update: Record<string, unknown> = {
       transaction_id: charge.transaction_id,
@@ -749,7 +761,84 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
       const { sendPurchaseForOrder } = await import("@/lib/meta.server");
       await sendPurchaseForOrder(order.id as string).catch(() => undefined);
     }
+    return {
+      status: result === "paid" ? ("paid" as const) : result === "refused" ? ("refused" as const) : ("pending" as const),
+      error: null,
+      // Wappi: a transação completa volta ao navegador para o finishThreeDS do SDK (contém three_ds).
+      ...(cardProvider === "wappi" ? { transaction: charge.transaction ?? null } : {}),
+    };
+  });
+
+/**
+ * Wappi Brasil: depois do finishThreeDS no navegador, o servidor RECONFIRMA o status
+ * na API da Wappi (a resposta do navegador é só experiência; a fonte da verdade é a API).
+ * Idempotente: só lê o gateway e atualiza o pedido conforme o status real.
+ */
+export const confirmWappiCardPayment = createServerFn({ method: "POST" })
+  .inputValidator((data: { order_number: string }) => z.object({ order_number: z.string().min(4).max(64) }).parse(data))
+  .handler(async ({ data }) => {
+    const fail = (error: string) => ({ status: "error" as const, error });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, status, store_id, payment, payment_provider, transaction_id, paid_at")
+      .eq("order_number", data.order_number)
+      .maybeSingle();
+    if (!order || !order.store_id) return fail("Pedido não encontrado.");
+    if (order.status === "pago") return { status: "paid" as const, error: null };
+    if (order.payment_provider !== "wappi" || !order.transaction_id) return fail("Este pedido não tem uma transação de cartão da Wappi.");
+
+    const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
+    const { getProvider } = await import("@/lib/payments/providers.server");
+    const settings = await loadStorePayment(order.store_id as string, "wappi");
+    const gateway = settings ? getProvider("wappi") : null;
+    if (!settings || !gateway) return fail("Pagamento com cartão indisponível nesta loja.");
+
+    let confirmed;
+    try {
+      confirmed = await gateway.getStatus(toGatewayConfig(settings), order.transaction_id as string);
+    } catch {
+      return { status: "pending" as const, error: null };
+    }
+    const { normalizeCardStatus } = await import("./payment-methods");
+    const result = normalizeCardStatus("wappi", confirmed.status);
+    const internal = confirmed.status.toLowerCase() || "pending";
+    const payment = (order.payment ?? {}) as Record<string, unknown>;
+    const update: Record<string, unknown> = {
+      provider_status: internal,
+      payment: { ...payment, gateway_status: confirmed.status, status: result === "paid" ? "pago" : result === "refused" ? "recusado" : "pendente" },
+    };
+    if (result === "paid") {
+      update["status"] = "pago";
+      if (!order.paid_at) update["paid_at"] = confirmed.paid_at ? new Date(confirmed.paid_at).toISOString() : new Date().toISOString();
+    }
+    await supabaseAdmin.from("orders").update(update as never).eq("id", order.id);
+    if (result === "paid") {
+      const { sendPurchaseForOrder } = await import("@/lib/meta.server");
+      await sendPurchaseForOrder(order.id as string).catch(() => undefined);
+    }
     return { status: result === "paid" ? ("paid" as const) : result === "refused" ? ("refused" as const) : ("pending" as const), error: null };
+  });
+
+/**
+ * Wappi Brasil: devolve a PUBLIC_KEY da loja para o SDK de cartão no navegador.
+ * A chave pública é feita para ser usada no navegador (doc oficial); a secreta nunca sai do servidor.
+ */
+export const getWappiCardConfig = createServerFn({ method: "GET" })
+  .inputValidator((data: { order_number: string }) => z.object({ order_number: z.string().min(4).max(64) }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin.from("orders").select("id, store_id").eq("order_number", data.order_number).maybeSingle();
+    if (!order?.store_id) return { available: false as const, publicKey: null };
+    const { data: storeRow } = await supabaseAdmin.from("store_settings").select("checkout").eq("id", order.store_id).maybeSingle();
+    const { resolvePaymentMethods, cardProviderReady } = await import("./payment-methods");
+    const methods = resolvePaymentMethods((storeRow?.checkout as { payment_methods?: unknown } | null)?.payment_methods);
+    if (!methods.card.enabled || !cardProviderReady(methods) || methods.card.provider !== "wappi") return { available: false as const, publicKey: null };
+    const { loadStorePayment } = await import("@/lib/payments/resolve.server");
+    const row = await loadStorePayment(order.store_id as string, "wappi");
+    const publicKey = row?.public_data["public_key"] ?? "";
+    if (!row || !publicKey) return { available: false as const, publicKey: null };
+    return { available: true as const, publicKey };
   });
 
 /**
