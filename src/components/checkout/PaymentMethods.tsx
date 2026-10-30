@@ -427,6 +427,7 @@ export function AddCardSheet({ cfg, totalCents, onClose, customerName = "", onPa
           <input id="cc-name" autoComplete="cc-name" placeholder="Nome completo" value={holder} onChange={(e) => setHolder(e.target.value.slice(0, 60))} className={field(errors.holder)} />
           <Err k="holder" />
         </div>
+        {wappiSettings?.threeDSSecurityType === "IFRAME" && <div ref={iframeRef} className="overflow-hidden rounded-xl" />}
         <div>
           <label htmlFor="cc-inst" className="mb-1.5 block text-[14px] font-bold">Parcelas</label>
           <select id="cc-inst" value={installments} onChange={(e) => setInstallments(Number(e.target.value))} className={field()}>
