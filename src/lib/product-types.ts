@@ -167,6 +167,10 @@ export type ProductDisplay = {
   badge1_text?: string | null;
   badge2_show?: boolean;
   badge2_text?: string | null;
+  /** Selos do pop-up de compra: herdar da página (padrão) ou textos próprios. */
+  sheet_badges_mode?: "inherit" | "custom";
+  sheet_badge1_text?: string | null;
+  sheet_badge2_text?: string | null;
   /** Selo WhatsApp — verde, opcionalmente clicável (wa.me), por produto. */
   wa_seal_show?: boolean;
   wa_seal_text?: string | null;
@@ -563,6 +567,17 @@ export function promoBadges(product: MetricsProduct): {
     wa,
   };
 }
+
+/** Selos do pop-up de compra: herda os da página ou usa textos próprios (vazio oculta). */
+export function sheetBadges(product: MetricsProduct): { badge1: string | null; badge2: string | null } {
+  const d = product.display ?? {};
+  if (d.sheet_badges_mode !== "custom") {
+    const { badge1, badge2 } = promoBadges(product);
+    return { badge1, badge2 };
+  }
+  return { badge1: (d.sheet_badge1_text ?? "").trim() || null, badge2: (d.sheet_badge2_text ?? "").trim() || null };
+}
+
 
 /** Avaliação do topo do Checkout 2. */
 export function checkoutRating(

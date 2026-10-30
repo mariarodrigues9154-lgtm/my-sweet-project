@@ -751,6 +751,8 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           onChange={(e) => set("display", { ...(d.display ?? {}), badge2_text: e.target.value })}
           className={inputCls}
         />
+        <SheetBadgesFields d={d} set={set} inputCls={inputCls} />
+
         <label className="flex items-center gap-2 text-[13px] font-semibold">
           <input
             type="checkbox"
