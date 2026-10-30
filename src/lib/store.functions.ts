@@ -654,7 +654,8 @@ export const payOrderWithCard = createServerFn({ method: "POST" })
     if (data.installments > methods.card.max_installments) return fail("Parcelamento indisponível.");
 
     const { loadStorePayment, toGatewayConfig } = await import("@/lib/payments/resolve.server");
-    const row = await loadStorePayment(order.store_id as string);
+    // Cartão usa as credenciais do gateway de CARTÃO da loja, independente do gateway PIX selecionado.
+    const row = await loadStorePayment(order.store_id as string, methods.card.provider);
     if (!row || !row.enabled || row.provider !== methods.card.provider) return fail("Pagamento com cartão indisponível nesta loja.");
 
     const { data: product } = await supabaseAdmin.from("products").select("id, title, store_id").eq("id", order.product_id as string).maybeSingle();
