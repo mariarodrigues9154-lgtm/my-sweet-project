@@ -265,17 +265,33 @@ export function BuySheet({
                     {group.options.map((option) => {
                       const active = selection[group.name] === option.value;
                       const enabled = optionSelectable(product, selection, group.name, option.value);
+                      const badge = optionPromoBadge(product, selection, group.name, option.value);
                       return (
                         <button
                           key={option.value}
                           type="button"
                           disabled={!enabled}
                           onClick={() => choose(group.name, option.value)}
-                          className={`overflow-hidden rounded-xl border bg-card text-left transition-colors ${
+                          className={`relative overflow-visible rounded-xl border bg-card text-left transition-colors ${
                             active ? "border-2 border-primary" : "border-border"
                           } ${enabled ? "" : "opacity-40"}`}
                         >
-                          <div className="aspect-square w-full bg-surface">
+                          {badge && (
+                            <span
+                              className={`absolute -top-2 left-1/2 z-10 inline-flex max-w-[92%] -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-bold leading-4 text-white shadow-sm ${
+                                badge.pulse ? "badge-pulse" : ""
+                              }`}
+                              style={{
+                                backgroundColor: badge.bg_color || undefined,
+                                color: badge.text_color || undefined,
+                                background: badge.bg_color ? undefined : "var(--gradient-primary, var(--color-primary))",
+                              }}
+                            >
+                              <Zap size={10} className="fill-current" />
+                              {badge.text}
+                            </span>
+                          )}
+                          <div className="aspect-square w-full overflow-hidden rounded-t-[10px] bg-surface">
                             {option.image && (
                               <img src={option.image} alt={option.label} className="size-full object-contain" />
                             )}
@@ -292,16 +308,32 @@ export function BuySheet({
                     {group.options.map((option) => {
                       const active = selection[group.name] === option.value;
                       const enabled = optionSelectable(product, selection, group.name, option.value);
+                      const badge = optionPromoBadge(product, selection, group.name, option.value);
                       return (
                         <button
                           key={option.value}
                           type="button"
                           disabled={!enabled}
                           onClick={() => choose(group.name, option.value)}
-                          className={`min-w-[62px] rounded-lg border px-3 py-2 text-center text-[13px] font-normal transition-colors ${
+                          className={`relative min-w-[62px] rounded-lg border px-3 py-2 text-center text-[13px] font-normal transition-colors ${
                             active ? "border-2 border-primary text-primary" : "border-border bg-card text-foreground"
                           } ${enabled ? "" : "opacity-40 line-through"}`}
                         >
+                          {badge && (
+                            <span
+                              className={`absolute -top-2.5 left-1/2 z-10 inline-flex max-w-[140px] -translate-x-1/2 items-center gap-1 truncate whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold leading-4 text-white shadow-sm ${
+                                badge.pulse ? "badge-pulse" : ""
+                              }`}
+                              style={{
+                                backgroundColor: badge.bg_color || undefined,
+                                color: badge.text_color || undefined,
+                                background: badge.bg_color ? undefined : "var(--gradient-primary, var(--color-primary))",
+                              }}
+                            >
+                              <Zap size={9} className="fill-current" />
+                              {badge.text}
+                            </span>
+                          )}
                           {option.label}
                         </button>
                       );
