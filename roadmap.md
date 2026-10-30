@@ -1,5 +1,10 @@
 # Roadmap
 
+## Telefone completo em Pedidos Pix (30/10/2026)
+- [x] Disponibilizar telefone real exclusivamente no retorno administrativo protegido
+- [x] Melhorar somente a coluna WhatsApp com copiar e abrir conversa manual
+- [x] Validar 242 testes e painel autenticado com pedido real: telefone completo, cópia, link com DDI, pesquisa e filtros em computador/celular; acesso sem sessão redireciona ao login, retorno público sem cliente/telefone e build OK. Nenhuma mensagem enviada.
+
 ## Central de múltiplos gateways (29/10/2026)
 - [x] Preservar configuração existente e adicionar registros independentes por provedor com ativação atômica por loja
 - [x] Atualizar painel para cadastrar, editar, testar e ativar gateways sem sobrescrever credenciais
