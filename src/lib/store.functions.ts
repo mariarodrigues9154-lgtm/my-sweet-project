@@ -627,8 +627,9 @@ const cardPayInput = z.object({
 });
 
 /**
- * Cartão de crédito pelo gateway da loja (hoje FreePay). Valor e parcelas recalculados no servidor;
- * os dados do cartão só seguem em memória para o gateway — nunca são gravados nem logados.
+ * Cartão de crédito pelo gateway da loja (FreePay ou Wappi Brasil). Valor e parcelas
+ * recalculados no servidor. FreePay recebe o cartão aberto só em memória; Wappi recebe
+ * apenas o token gerado pelo SDK no navegador (card_hash) — nunca gravado nem logado.
  * Pago/recusado vêm somente do status real devolvido pelo gateway.
  */
 export const payOrderWithCard = createServerFn({ method: "POST" })
