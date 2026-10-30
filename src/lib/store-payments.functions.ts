@@ -92,7 +92,7 @@ export const testStoreGateway = createServerFn({ method: "POST" })
         const detail = result.error ?? "";
         const error = /autentic|credencia|chave|token|key/i.test(detail) ? "Falha de autenticação. Confira as credenciais deste gateway." : /tentativ|limite|aguarde/i.test(detail) ? "Limite de consultas do provedor. Aguarde antes de testar novamente." : "O provedor recusou a consulta ou está indisponível. Tente novamente.";
         // WestPay builds a credential-free message with the real HTTP status/provider text.
-        return { ok: false as const, error: (data.provider === "westpay" || data.provider === "venuspay") && detail ? detail : error };
+        return { ok: false as const, error: (data.provider === "westpay" || data.provider === "venuspay" || data.provider === "pixxblack") && detail ? detail : error };
       }
       return { ok: true as const };
     } catch {
