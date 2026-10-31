@@ -1150,11 +1150,35 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           </div>
         )}
         <ReviewsCsvImport existing={d.reviews} onImport={(add) => setD((cur) => { if (!cur) return cur; const list = [...cur.reviews]; for (const { review, order } of add) { if (order != null && order >= 1 && order <= list.length) list.splice(order - 1, 0, review); else list.push(review); } return { ...cur, reviews: list }; })} />
+        {d.reviews.length > 0 && (() => {
+          const sel = selectedReviews.filter((k) => k < d.reviews.length);
+          const all = sel.length === d.reviews.length;
+          return (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2">
+              <button type="button" disabled={saving} className={btnCls} onClick={() => setSelectedReviews(all ? [] : d.reviews.map((_, k) => k))}>
+                {all ? "Desmarcar todas" : "Selecionar todas"}
+              </button>
+              <span className="text-[11.5px] font-semibold text-muted-foreground">{sel.length} selecionada{sel.length === 1 ? "" : "s"}</span>
+              {sel.length > 0 && (
+                <button type="button" disabled={saving} className={`${btnCls} text-destructive`} onClick={() => {
+                  if (!window.confirm(`Excluir definitivamente as ${sel.length} avaliações selecionadas deste produto? Essa ação não pode ser desfeita.`)) return;
+                  setD((cur) => (cur ? { ...cur, reviews: cur.reviews.filter((_, k) => !sel.includes(k)) } : cur));
+                  setSelectedReviews([]);
+                  setAutoSave(true);
+                }}>
+                  <Trash2 size={13} /> Excluir selecionadas ({sel.length})
+                </button>
+              )}
+            </div>
+          );
+        })()}
         {d.reviews.map((review, i) => {
           const upd = (patch: Partial<Review>) => set("reviews", d.reviews.map((x, k) => (k === i ? { ...x, ...patch } : x)));
           return (
-            <div key={i} className="space-y-2 rounded-lg border border-border p-2.5">
-              <div className="grid grid-cols-[40px_minmax(0,1fr)_80px_auto] items-center gap-2">
+            <div key={i} className={`space-y-2 rounded-lg border p-2.5 ${review.pinned ? "border-primary/60 bg-primary/5" : "border-border"}`}>
+              {review.pinned && <p className="flex items-center gap-1 text-[11px] font-bold text-primary"><Pin size={11} /> Fixada no topo (posição {d.reviews.slice(0, i + 1).filter((x) => x.pinned).length})</p>}
+              <div className="grid grid-cols-[auto_40px_minmax(0,1fr)_80px_auto] items-center gap-2">
+                <input type="checkbox" aria-label={`Selecionar avaliação ${i + 1}`} checked={selectedReviews.includes(i)} onChange={(e) => setSelectedReviews((cur) => (e.target.checked ? [...cur, i] : cur.filter((k) => k !== i)))} />
                 <label className="grid size-10 cursor-pointer place-items-center overflow-hidden rounded-full bg-surface" title="Avatar">
                   {review.avatar ? <img src={review.avatar} alt="" className="size-full object-cover" /> : <ImagePlus size={14} />}
                   <input type="file" hidden accept={IMAGE_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void uploadOne(f, (url) => upd({ avatar: url })); }} />
