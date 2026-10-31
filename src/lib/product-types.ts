@@ -12,6 +12,9 @@ export type VariantOption = {
   value: string;
   /** Imagem própria da opção (ex.: a foto daquela cor). */
   image?: string | null;
+  /** Disponibilidade manual independente do estoque, exclusiva desta opção. */
+  sold_out?: boolean;
+  sold_out_text?: string;
 };
 
 export type VariantGroup = {
@@ -477,12 +480,18 @@ export function variantPricing(
       ? Number(combo.previous_price)
       : Number(product.previous_price);
   const stock = combo?.stock != null ? Number(combo.stock) : Number(product.stock ?? 0);
+  const optionsAvailable = (product.variants ?? []).every((group) => {
+    const value = selection[group.name];
+    if (!value) return true;
+    const option = group.options.find((option) => option.value === value);
+    return option != null && option.sold_out !== true;
+  });
   return {
     price,
     previous_price: Math.max(previous, price),
     stock: Math.max(0, stock),
     sku: combo?.sku ?? null,
-    available: comboActive(combo) && Math.max(0, stock) > 0,
+    available: optionsAvailable && comboActive(combo) && Math.max(0, stock) > 0,
   };
 }
 
@@ -511,6 +520,8 @@ export function optionSelectable(
 ): boolean {
   const groups = product.variants ?? [];
   const combos = product.variant_combos ?? [];
+  const option = groups.find((group) => group.name === groupName)?.options.find((option) => option.value === value);
+  if (!option || option.sold_out === true) return false;
   if (!combos.length) return Number(product.stock ?? 0) > 0;
   return combos.some((combo) => {
     if (combo.active === false) return false;

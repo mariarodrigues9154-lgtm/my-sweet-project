@@ -19,6 +19,8 @@ import {
   type StoreSettings,
 } from "@/lib/product-types";
 import { Countdown } from "./OfferBlock";
+import { Button } from "@/components/ui/button";
+import { soldOutLabel } from "@/lib/variant-availability";
 
 /**
  * Bottom sheet de seleção de variações (referência TikTok Shop).
@@ -109,6 +111,10 @@ export function BuySheet({
   const selectedImage = variantImage(product, selection) ?? firstImage;
 
   const choose = (groupName: string, value: string) => {
+    if (!optionSelectable(product, selection, groupName, value)) {
+      setNotice("Esta variante está indisponível. Escolha outra opção.");
+      return;
+    }
     setSelection((current) => ({ ...current, [groupName]: value }));
     setHighlight(null);
     setNotice(null);
@@ -266,17 +272,19 @@ export function BuySheet({
                       const active = selection[group.name] === option.value;
                       const enabled = optionSelectable(product, selection, group.name, option.value);
                       const badge = optionPromoBadge(product, selection, group.name, option.value);
+                      const soldOut = soldOutLabel(option);
                       return (
-                        <button
+                        <Button
+                          variant="ghost"
                           key={option.value}
                           type="button"
-                          disabled={!enabled}
+                          aria-disabled={!enabled}
                           onClick={() => choose(group.name, option.value)}
-                          className={`relative overflow-visible rounded-xl border bg-card text-left transition-colors ${
+                          className={`relative block h-auto gap-0 whitespace-normal overflow-visible rounded-xl border bg-card p-0 text-left shadow-none transition-colors hover:bg-card ${
                             active ? "border-2 border-primary" : "border-border"
-                          } ${enabled ? "" : "opacity-40"}`}
+                          } ${soldOut ? "bg-muted" : enabled ? "" : "opacity-40"}`}
                         >
-                          {badge && (
+                          {badge && !soldOut && (
                             <span
                               className={`absolute -top-2 left-1/2 z-10 inline-flex max-w-[94%] -translate-x-1/2 items-center gap-0.5 overflow-hidden whitespace-nowrap rounded-full px-1.5 py-px text-[9px] font-bold leading-4 text-white shadow-sm sm:max-w-[92%] sm:gap-1 sm:px-2 sm:py-0.5 sm:text-[10.5px] ${
                                 badge.pulse ? "badge-pulse" : ""
@@ -291,15 +299,22 @@ export function BuySheet({
                               <span className="truncate">{badge.text}</span>
                             </span>
                           )}
-                          <div className="aspect-square w-full overflow-hidden rounded-t-[10px] bg-surface">
+                          <div className="relative aspect-square w-full overflow-hidden rounded-t-[10px] bg-surface">
                             {option.image && (
-                              <img src={option.image} alt={option.label} className="size-full object-contain" />
+                              <img src={option.image} alt={option.label} className={`size-full object-contain ${soldOut ? "grayscale opacity-60" : ""}`} />
+                            )}
+                            {soldOut && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-muted/20 px-2">
+                                <span className="max-w-full break-words rounded-lg bg-foreground/70 px-2 py-1.5 text-center text-[10px] font-bold leading-tight text-background sm:text-[11px]">
+                                  {soldOut}
+                                </span>
+                              </div>
                             )}
                           </div>
                           <span className="block px-1.5 py-2 text-center text-[12.5px] font-normal leading-tight">
                             {option.label}
                           </span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -310,12 +325,13 @@ export function BuySheet({
                       const enabled = optionSelectable(product, selection, group.name, option.value);
                       const badge = optionPromoBadge(product, selection, group.name, option.value);
                       return (
-                        <button
+                        <Button
+                          variant="ghost"
                           key={option.value}
                           type="button"
-                          disabled={!enabled}
+                          aria-disabled={!enabled}
                           onClick={() => choose(group.name, option.value)}
-                          className={`relative min-w-[62px] rounded-lg border px-3 py-2 text-center text-[13px] font-normal transition-colors ${
+                          className={`relative h-auto min-w-[62px] rounded-lg border px-3 py-2 text-center text-[13px] font-normal transition-colors hover:bg-card ${
                             active ? "border-2 border-primary text-primary" : "border-border bg-card text-foreground"
                           } ${enabled ? "" : "opacity-40 line-through"}`}
                         >
@@ -335,7 +351,7 @@ export function BuySheet({
                             </span>
                           )}
                           {option.label}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -373,7 +389,7 @@ export function BuySheet({
 
         {/* Rodapé fixo do popup */}
         <div className="shrink-0 border-t border-border bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-          {notice && <p className="mb-2 text-center text-[12.5px] text-primary">{notice}</p>}
+          {notice && <p role="status" className="mb-2 text-center text-[12.5px] text-primary">{notice}</p>}
           <button
             type="button"
             onClick={confirm}

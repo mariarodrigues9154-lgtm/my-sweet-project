@@ -1,4 +1,5 @@
 import { sanitizeCouponPromo } from "@/lib/coupon-promo";
+import { variantAvailabilityFields } from "@/lib/variant-availability";
 import { economyBannerSchema } from "@/lib/economy-banner";
 import { videosTitleSchema } from "@/lib/videos-title";
 import { productHeaderSchema } from "@/lib/product-header";
@@ -628,6 +629,7 @@ const variantGroupSchema = z.object({
         label: z.string().trim().min(1).max(60),
         value: z.string().trim().min(1).max(60),
         image: optStr(2000),
+        ...variantAvailabilityFields,
       }),
     )
     .max(60),
