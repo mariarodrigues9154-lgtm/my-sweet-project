@@ -53,3 +53,23 @@ export function decideAttempt(target: AttemptOrder, others: AttemptOrder[], wind
   if (newer) return { action: "skip_superseded", by: newer };
   return { action: "send" };
 }
+
+export const RECENT_MESSAGE_WINDOW_MIN = 24 * 60;
+
+/**
+ * Verdadeiro se o mesmo cliente (telefone, CPF ou e-mail) já recebeu uma mensagem
+ * de recuperação enviada com sucesso nas últimas 24h, para qualquer outro pedido.
+ */
+export function alreadyMessagedRecently(
+  target: Pick<AttemptOrder, "id" | "customer">,
+  sent: Array<{ order_id: string; sent_at: string; customer: AttemptOrder["customer"] }>,
+  now: number,
+  windowMin = RECENT_MESSAGE_WINDOW_MIN,
+): boolean {
+  const keys = new Set(customerKeys(target.customer));
+  if (!keys.size) return false;
+  const start = now - windowMin * 60000;
+  return sent.some(
+    (s) => s.order_id !== target.id && new Date(s.sent_at).getTime() >= start && customerKeys(s.customer).some((k) => keys.has(k)),
+  );
+}
