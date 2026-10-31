@@ -1,5 +1,10 @@
 # Roadmap
 
+## Variantes esgotadas (31/10/2026)
+- [ ] Adicionar controle individual e etiqueta editável nas opções existentes, sem alterar preços/estoque
+- [ ] Exibir foto acinzentada e etiqueta, informar ao clicar e bloquear compra também no servidor
+- [ ] Validar regras, salvamento autorizado e visual em celular/computador sem alterar produtos reais
+
 ## Telefone completo em Pedidos Pix (30/10/2026)
 - [x] Disponibilizar telefone real exclusivamente no retorno administrativo protegido
 - [x] Melhorar somente a coluna WhatsApp com copiar e abrir conversa manual
