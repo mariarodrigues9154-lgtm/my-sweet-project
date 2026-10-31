@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { sortReviewsPinnedFirst, type Review } from "./product-types";
 
-const r = (name: string, pinned?: boolean): Review => ({ name, rating: 5, date: "", text: "x", pinned });
+const r = (name: string, pinned?: boolean): Review => ({ name, rating: 5, date: "", text: "x", ...(pinned ? { pinned } : {}) });
 
 describe("sortReviewsPinnedFirst", () => {
   it("coloca fixadas no topo mantendo a ordem do painel entre elas", () => {
