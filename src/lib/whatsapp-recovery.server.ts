@@ -203,7 +203,7 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
 
 /** Busca outros pedidos da loja na janela da tentativa, reconfirma pendentes no gateway e decide. */
 async function checkAttempt(db: any, storeId: string, o: { id: string; created_at: unknown; customer: unknown; order_number: unknown }) {
-  const { decideAttempt, ATTEMPT_WINDOW_MIN } = await import("./pix-attempt");
+  const { decideAttempt, ATTEMPT_WINDOW_MIN } = await import("./pix-purchase-attempt");
   const since = new Date(new Date(o.created_at as string).getTime() - ATTEMPT_WINDOW_MIN * 60000).toISOString();
   const { data } = await db.from("orders").select("id, order_number, status, created_at, customer").eq("store_id", storeId).gte("created_at", since).limit(500);
   const target = { id: o.id, order_number: o.order_number as string, status: "aguardando_pagamento", created_at: o.created_at as string, customer: o.customer as never };
@@ -211,7 +211,7 @@ async function checkAttempt(db: any, storeId: string, o: { id: string; created_a
   let decision = decideAttempt(target, rows);
   if (decision.action !== "send") return decision;
   // Última validação: outros PIX pendentes do mesmo cliente podem ter sido pagos e o aviso ainda não chegou.
-  const { customerKeys } = await import("./pix-attempt");
+  const { customerKeys } = await import("./pix-purchase-attempt");
   const keys = new Set(customerKeys(target.customer));
   const siblings = rows.filter((r) => r.id !== o.id && r.status === "aguardando_pagamento" && customerKeys(r.customer).some((k) => keys.has(k))).slice(0, 5);
   if (!siblings.length) return decision;

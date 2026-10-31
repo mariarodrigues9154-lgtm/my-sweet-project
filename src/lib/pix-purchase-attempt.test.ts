@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideAttempt, type AttemptOrder } from "./pix-attempt";
+import { decideAttempt, type AttemptOrder } from "./pix-purchase-attempt";
 
 const c = { phone: "(35) 99198-9688", email: "a@b.com", document: "123.456.789-00" };
 const o = (id: string, status: string, min: number, customer: AttemptOrder["customer"] = c): AttemptOrder =>
