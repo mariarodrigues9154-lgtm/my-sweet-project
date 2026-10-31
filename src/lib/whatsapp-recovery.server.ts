@@ -170,6 +170,8 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       const attempt = await checkAttempt(supabaseAdmin, cfg.store_id as string, o);
       if (attempt.action === "skip_paid") { await finish("nao_enviada", `Recuperação cancelada: cliente já pagou o pedido #${attempt.by.order_number ?? ""} da mesma tentativa de compra`, "PAID"); continue; }
       if (attempt.action === "skip_superseded") { await finish("ignorado", `Substituído pelo PIX mais recente #${attempt.by.order_number ?? ""} do mesmo cliente`, "PENDING"); continue; }
+      // Trava de 24h: o mesmo cliente nunca recebe mais de uma mensagem de recuperação por dia.
+      if (await messagedRecently(supabaseAdmin, cfg.store_id as string, o, now)) { await finish("ignorado", "Cliente já recebeu mensagem nas últimas 24h", "PENDING"); continue; }
 
       const pay = (o.payment ?? {}) as { copy_paste?: string; expiration_date?: string };
       const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
@@ -221,4 +223,20 @@ async function checkAttempt(db: any, storeId: string, o: { id: string; created_a
   }
   decision = decideAttempt(target, rows);
   return decision;
+}
+
+/** Envios bem-sucedidos da loja nas últimas 24h, comparados pelo cliente (telefone/CPF/e-mail). */
+async function messagedRecently(db: any, storeId: string, o: { id: string; customer: unknown }, now: number) {
+  const { alreadyMessagedRecently, RECENT_MESSAGE_WINDOW_MIN } = await import("./pix-purchase-attempt");
+  const since = new Date(now - RECENT_MESSAGE_WINDOW_MIN * 60000).toISOString();
+  const { data, error } = await db
+    .from("whatsapp_pix_reminders")
+    .select("order_id, updated_at, orders(customer)")
+    .eq("store_id", storeId)
+    .eq("status", "enviada")
+    .gte("updated_at", since)
+    .limit(1000);
+  if (error) return true; // na dúvida, não envia de novo
+  const sent = (data ?? []).map((r: any) => ({ order_id: r.order_id, sent_at: r.updated_at, customer: r.orders?.customer ?? null }));
+  return alreadyMessagedRecently({ id: o.id, customer: o.customer as never }, sent, now);
 }
