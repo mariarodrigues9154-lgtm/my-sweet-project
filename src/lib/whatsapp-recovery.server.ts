@@ -166,6 +166,11 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       if (status !== "aguardando_pagamento") { await finish("nao_enviada", `Pedido com status ${status}`, status.toUpperCase()); continue; }
       if (!phone) { await finish("falha", "Telefone inválido", "PENDING"); continue; }
 
+      // Mesma tentativa de compra: outro PIX do mesmo cliente pago (ou pendente mais novo) bloqueia este.
+      const attempt = await checkAttempt(supabaseAdmin, cfg.store_id as string, o);
+      if (attempt.action === "skip_paid") { await finish("nao_enviada", `Recuperação cancelada: cliente já pagou o pedido #${attempt.by.order_number ?? ""} da mesma tentativa de compra`, "PAID"); continue; }
+      if (attempt.action === "skip_superseded") { await finish("ignorado", `Substituído pelo PIX mais recente #${attempt.by.order_number ?? ""} do mesmo cliente`, "PENDING"); continue; }
+
       const pay = (o.payment ?? {}) as { copy_paste?: string; expiration_date?: string };
       const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
       const expired = !!exp && new Date(exp).getTime() <= now;
