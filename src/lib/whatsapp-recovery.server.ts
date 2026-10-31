@@ -166,6 +166,11 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       if (status !== "aguardando_pagamento") { await finish("nao_enviada", `Pedido com status ${status}`, status.toUpperCase()); continue; }
       if (!phone) { await finish("falha", "Telefone inválido", "PENDING"); continue; }
 
+      // Mesma tentativa de compra: outro PIX do mesmo cliente pago (ou pendente mais novo) bloqueia este.
+      const attempt = await checkAttempt(supabaseAdmin, cfg.store_id as string, o);
+      if (attempt.action === "skip_paid") { await finish("nao_enviada", `Recuperação cancelada: cliente já pagou o pedido #${attempt.by.order_number ?? ""} da mesma tentativa de compra`, "PAID"); continue; }
+      if (attempt.action === "skip_superseded") { await finish("ignorado", `Substituído pelo PIX mais recente #${attempt.by.order_number ?? ""} do mesmo cliente`, "PENDING"); continue; }
+
       const pay = (o.payment ?? {}) as { copy_paste?: string; expiration_date?: string };
       const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
       const expired = !!exp && new Date(exp).getTime() <= now;
@@ -194,4 +199,26 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
     }
   }
   return { checked, sent };
+}
+
+/** Busca outros pedidos da loja na janela da tentativa, reconfirma pendentes no gateway e decide. */
+async function checkAttempt(db: any, storeId: string, o: { id: string; created_at: unknown; customer: unknown; order_number: unknown }) {
+  const { decideAttempt, ATTEMPT_WINDOW_MIN } = await import("./pix-purchase-attempt");
+  const since = new Date(new Date(o.created_at as string).getTime() - ATTEMPT_WINDOW_MIN * 60000).toISOString();
+  const { data } = await db.from("orders").select("id, order_number, status, created_at, customer").eq("store_id", storeId).gte("created_at", since).limit(500);
+  const target = { id: o.id, order_number: o.order_number as string, status: "aguardando_pagamento", created_at: o.created_at as string, customer: o.customer as never };
+  const rows = (data ?? []) as Array<typeof target>;
+  let decision = decideAttempt(target, rows);
+  if (decision.action !== "send") return decision;
+  // Última validação: outros PIX pendentes do mesmo cliente podem ter sido pagos e o aviso ainda não chegou.
+  const { customerKeys } = await import("./pix-purchase-attempt");
+  const keys = new Set(customerKeys(target.customer));
+  const siblings = rows.filter((r) => r.id !== o.id && r.status === "aguardando_pagamento" && customerKeys(r.customer).some((k) => keys.has(k))).slice(0, 5);
+  if (!siblings.length) return decision;
+  const { checkOrderPaymentStatus } = await import("@/lib/payments/order-status.server");
+  for (const s of siblings) {
+    try { s.status = (await checkOrderPaymentStatus(s.order_number as string)).status; } catch { /* mantém */ }
+  }
+  decision = decideAttempt(target, rows);
+  return decision;
 }
