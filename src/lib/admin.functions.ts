@@ -571,6 +571,7 @@ const reviewSchema = z.object({
   text: z.string().trim().min(1).max(3000),
   confirmed: optBool,
   hidden: optBool,
+  pinned: optBool,
   photos: strList(2000, 20),
   videos: strList(2000, 10),
   avatar: z.string().trim().max(2000).nullish().transform((v) => v || null),

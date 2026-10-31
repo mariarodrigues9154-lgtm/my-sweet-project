@@ -12,6 +12,8 @@ import {
   ImagePlus,
   Loader2,
   Pencil,
+  Pin,
+  PinOff,
   Plus,
   Star,
   Trash2,
@@ -442,6 +444,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
   const [imageUrl, setImageUrl] = useState("");
   const formRef = React.useRef<HTMLFormElement>(null);
   const [autoSave, setAutoSave] = useState(false);
+  const [selectedReviews, setSelectedReviews] = useState<number[]>([]);
   useEffect(() => {
     if (!autoSave) return;
     setAutoSave(false);
@@ -454,6 +457,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
       .then((p) => {
         if (!alive) return;
         setD({ ...p, sections: p.sections ?? {}, creator_videos: p.creator_videos ?? [], reviews: p.reviews ?? [], description: p.description ?? [], specs: p.specs ?? [], media: p.media ?? [], protection: p.protection ?? {}, variants: p.variants ?? [], variant_combos: p.variant_combos ?? [] } as Detail);
+        setSelectedReviews([]);
         setPrice(moneyInput(p.price));
         setPrevious(moneyInput(p.previous_price));
         setStock(String(p.stock));
@@ -1146,11 +1150,35 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
           </div>
         )}
         <ReviewsCsvImport existing={d.reviews} onImport={(add) => setD((cur) => { if (!cur) return cur; const list = [...cur.reviews]; for (const { review, order } of add) { if (order != null && order >= 1 && order <= list.length) list.splice(order - 1, 0, review); else list.push(review); } return { ...cur, reviews: list }; })} />
+        {d.reviews.length > 0 && (() => {
+          const sel = selectedReviews.filter((k) => k < d.reviews.length);
+          const all = sel.length === d.reviews.length;
+          return (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2">
+              <button type="button" disabled={saving} className={btnCls} onClick={() => setSelectedReviews(all ? [] : d.reviews.map((_, k) => k))}>
+                {all ? "Desmarcar todas" : "Selecionar todas"}
+              </button>
+              <span className="text-[11.5px] font-semibold text-muted-foreground">{sel.length} selecionada{sel.length === 1 ? "" : "s"}</span>
+              {sel.length > 0 && (
+                <button type="button" disabled={saving} className={`${btnCls} text-destructive`} onClick={() => {
+                  if (!window.confirm(`Excluir definitivamente as ${sel.length} avaliações selecionadas deste produto? Essa ação não pode ser desfeita.`)) return;
+                  setD((cur) => (cur ? { ...cur, reviews: cur.reviews.filter((_, k) => !sel.includes(k)) } : cur));
+                  setSelectedReviews([]);
+                  setAutoSave(true);
+                }}>
+                  <Trash2 size={13} /> Excluir selecionadas ({sel.length})
+                </button>
+              )}
+            </div>
+          );
+        })()}
         {d.reviews.map((review, i) => {
           const upd = (patch: Partial<Review>) => set("reviews", d.reviews.map((x, k) => (k === i ? { ...x, ...patch } : x)));
           return (
-            <div key={i} className="space-y-2 rounded-lg border border-border p-2.5">
-              <div className="grid grid-cols-[40px_minmax(0,1fr)_80px_auto] items-center gap-2">
+            <div key={i} className={`space-y-2 rounded-lg border p-2.5 ${review.pinned ? "border-primary/60 bg-primary/5" : "border-border"}`}>
+              {review.pinned && <p className="flex items-center gap-1 text-[11px] font-bold text-primary"><Pin size={11} /> Fixada no topo (posição {d.reviews.slice(0, i + 1).filter((x) => x.pinned).length})</p>}
+              <div className="grid grid-cols-[auto_40px_minmax(0,1fr)_80px_auto] items-center gap-2">
+                <input type="checkbox" aria-label={`Selecionar avaliação ${i + 1}`} checked={selectedReviews.includes(i)} onChange={(e) => setSelectedReviews((cur) => (e.target.checked ? [...cur, i] : cur.filter((k) => k !== i)))} />
                 <label className="grid size-10 cursor-pointer place-items-center overflow-hidden rounded-full bg-surface" title="Avatar">
                   {review.avatar ? <img src={review.avatar} alt="" className="size-full object-cover" /> : <ImagePlus size={14} />}
                   <input type="file" hidden accept={IMAGE_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void uploadOne(f, (url) => upd({ avatar: url })); }} />
@@ -1159,7 +1187,12 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                 <select value={String(review.rating)} onChange={(e) => upd({ rating: Number(e.target.value) })} className={inputCls}>
                   {[...new Set([5, 4.9, 4.8, 4.7, 4.5, 4, 3, 2, 1, Number(review.rating) || 5])].sort((a, b) => b - a).map((n) => <option key={n} value={n}>{String(n).replace(".", ",")}★</option>)}
                 </select>
-                <Order onUp={() => set("reviews", move(d.reviews, i, -1))} onDown={() => set("reviews", move(d.reviews, i, 1))} onRemove={() => set("reviews", d.reviews.filter((_, k) => k !== i))} />
+                <span className="flex items-center gap-1">
+                  <button type="button" aria-label={review.pinned ? `Desafixar avaliação ${i + 1}` : `Fixar avaliação ${i + 1} no topo`} title={review.pinned ? "Desafixar do topo" : "Fixar no topo"} onClick={() => upd({ pinned: !review.pinned })} className={`grid size-7 place-items-center rounded-md border ${review.pinned ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                    {review.pinned ? <PinOff size={13} /> : <Pin size={13} />}
+                  </button>
+                  <Order onUp={() => set("reviews", move(d.reviews, i, -1))} onDown={() => set("reviews", move(d.reviews, i, 1))} onRemove={() => set("reviews", d.reviews.filter((_, k) => k !== i))} />
+                </span>
               </div>
               <input value={review.date} placeholder="Data/tempo (ex.: Há 2 horas)" onChange={(e) => upd({ date: e.target.value })} className={inputCls} />
               <textarea value={review.text} placeholder="Texto da avaliação" onChange={(e) => upd({ text: e.target.value })} rows={3} className={inputCls} />
