@@ -1187,7 +1187,12 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
                 <select value={String(review.rating)} onChange={(e) => upd({ rating: Number(e.target.value) })} className={inputCls}>
                   {[...new Set([5, 4.9, 4.8, 4.7, 4.5, 4, 3, 2, 1, Number(review.rating) || 5])].sort((a, b) => b - a).map((n) => <option key={n} value={n}>{String(n).replace(".", ",")}★</option>)}
                 </select>
-                <Order onUp={() => set("reviews", move(d.reviews, i, -1))} onDown={() => set("reviews", move(d.reviews, i, 1))} onRemove={() => set("reviews", d.reviews.filter((_, k) => k !== i))} />
+                <span className="flex items-center gap-1">
+                  <button type="button" aria-label={review.pinned ? `Desafixar avaliação ${i + 1}` : `Fixar avaliação ${i + 1} no topo`} title={review.pinned ? "Desafixar do topo" : "Fixar no topo"} onClick={() => upd({ pinned: !review.pinned })} className={`grid size-7 place-items-center rounded-md border ${review.pinned ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                    {review.pinned ? <PinOff size={13} /> : <Pin size={13} />}
+                  </button>
+                  <Order onUp={() => set("reviews", move(d.reviews, i, -1))} onDown={() => set("reviews", move(d.reviews, i, 1))} onRemove={() => set("reviews", d.reviews.filter((_, k) => k !== i))} />
+                </span>
               </div>
               <input value={review.date} placeholder="Data/tempo (ex.: Há 2 horas)" onChange={(e) => upd({ date: e.target.value })} className={inputCls} />
               <textarea value={review.text} placeholder="Texto da avaliação" onChange={(e) => upd({ text: e.target.value })} rows={3} className={inputCls} />
