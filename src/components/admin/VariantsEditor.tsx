@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 
 import { IMAGE_ACCEPT } from "@/lib/media-upload";
+import { Switch } from "@/components/ui/switch";
 import { brl, moneyInput, parseMoney } from "@/lib/format";
 import { allComboKeys, comboLabel, type VariantCombo, type VariantGroup } from "@/lib/product-types";
 
@@ -126,7 +127,8 @@ export function VariantsEditor({
 
           <div className="mt-3 space-y-2">
             {group.options.map((option, oi) => (
-              <div key={option.value} className="flex items-center gap-2">
+              <div key={option.value}>
+              <div className="flex items-center gap-2">
                 {option.image ? (
                   <div className="relative size-11 shrink-0 overflow-hidden rounded-lg border border-border">
                     <img src={option.image} alt="" className="size-full object-cover" />
@@ -182,6 +184,34 @@ export function VariantsEditor({
                 >
                   <X size={15} />
                 </button>
+              </div>
+              <div className="mt-2 mb-3 space-y-2">
+                <label className="flex items-center gap-2 text-[12px]">
+                  <Switch
+                    aria-label={`Variante esgotada: ${group.label} ${option.label || option.value}`}
+                    checked={option.sold_out === true}
+                    onCheckedChange={(checked) => patchGroup(gi, {
+                      options: group.options.map((o, i) => i === oi ? { ...o, sold_out: checked } : o),
+                    })}
+                  />
+                  Variante esgotada
+                </label>
+                {option.sold_out === true && (
+                  <label className="block">
+                    <span className="text-[11px] text-muted-foreground">Texto da etiqueta de esgotado</span>
+                    <input
+                      aria-label={`Texto da etiqueta: ${group.label} ${option.label || option.value}`}
+                      value={option.sold_out_text ?? ""}
+                      placeholder="ESGOTADO"
+                      maxLength={120}
+                      className={inputCls}
+                      onChange={(e) => patchGroup(gi, {
+                        options: group.options.map((o, i) => i === oi ? { ...o, sold_out_text: e.target.value } : o),
+                      })}
+                    />
+                  </label>
+                )}
+              </div>
               </div>
             ))}
             <button
