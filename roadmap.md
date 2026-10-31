@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Variantes esgotadas (31/10/2026)
-- [ ] Adicionar controle individual e etiqueta editável nas opções existentes, sem alterar preços/estoque
-- [ ] Exibir foto acinzentada e etiqueta, informar ao clicar e bloquear compra também no servidor
-- [ ] Validar regras, salvamento autorizado e visual em celular/computador sem alterar produtos reais
+- [x] Adicionar controle individual e etiqueta editável nas opções existentes, sem alterar preços/estoque
+- [x] Exibir foto acinzentada e etiqueta, informar ao clicar e bloquear compra também no servidor via variantPricing
+- [x] Validar 15 testes, salvar/reabrir no painel autorizado, foto/etiqueta em 390px e computador, aviso sem selecionar, opção disponível até checkout e reativação. Cópia temporária removida; originais intactos, nenhuma cobrança criada; build OK.
 
 ## Telefone completo em Pedidos Pix (30/10/2026)
 - [x] Disponibilizar telefone real exclusivamente no retorno administrativo protegido

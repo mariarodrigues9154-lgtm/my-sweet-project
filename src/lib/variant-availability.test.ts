@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { soldOutLabel, variantAvailabilityFields } from "./variant-availability";
+import { variantAvailabilityFields } from "./variant-availability";
 import { optionSelectable, variantPricing, type Product } from "./product-types";
 
 function fixture(): Product {
