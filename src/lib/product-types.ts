@@ -224,6 +224,12 @@ export function reviewsSectionHeader(product: Product): { title: string; count: 
 
 
 /** Avaliações por carregamento do produto (1–20, padrão 20). */
+/** Avaliações fixadas primeiro, na ordem do painel; as demais mantêm a ordem original. */
+export function sortReviewsPinnedFirst<T extends { pinned?: boolean }>(reviews: T[]): T[] {
+  if (!reviews.some((r) => r.pinned)) return reviews;
+  return [...reviews.filter((r) => r.pinned), ...reviews.filter((r) => !r.pinned)];
+}
+
 export function reviewsPageSize(product: Pick<Product, "sections">): number {
   const n = Math.round(Number(product.sections?.reviews_page_size));
   return Number.isFinite(n) && n >= 1 ? Math.min(20, n) : 20;
@@ -236,6 +242,8 @@ export type Review = {
   text: string;
   confirmed?: boolean;
   hidden?: boolean;
+  /** Fixada no topo da lista pública; a ordem entre fixadas é a ordem do painel. */
+  pinned?: boolean;
   photos?: string[];
   /** Vídeos opcionais da avaliação (padrão: nenhum). */
   videos?: string[];
