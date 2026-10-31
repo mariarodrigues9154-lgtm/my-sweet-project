@@ -12,6 +12,8 @@ import {
   ImagePlus,
   Loader2,
   Pencil,
+  Pin,
+  PinOff,
   Plus,
   Star,
   Trash2,
@@ -442,6 +444,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
   const [imageUrl, setImageUrl] = useState("");
   const formRef = React.useRef<HTMLFormElement>(null);
   const [autoSave, setAutoSave] = useState(false);
+  const [selectedReviews, setSelectedReviews] = useState<number[]>([]);
   useEffect(() => {
     if (!autoSave) return;
     setAutoSave(false);
@@ -454,6 +457,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
       .then((p) => {
         if (!alive) return;
         setD({ ...p, sections: p.sections ?? {}, creator_videos: p.creator_videos ?? [], reviews: p.reviews ?? [], description: p.description ?? [], specs: p.specs ?? [], media: p.media ?? [], protection: p.protection ?? {}, variants: p.variants ?? [], variant_combos: p.variant_combos ?? [] } as Detail);
+        setSelectedReviews([]);
         setPrice(moneyInput(p.price));
         setPrevious(moneyInput(p.previous_price));
         setStock(String(p.stock));
