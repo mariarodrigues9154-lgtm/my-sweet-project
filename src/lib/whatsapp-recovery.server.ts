@@ -124,6 +124,8 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       .select("id, order_number, status, store_id, customer, product_snapshot, total, payment, pix_expiration_date, access_token, transaction_id, created_at")
       .eq("store_id", cfg.store_id)
       .eq("status", "aguardando_pagamento")
+      // Só cobranças PIX: tentativas de cartão nunca entram na recuperação de PIX.
+      .or("payment_method.eq.pix,payment_method.is.null")
       .not("transaction_id", "is", null)
       .gte("created_at", after)
       .lte("created_at", until)
@@ -207,9 +209,11 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
 async function checkAttempt(db: any, storeId: string, o: { id: string; created_at: unknown; customer: unknown; order_number: unknown }) {
   const { decideAttempt, ATTEMPT_WINDOW_MIN } = await import("./pix-purchase-attempt");
   const since = new Date(new Date(o.created_at as string).getTime() - ATTEMPT_WINDOW_MIN * 60000).toISOString();
-  const { data } = await db.from("orders").select("id, order_number, status, created_at, customer").eq("store_id", storeId).gte("created_at", since).limit(500);
+  const { data } = await db.from("orders").select("id, order_number, status, created_at, customer, payment_method").eq("store_id", storeId).gte("created_at", since).limit(500);
+  // Cartão pendente (tentativa recusada/abandonada) não substitui um PIX; cartão pago continua cancelando a recuperação.
+  const all = ((data ?? []) as Array<{ status: string; payment_method?: string | null }>).filter((r) => r.status !== "aguardando_pagamento" || !r.payment_method || r.payment_method === "pix");
   const target = { id: o.id, order_number: o.order_number as string, status: "aguardando_pagamento", created_at: o.created_at as string, customer: o.customer as never };
-  const rows = (data ?? []) as Array<typeof target>;
+  const rows = all as unknown as Array<typeof target>;
   let decision = decideAttempt(target, rows);
   if (decision.action !== "send") return decision;
   // Última validação: outros PIX pendentes do mesmo cliente podem ter sido pagos e o aviso ainda não chegou.
