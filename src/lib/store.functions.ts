@@ -781,7 +781,7 @@ export const confirmWappiCardPayment = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, status, store_id, payment, payment_provider, transaction_id, paid_at")
+      .select("id, order_number, status, store_id, payment, payment_provider, transaction_id, paid_at, payment_method")
       .eq("order_number", data.order_number)
       .maybeSingle();
     if (!order || !order.store_id) return fail("Pedido não encontrado.");
@@ -800,23 +800,9 @@ export const confirmWappiCardPayment = createServerFn({ method: "POST" })
     } catch {
       return { status: "pending" as const, error: null };
     }
-    const { normalizeCardStatus } = await import("./payment-methods");
-    const result = normalizeCardStatus("wappi", confirmed.status);
-    const internal = confirmed.status.toLowerCase() || "pending";
-    const payment = (order.payment ?? {}) as Record<string, unknown>;
-    const update: Record<string, unknown> = {
-      provider_status: internal,
-      payment: { ...payment, gateway_status: confirmed.status, status: result === "paid" ? "pago" : result === "refused" ? "recusado" : "pendente" },
-    };
-    if (result === "paid") {
-      update["status"] = "pago";
-      if (!order.paid_at) update["paid_at"] = confirmed.paid_at ? new Date(confirmed.paid_at).toISOString() : new Date().toISOString();
-    }
-    await supabaseAdmin.from("orders").update(update as never).eq("id", order.id);
-    if (result === "paid") {
-      const { sendPurchaseForOrder } = await import("@/lib/meta.server");
-      await sendPurchaseForOrder(order.id as string).catch(() => undefined);
-    }
+    const { confirmCardOrder } = await import("./payments/card-confirm.server");
+    const { sendPurchaseForOrder } = await import("./meta.server");
+    const result = await confirmCardOrder(supabaseAdmin, order, confirmed, sendPurchaseForOrder);
     return { status: result === "paid" ? ("paid" as const) : result === "refused" ? ("refused" as const) : ("pending" as const), error: null };
   });
 

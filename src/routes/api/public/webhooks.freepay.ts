@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/public/webhooks/freepay")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: order } = await supabaseAdmin
           .from("orders")
-          .select("id, status, store_id, payment, provider_status, paid_at, e2e")
+          .select("id, status, store_id, payment, provider_status, paid_at, e2e, payment_method, payment_provider, transaction_id")
           .eq("payment_provider", "freepay")
           .eq("transaction_id", transactionId)
           .maybeSingle();
@@ -43,6 +43,13 @@ export const Route = createFileRoute("/api/public/webhooks/freepay")({
           confirmed = await gateway.getStatus(toGatewayConfig(settings), transactionId);
         } catch {
           return new Response("indisponível", { status: 503 });
+        }
+        const { orderPaymentMethod } = await import("@/lib/order-payment");
+        if (orderPaymentMethod(order) === "card" && !["REFUNDED", "CHARGEBACK", "PRECHARGEBACK"].includes(confirmed.status.toUpperCase())) {
+          const { confirmCardOrder } = await import("@/lib/payments/card-confirm.server");
+          const { sendPurchaseForOrder } = await import("@/lib/meta.server");
+          await confirmCardOrder(supabaseAdmin, order, confirmed, sendPurchaseForOrder);
+          return new Response("ok");
         }
         const internal = confirmed.status.toLowerCase();
         const event = request.headers.get("x-webhook-event") ?? String(body["event"] ?? "postback");

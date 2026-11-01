@@ -6,6 +6,7 @@ import { productHeaderSchema } from "@/lib/product-header";
 import { customerProtectionSchema } from "@/lib/customer-protection";
 import { pixPageSchema } from "@/lib/pix-page";
 import { resolvePaymentMethods } from "@/lib/payment-methods";
+import { orderPaymentMethod } from "@/lib/order-payment";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -32,7 +33,7 @@ export const adminOverview = createServerFn({ method: "GET" })
         .order("sort_order", { ascending: true }),
       supabaseAdmin
         .from("orders")
-        .select("order_number, status, total, quantity, customer, product_snapshot, created_at, store_id, payment_provider, provider_status, payment")
+        .select("order_number, status, total, quantity, customer, product_snapshot, created_at, store_id, payment_provider, provider_status, payment_method, payment")
         .order("created_at", { ascending: false })
         .limit(50),
       supabaseAdmin
@@ -63,6 +64,7 @@ export const adminOverview = createServerFn({ method: "GET" })
         customer: (o.customer ?? {}) as { name?: string; email?: string },
         product_snapshot: (o.product_snapshot ?? {}) as { title?: string },
         payment_provider: (o.payment_provider as string | null) ?? null,
+        payment_method: orderPaymentMethod(o),
         provider_status: (o.provider_status as string | null) ?? null,
         payment_url: (() => {
           const u = ((o.payment ?? {}) as { payment_url?: unknown }).payment_url;

@@ -3,7 +3,7 @@ export async function checkOrderPaymentStatus(orderNumber: string): Promise<{ fo
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row } = await supabaseAdmin
     .from("orders")
-    .select("id, status, store_id, transaction_id, payment, paid_at, payment_provider, total")
+    .select("id, status, store_id, transaction_id, payment, paid_at, payment_provider, payment_method, total")
     .eq("order_number", orderNumber)
     .maybeSingle();
   if (!row) return { found: false, status: "desconhecido", paid_at: null };
@@ -20,6 +20,13 @@ export async function checkOrderPaymentStatus(orderNumber: string): Promise<{ fo
 
   try {
     const result = await gateway.getStatus(toGatewayConfig(settings), row.transaction_id as string);
+    const { orderPaymentMethod } = await import("../order-payment");
+    if (orderPaymentMethod(row) === "card") {
+      const { confirmCardOrder } = await import("./card-confirm.server");
+      const { sendPurchaseForOrder } = await import("../meta.server");
+      const status = await confirmCardOrder(supabaseAdmin, row, result, sendPurchaseForOrder);
+      return status === "paid" ? { found: true, status: "pago", paid_at: row.paid_at ?? result.paid_at ?? new Date().toISOString() } : current;
+    }
     if (row.payment_provider === "westpay") {
       const { confirmWestpayOrder } = await import("./westpay-confirm.server");
       const { sendPurchaseForOrder } = await import("@/lib/meta.server");
