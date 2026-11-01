@@ -9,6 +9,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
     maybeSingle: async () => {
       if (table === "orders") return { data: { id: "order", store_id: "store", status: state.status, order_number: "N1", quantity: 1, unit_price: 100, total: 100, customer: { email: "cliente@example.com", name: "Cliente" }, address: {}, product_snapshot: { title: "Produto" } } };
       if (table === "store_magnus_settings") return { data: { enabled: true, api_token: "test-only" } };
+      console.log("claim-test", table, claiming, state.claimed);
       if (claiming && !state.claimed) { state.claimed = true; return { data: { id: "shipment" } }; }
       return { data: null };
     },
