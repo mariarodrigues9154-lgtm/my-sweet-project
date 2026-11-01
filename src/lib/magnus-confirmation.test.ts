@@ -12,7 +12,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
       if (claiming && !state.claimed) { state.claimed = true; return { data: { id: "shipment" } }; }
       return { data: null };
     },
-    then: (resolve: (value: unknown) => unknown) => resolve({ error: null }),
+    then: (resolve: (value: unknown) => unknown) => { const run = async () => ({ ...(await q.maybeSingle()), error: null }); return run().then(resolve); },
   };
   return q;
 } } }));
