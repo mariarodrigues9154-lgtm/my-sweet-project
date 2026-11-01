@@ -1,5 +1,10 @@
 # Roadmap
 
+## Confirmação de cartão e Magnus Frete (01/11/2026)
+- [ ] Revisar e corrigir confirmação do cartão, mantendo provedor original e sem criar PIX
+- [ ] Identificar cartão aprovado em Pedidos recentes e preservar envio único à Magnus
+- [ ] Validar testes, painel com pedido real e situação do e-mail externo sem cobrar clientes
+
 ## Variantes esgotadas (31/10/2026)
 - [x] Adicionar controle individual e etiqueta editável nas opções existentes, sem alterar preços/estoque
 - [x] Exibir foto acinzentada e etiqueta, informar ao clicar e bloquear compra também no servidor via variantPricing
