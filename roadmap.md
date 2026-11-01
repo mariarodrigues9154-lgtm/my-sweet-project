@@ -1,5 +1,11 @@
 # Roadmap
 
+## Confirmação de cartão e Magnus Frete (01/11/2026)
+- [x] Revisar confirmação do cartão e compartilhar transição condicionada ao pedido/transação original entre webhook, 3DS e consulta, sem criar PIX
+- [x] Corrigir etiqueta CARTÃO APROVADO em Pedidos recentes e preservar envio único à Magnus existente
+- [x] Validar painel autenticado com pedido real 20261101-3V7ZG pago sem etiqueta PIX; 11 cartões pagos recentes com rastreio Magnus e e-mail de checkout, sem alterar pedidos nem criar cobranças
+- [ ] Confirmar recebimento do e-mail pelo cliente: envio externo não possui registros de entrega disponíveis neste projeto; não foi criado remetente paralelo
+
 ## Variantes esgotadas (31/10/2026)
 - [x] Adicionar controle individual e etiqueta editável nas opções existentes, sem alterar preços/estoque
 - [x] Exibir foto acinzentada e etiqueta, informar ao clicar e bloquear compra também no servidor via variantPricing

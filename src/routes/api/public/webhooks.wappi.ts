@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/webhooks/wappi")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: order } = await supabaseAdmin
           .from("orders")
-          .select("id, status, store_id, payment, provider_status, e2e, paid_at")
+          .select("id, status, store_id, payment, provider_status, e2e, paid_at, payment_method, payment_provider, transaction_id")
           .eq("payment_provider", "wappi")
           .eq("transaction_id", transactionId)
           .maybeSingle();
@@ -51,6 +51,13 @@ export const Route = createFileRoute("/api/public/webhooks/wappi")({
           confirmed = await gateway.getStatus(toGatewayConfig(settings), transactionId);
         } catch {
           return new Response("indisponível", { status: 503 });
+        }
+        const { orderPaymentMethod } = await import("@/lib/order-payment");
+        if (orderPaymentMethod(order) === "card" && !["REFUNDED", "CHARGEBACK", "PRECHARGEBACK"].includes(confirmed.status)) {
+          const { confirmCardOrder } = await import("@/lib/payments/card-confirm.server");
+          const { sendPurchaseForOrder } = await import("@/lib/meta.server");
+          await confirmCardOrder(supabaseAdmin, order, confirmed, sendPurchaseForOrder);
+          return new Response("ok");
         }
         const status = KNOWN.has(confirmed.status) ? confirmed.status : "ERROR";
         const internal = status.toLowerCase();

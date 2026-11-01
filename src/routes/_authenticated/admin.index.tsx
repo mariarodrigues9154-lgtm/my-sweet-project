@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 import { brl } from "@/lib/format";
+import { orderPaymentBadge } from "@/lib/order-payment";
 import { adminOverview } from "@/lib/admin.functions";
 import { ProductManager } from "@/components/admin/ProductManager";
 import { ReviewsList, StoresList } from "@/components/admin/AdminLists";
@@ -118,7 +119,7 @@ function AdminHome() {
                     </p>
                     {order.payment_provider && (
                       <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
-                        <span className={`rounded px-1.5 py-0.5 font-bold ${pixBadge(order.provider_status).cls}`}>PIX {pixBadge(order.provider_status).label}</span>
+                        <span className={`rounded px-1.5 py-0.5 font-bold ${orderPaymentBadge(order).cls}`}>{orderPaymentBadge(order).label}</span>
                         {order.payment_url && (
                           <a href={order.payment_url} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline">Link da Wappi</a>
                         )}
@@ -146,9 +147,3 @@ function AdminHome() {
   );
 }
 
-function pixBadge(status: string | null): { label: string; cls: string } {
-  const s = (status ?? "").toLowerCase();
-  if (s === "paid" || s === "confirmed") return { label: "CONFIRMED", cls: "bg-success/15 text-success" };
-  if (["refused", "expired", "error", "cancelled", "canceled", "refunded", "chargeback"].includes(s)) return { label: "CANCELLED", cls: "bg-destructive/15 text-destructive" };
-  return { label: "PENDING", cls: "bg-muted text-muted-foreground" };
-}
