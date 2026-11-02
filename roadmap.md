@@ -1,5 +1,9 @@
 # Roadmap
 
+## Recuperação após reconexão (02/11/2026)
+- [x] Conferir agendador ativo e registros reais: envio aceito na Organiza Lar às 07h39 (Fortaleza); 19 falhas em pedidos pendentes nas últimas 24h, ainda sujeitos às travas.
+- [ ] Retomar recuperação solicitada com WhatsApp conectado: usuária informou nova desconexão; não forçar disparos nem contornar travas. Reconectar a sessão na PlugSend e verificar novos resultados antes de afirmar entrega.
+
 ## Confirmação de cartão e Magnus Frete (01/11/2026)
 - [x] Revisar confirmação do cartão e compartilhar transição condicionada ao pedido/transação original entre webhook, 3DS e consulta, sem criar PIX
 - [x] Corrigir etiqueta CARTÃO APROVADO em Pedidos recentes e preservar envio único à Magnus existente
