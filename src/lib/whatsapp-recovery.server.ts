@@ -23,6 +23,18 @@ export function fillTemplate(text: string, vars: Record<string, string>): string
   return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? vars[k]! : m));
 }
 
+/** Texto padrão quando a loja não escreveu uma mensagem própria. */
+export const DEFAULT_RECOVERY_MESSAGE = "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.";
+
+/**
+ * Texto final do lembrete: o link de pagamento é sempre removido,
+ * mesmo que um modelo antigo ainda use {link_pagamento}.
+ */
+export function recoveryText(message: string, vars: Record<string, string>): string {
+  const text = fillTemplate(message || DEFAULT_RECOVERY_MESSAGE, { ...vars, link_pagamento: "" });
+  return text.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 /** Minutos de espera de cada lembrete ativo (1 a 3). */
 export function reminderDelays(delays: number[] | null | undefined, max: number): number[] {
   const n = Math.min(3, Math.max(1, Math.round(max || 1)));
@@ -181,8 +193,6 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
       const expired = !!exp && new Date(exp).getTime() <= now;
       const pub = (cfg.public_data ?? {}) as Record<string, string>;
-      const site = (pub["site_url"] || DEFAULT_SITE).replace(/\/+$/, "");
-      const link = `${site}/pix/${o.access_token}`;
       const snap = (o.product_snapshot ?? {}) as { title?: string };
       const name = String((o.customer as { name?: string })?.name ?? "").trim().split(/\s+/)[0] || "cliente";
       const vars = {
@@ -191,13 +201,12 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
         produto: snap.title ?? "",
         valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
         pix: expired ? "" : pay.copy_paste ?? "",
-        link_pagamento: link,
         nome_loja: (store?.name as string) ?? "",
       };
-      const text = fillTemplate(cfg.message || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.", vars);
+      const text = recoveryText(cfg.message as string, vars);
       try {
         const id = await sendWhatsApp({ provider: cfg.provider as WaProvider, secrets: (cfg.secret_data ?? {}) as Record<string, string>, pub, to: phone, text, vars, token: o.access_token as string });
-        await finish("enviada", expired ? "PIX expirado — link para gerar nova cobrança" : null, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
+        await finish("enviada", expired ? "PIX expirado — mensagem enviada sem link" : null, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
         sent++;
       } catch (e) {
         await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");
