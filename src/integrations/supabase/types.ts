@@ -952,6 +952,21 @@ export type Database = {
           },
         ]
       }
+      whatsapp_recovery_dispatch_gate: {
+        Row: {
+          id: boolean
+          next_attempt_at: string
+        }
+        Insert: {
+          id?: boolean
+          next_attempt_at: string
+        }
+        Update: {
+          id?: boolean
+          next_attempt_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -961,6 +976,7 @@ export type Database = {
         Args: { p_provider: string; p_store_id: string }
         Returns: undefined
       }
+      claim_whatsapp_recovery_dispatch: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
