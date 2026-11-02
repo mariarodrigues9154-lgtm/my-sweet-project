@@ -201,8 +201,77 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
         await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");
       }
     }
+    // Reenvio de mensagens que falharam porque o WhatsApp estava desconectado: 1 por vez, com 5 min de intervalo.
+    try { if (await retryDisconnected(supabaseAdmin, cfg, (store?.name as string) ?? "", now)) sent++; } catch { /* tenta na próxima rodada */ }
   }
   return { checked, sent };
+}
+
+export const RETRY_GAP_MIN = 5;
+
+/** Reenvia o lembrete mais antigo (últimas 24h) que falhou por WhatsApp desconectado, se nada foi enviado nos últimos 5 min. */
+async function retryDisconnected(db: any, cfg: any, storeName: string, now: number): Promise<boolean> {
+  const gapSince = new Date(now - RETRY_GAP_MIN * 60000).toISOString();
+  const { data: recent } = await db.from("whatsapp_pix_reminders").select("id").eq("status", "enviada").gte("updated_at", gapSince).limit(1);
+  if (recent?.length) return false;
+  const { data: rows } = await db
+    .from("whatsapp_pix_reminders")
+    .select("id, order_id")
+    .eq("store_id", cfg.store_id)
+    .eq("status", "falha")
+    .ilike("detail", "%disconnect%")
+    .gte("created_at", new Date(now - 24 * 3600000).toISOString())
+    .order("created_at", { ascending: true })
+    .limit(1);
+  const row = rows?.[0];
+  if (!row) return false;
+  const finish = (status: string, detail: string | null, pix_status: string, extra: Record<string, unknown> = {}) =>
+    db.from("whatsapp_pix_reminders").update({ status, detail, pix_status, updated_at: new Date().toISOString(), ...extra }).eq("id", row.id);
+  // Trava: só quem conseguir trocar de "falha" para "reenviando" continua.
+  const { data: claimed } = await db.from("whatsapp_pix_reminders").update({ status: "reenviando", updated_at: new Date().toISOString() }).eq("id", row.id).eq("status", "falha").select("id");
+  if (!claimed?.length) return false;
+  const { data: o } = await db
+    .from("orders")
+    .select("id, order_number, status, store_id, customer, product_snapshot, total, payment, payment_method, pix_expiration_date, access_token, created_at")
+    .eq("id", row.order_id)
+    .maybeSingle();
+  if (!o || (o.payment_method && o.payment_method !== "pix")) { await finish("nao_enviada", "Pedido não é PIX", "UNKNOWN"); return false; }
+  let status = o.status as string;
+  try {
+    const { checkOrderPaymentStatus } = await import("@/lib/payments/order-status.server");
+    status = (await checkOrderPaymentStatus(o.order_number as string)).status;
+  } catch { /* mantém */ }
+  if (status === "pago" || status === "aprovado") { await finish("nao_enviada", "Pagamento confirmado antes do reenvio", "PAID"); return false; }
+  if (status !== "aguardando_pagamento") { await finish("nao_enviada", `Pedido com status ${status}`, status.toUpperCase()); return false; }
+  const phone = normalizeBrPhone((o.customer as { phone?: string })?.phone);
+  if (!phone) { await finish("falha", "Telefone inválido", "PENDING"); return false; }
+  const attempt = await checkAttempt(db, cfg.store_id as string, o);
+  if (attempt.action === "skip_paid") { await finish("nao_enviada", `Recuperação cancelada: cliente já pagou o pedido #${attempt.by.order_number ?? ""} da mesma tentativa de compra`, "PAID"); return false; }
+  if (attempt.action === "skip_superseded") { await finish("ignorado", `Substituído pelo PIX mais recente #${attempt.by.order_number ?? ""} do mesmo cliente`, "PENDING"); return false; }
+  if (await messagedRecently(db, cfg.store_id as string, o, now)) { await finish("ignorado", "Cliente já recebeu mensagem nas últimas 24h", "PENDING"); return false; }
+  const pay = (o.payment ?? {}) as { copy_paste?: string; expiration_date?: string };
+  const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
+  const expired = !!exp && new Date(exp).getTime() <= now;
+  const pub = (cfg.public_data ?? {}) as Record<string, string>;
+  const site = (pub["site_url"] || DEFAULT_SITE).replace(/\/+$/, "");
+  const vars = {
+    nome: String((o.customer as { name?: string })?.name ?? "").trim().split(/\s+/)[0] || "cliente",
+    pedido: String(o.order_number),
+    produto: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
+    valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    pix: expired ? "" : pay.copy_paste ?? "",
+    link_pagamento: `${site}/pix/${o.access_token}`,
+    nome_loja: storeName,
+  };
+  const text = fillTemplate(cfg.message || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.", vars);
+  try {
+    const id = await sendWhatsApp({ provider: cfg.provider as WaProvider, secrets: (cfg.secret_data ?? {}) as Record<string, string>, pub, to: phone, text, vars, token: o.access_token as string });
+    await finish("enviada", `Reenviada após reconexão${expired ? " — PIX expirado, link para gerar nova cobrança" : ""}`, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
+    return true;
+  } catch (e) {
+    await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");
+    return false;
+  }
 }
 
 /** Busca outros pedidos da loja na janela da tentativa, reconfirma pendentes no gateway e decide. */
