@@ -92,6 +92,13 @@
       "when": 1793367954902,
       "tag": "0012_add_medusapay_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793616206854,
+      "tag": "0013_whatsapp_recovery_global_dispatch_gap",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,22 @@
-import { describe, expect, it } from "vitest";
-import { DEFAULT_RECOVERY_MESSAGE, fillTemplate, normalizeBrPhone, recoveryText, reminderDelays } from "./whatsapp-recovery.server";
+import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { claimRecoveryDispatch, DEFAULT_RECOVERY_MESSAGE, fillTemplate, normalizeBrPhone, recoveryText, reminderDelays, RETRY_GAP_MIN } from "./whatsapp-recovery.server";
 
 describe("recuperação PIX via WhatsApp", () => {
+  it("usa intervalo persistente de cinco minutos sem liberar chamadas concorrentes", async () => {
+    const sql = readFileSync("drizzle/migrations/0013_whatsapp_recovery_global_dispatch_gap.sql", "utf8");
+    expect(RETRY_GAP_MIN).toBe(5);
+    expect(sql).toContain("interval '5 minutes'");
+    expect(sql).toContain("ON CONFLICT (id) DO UPDATE");
+    expect(sql).toContain("next_attempt_at <= clock_timestamp()");
+    const rpc = vi.fn().mockResolvedValueOnce({ data: true, error: null }).mockResolvedValue({ data: false, error: null });
+    expect(await claimRecoveryDispatch({ rpc })).toBe(true);
+    expect(await claimRecoveryDispatch({ rpc })).toBe(false);
+  });
+  it("não envia quando a reserva persistente falha", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: { message: "unavailable" } });
+    expect(await claimRecoveryDispatch({ rpc })).toBe(false);
+  });
   it("normaliza telefone brasileiro para 55 + DDD + número", () => {
     expect(normalizeBrPhone("(85) 99999-1234")).toBe("5585999991234");
     expect(normalizeBrPhone("+55 85 99999-1234")).toBe("5585999991234");

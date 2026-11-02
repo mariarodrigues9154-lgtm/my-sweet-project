@@ -120,6 +120,9 @@ export async function sendWhatsApp(i: SendInput): Promise<string | null> {
 /** Processa os lembretes vencidos de todas as lojas ativas. Idempotente (trava por pedido+lembrete). */
 export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent: number }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Uma única rodada global a cada cinco minutos, inclusive se o provedor falhar.
+  // A reserva atômica também impede dois cron jobs simultâneos de disparar juntos.
+  if (!(await claimRecoveryDispatch(supabaseAdmin))) return { checked: 0, sent: 0 };
   const { data: configs } = await supabaseAdmin.from("store_whatsapp_settings").select("*").eq("enabled", true);
   let checked = 0;
   let sent = 0;
@@ -146,7 +149,10 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       .limit(500);
     const { data: store } = await supabaseAdmin.from("store_settings").select("name").eq("id", cfg.store_id).maybeSingle();
     // Reenvio de mensagens que falharam porque o WhatsApp estava desconectado: 1 por vez, com 5 min de intervalo.
-    try { if (await retryDisconnected(supabaseAdmin, cfg, (store?.name as string) ?? "", now)) sent++; } catch { /* tenta na próxima rodada */ }
+    try {
+      const retry = await retryDisconnected(supabaseAdmin, cfg, (store?.name as string) ?? "", now);
+      if (retry) return { checked: checked + 1, sent: sent + (retry === "sent" ? 1 : 0) };
+    } catch { return { checked, sent }; }
     if (!orders?.length) continue;
     const { data: logs } = await supabaseAdmin.from("whatsapp_pix_reminders").select("order_id, step").in("order_id", orders.map((o) => o.id));
     const done = new Set((logs ?? []).map((l) => `${l.order_id}:${l.step}`));
@@ -213,6 +219,8 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       } catch (e) {
         await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");
       }
+      // Nunca continuar para outro cliente ou outra loja na mesma rodada.
+      return { checked, sent };
     }
   }
   return { checked, sent };
@@ -220,8 +228,13 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
 
 export const RETRY_GAP_MIN = 5;
 
+export async function claimRecoveryDispatch(db: { rpc: (name: "claim_whatsapp_recovery_dispatch") => PromiseLike<{ data: unknown; error: unknown }> }): Promise<boolean> {
+  const { data, error } = await db.rpc("claim_whatsapp_recovery_dispatch");
+  return !error && data === true;
+}
+
 /** Reenvia o lembrete mais antigo (últimas 24h) que falhou por WhatsApp desconectado, se nada foi enviado nos últimos 5 min. */
-async function retryDisconnected(db: any, cfg: any, storeName: string, now: number): Promise<boolean> {
+async function retryDisconnected(db: any, cfg: any, storeName: string, now: number): Promise<"sent" | "failed" | false> {
   const gapSince = new Date(now - RETRY_GAP_MIN * 60000).toISOString();
   const { data: recent } = await db.from("whatsapp_pix_reminders").select("id").eq("status", "enviada").gte("updated_at", gapSince).limit(1);
   if (recent?.length) return false;
@@ -276,10 +289,10 @@ async function retryDisconnected(db: any, cfg: any, storeName: string, now: numb
   try {
     const id = await sendWhatsApp({ provider: cfg.provider as WaProvider, secrets: (cfg.secret_data ?? {}) as Record<string, string>, pub, to: phone, text, vars, token: o.access_token as string });
     await finish("enviada", `Reenviada após reconexão${expired ? " — PIX expirado, mensagem sem link" : ""}`, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
-    return true;
+    return "sent";
   } catch (e) {
     await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");
-    return false;
+    return "failed";
   }
 }
 
