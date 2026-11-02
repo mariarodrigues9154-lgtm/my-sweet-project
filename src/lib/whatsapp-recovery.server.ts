@@ -130,8 +130,10 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       .gte("created_at", after)
       .lte("created_at", until)
       .limit(50);
-    if (!orders?.length) continue;
     const { data: store } = await supabaseAdmin.from("store_settings").select("name").eq("id", cfg.store_id).maybeSingle();
+    // Reenvio de mensagens que falharam porque o WhatsApp estava desconectado: 1 por vez, com 5 min de intervalo.
+    try { if (await retryDisconnected(supabaseAdmin, cfg, (store?.name as string) ?? "", now)) sent++; } catch { /* tenta na próxima rodada */ }
+    if (!orders?.length) continue;
     const { data: logs } = await supabaseAdmin.from("whatsapp_pix_reminders").select("order_id, step").in("order_id", orders.map((o) => o.id));
     const done = new Set((logs ?? []).map((l) => `${l.order_id}:${l.step}`));
 
@@ -201,8 +203,6 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
         await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");
       }
     }
-    // Reenvio de mensagens que falharam porque o WhatsApp estava desconectado: 1 por vez, com 5 min de intervalo.
-    try { if (await retryDisconnected(supabaseAdmin, cfg, (store?.name as string) ?? "", now)) sent++; } catch { /* tenta na próxima rodada */ }
   }
   return { checked, sent };
 }
