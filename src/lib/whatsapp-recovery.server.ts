@@ -141,7 +141,9 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       .not("transaction_id", "is", null)
       .gte("created_at", after)
       .lte("created_at", until)
-      .limit(50);
+      // Mais recentes primeiro: com muitos PIX pendentes, os novos nunca podem ficar de fora.
+      .order("created_at", { ascending: false })
+      .limit(500);
     const { data: store } = await supabaseAdmin.from("store_settings").select("name").eq("id", cfg.store_id).maybeSingle();
     // Reenvio de mensagens que falharam porque o WhatsApp estava desconectado: 1 por vez, com 5 min de intervalo.
     try { if (await retryDisconnected(supabaseAdmin, cfg, (store?.name as string) ?? "", now)) sent++; } catch { /* tenta na próxima rodada */ }
