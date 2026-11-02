@@ -26,4 +26,21 @@ describe("recuperação PIX via WhatsApp", () => {
   it("preenche variáveis da mensagem", () => {
     expect(fillTemplate("Olá, {nome}! Pedido #{pedido}", { nome: "Maria", pedido: "1258" })).toBe("Olá, Maria! Pedido #1258");
   });
+  it("mensagem de recuperação nunca leva link de pagamento", () => {
+    const vars = { nome: "Maria", pedido: "1258", produto: "Pano", valor: "R$ 19,90", pix: "", nome_loja: "Dona de Casa" };
+    const out = recoveryText("Oi {nome}, seu pix de {valor} está pendente. Acesse: {link_pagamento}", vars);
+    expect(out).not.toContain("http");
+    expect(out).not.toContain("{link_pagamento}");
+    expect(out).toBe("Oi Maria, seu pix de R$ 19,90 está pendente. Acesse:");
+  });
+  it("modelo salvo da loja é enviado sem link", () => {
+    const saved = "Olá, {nome}! Tudo bem?\n\nMeu nome é Jéssica, sou atendente da loja onde você gerou um Pix no valor de {valor}.\n\nVerifiquei aqui que o pagamento ainda não foi finalizado.";
+    const out = recoveryText(saved, { nome: "Maria", pedido: "1258", produto: "Pano", valor: "R$ 117,90", pix: "", nome_loja: "Dona de Casa" });
+    expect(out).not.toContain("http");
+    expect(out).toContain("R$ 117,90");
+  });
+  it("mensagem padrão não tem link", () => {
+    expect(DEFAULT_RECOVERY_MESSAGE).not.toContain("http");
+    expect(recoveryText("", { nome: "Maria", pedido: "1", produto: "", valor: "R$ 1,00", pix: "", nome_loja: "" })).not.toContain("http");
+  });
 });
