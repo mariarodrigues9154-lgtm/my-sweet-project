@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Recuperação após reconexão (02/11/2026)
+- [x] Aplicar reserva global atômica de cinco minutos e encerrar rodada após uma tentativa, tanto para novos lembretes quanto reenvios.
+- [ ] Verificar testes e envio espaçado no site publicado; depende de publicar a alteração para o agendador usar o limite em novos lembretes.
 - [x] Conferir agendador ativo e registros reais: envio aceito na Organiza Lar às 07h39 (Fortaleza); 19 falhas em pedidos pendentes nas últimas 24h, ainda sujeitos às travas.
 - [ ] Retomar recuperação solicitada com WhatsApp conectado: usuária informou nova desconexão; não forçar disparos nem contornar travas. Reconectar a sessão na PlugSend e verificar novos resultados antes de afirmar entrega.
 
