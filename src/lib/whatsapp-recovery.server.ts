@@ -262,20 +262,18 @@ async function retryDisconnected(db: any, cfg: any, storeName: string, now: numb
   const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
   const expired = !!exp && new Date(exp).getTime() <= now;
   const pub = (cfg.public_data ?? {}) as Record<string, string>;
-  const site = (pub["site_url"] || DEFAULT_SITE).replace(/\/+$/, "");
   const vars = {
     nome: String((o.customer as { name?: string })?.name ?? "").trim().split(/\s+/)[0] || "cliente",
     pedido: String(o.order_number),
     produto: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
     valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
     pix: expired ? "" : pay.copy_paste ?? "",
-    link_pagamento: `${site}/pix/${o.access_token}`,
     nome_loja: storeName,
   };
-  const text = fillTemplate(cfg.message || "Oi, {nome}! Vi que seu Pix foi gerado, mas o pagamento ainda não foi concluído. Teve alguma dificuldade ou ficou com alguma dúvida? Se precisar, posso te ajudar.", vars);
+  const text = recoveryText(cfg.message as string, vars);
   try {
     const id = await sendWhatsApp({ provider: cfg.provider as WaProvider, secrets: (cfg.secret_data ?? {}) as Record<string, string>, pub, to: phone, text, vars, token: o.access_token as string });
-    await finish("enviada", `Reenviada após reconexão${expired ? " — PIX expirado, link para gerar nova cobrança" : ""}`, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
+    await finish("enviada", `Reenviada após reconexão${expired ? " — PIX expirado, mensagem sem link" : ""}`, expired ? "EXPIRED" : "PENDING", { provider_message_id: id });
     return true;
   } catch (e) {
     await finish("falha", (e instanceof Error ? e.message : "Falha na API do WhatsApp").slice(0, 500), "PENDING");

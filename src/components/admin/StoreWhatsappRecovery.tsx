@@ -9,7 +9,7 @@ import { PlugSendTestResult, type PlugSendResult } from "./PlugSendTestResult";
 import { getWhatsappRecovery, saveWhatsappRecovery, testWhatsappConnection, testWhatsappRecovery, testPlugSendMessage } from "@/lib/whatsapp-recovery.functions";
 
 type Provider = "meta" | "zapi" | "evolution" | "plugsend";
-const VARS = ["{nome}", "{pedido}", "{produto}", "{valor}", "{pix}", "{link_pagamento}", "{nome_loja}"];
+const VARS = ["{nome}", "{pedido}", "{produto}", "{valor}", "{pix}", "{nome_loja}"];
 const STATUS: Record<string, string> = { enviada: "Enviada", nao_enviada: "Não enviada", falha: "Falha", processando: "Processando" };
 
 export function StoreWhatsappRecovery({ storeId }: { storeId: string }) {

@@ -107,7 +107,7 @@ export const testWhatsappRecovery = createServerFn({ method: "POST" })
     }
     if (!to) return { ok: false, message: "Telefone inválido." };
     if (!row) return { ok: false, message: "Salve a configuração primeiro." };
-    const vars = { nome: "Teste", pedido: "TESTE", produto: "Produto de teste", valor: "R$ 1,00", pix: "", link_pagamento: "https://www.achados-tik.shop", nome_loja: "Loja" };
+    const vars = { nome: "Teste", pedido: "TESTE", produto: "Produto de teste", valor: "R$ 1,00", pix: "", link_pagamento: "", nome_loja: "Loja" };
     try {
       await sendWhatsApp({ provider: row.provider as never, secrets: row.secret_data as never, pub: row.public_data as never, to, text: fillTemplate(templateFor(data.kind, false, (row.public_data ?? {}) as Record<string, string>, row.message as string), vars), vars, token: "teste" });
       return { ok: true, message: "Mensagem de teste enviada." };
@@ -141,14 +141,14 @@ export const testWhatsappConnection = createServerFn({ method: "POST" })
   });
 
 const DEFAULT_PAID = "Olá, {nome}! ✅\n\nRecebemos o pagamento do seu pedido #{pedido} com sucesso!\n\nValor: {valor}\n\nSeu pedido já está confirmado e seguirá normalmente para as próximas etapas.\n\nObrigado pela compra! 💚";
-const DEFAULT_EXPIRED = "Olá, {nome}! Seu PIX do pedido #{pedido} expirou.\n\nSe ainda deseja concluir a compra, acesse o link abaixo para continuar:\n{link_pagamento}";
+const DEFAULT_EXPIRED = "Olá, {nome}! Seu PIX do pedido #{pedido} expirou.\n\nSe ainda deseja concluir a compra, é só refazer o pedido na loja que eu te ajudo por aqui.";
 function templateFor(kind: "pending" | "paid", expired: boolean, pub: Record<string, string>, auto: string | null | undefined) {
   if (kind === "paid") return pub["paid_message"] || DEFAULT_PAID;
   if (expired) return pub["manual_message_expired"] || DEFAULT_EXPIRED;
   return pub["manual_message"] || auto || DEFAULT_MANUAL;
 }
 
-const DEFAULT_MANUAL = "Olá, {nome}! 👋\n\nVi que o pagamento via PIX do seu pedido #{pedido} ainda está pendente.\n\nValor: {valor}\n\nSe precisar continuar o pagamento, acesse:\n{link_pagamento}";
+const DEFAULT_MANUAL = "Olá, {nome}! 👋\n\nVi que o pagamento via PIX do seu pedido #{pedido} ainda está pendente.\n\nValor: {valor}\n\nSe ficou com alguma dúvida ou teve dificuldade para pagar, me chama aqui que eu te ajudo. 💚";
 
 async function loadManualContext(orderId: string, kind: "pending" | "paid" = "pending") {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -162,12 +162,11 @@ async function loadManualContext(orderId: string, kind: "pending" | "paid" = "pe
     supabaseAdmin.from("store_whatsapp_settings").select("*").eq("store_id", o.store_id).maybeSingle(),
     supabaseAdmin.from("store_settings").select("name").eq("id", o.store_id).maybeSingle(),
   ]);
-  const { DEFAULT_SITE, fillTemplate, normalizeBrPhone } = await import("./whatsapp-recovery.server");
+  const { fillTemplate, normalizeBrPhone } = await import("./whatsapp-recovery.server");
   const pub = (cfg?.public_data ?? {}) as Record<string, string>;
   const pay = (o.payment ?? {}) as { copy_paste?: string; expiration_date?: string };
   const exp = (o.pix_expiration_date as string | null) ?? pay.expiration_date ?? null;
   const expired = !!exp && new Date(exp).getTime() <= Date.now();
-  const site = (pub["site_url"] || DEFAULT_SITE).replace(/\/+$/, "");
   const name = String((o.customer as { name?: string })?.name ?? "").trim().split(/\s+/)[0] || "cliente";
   const vars = {
     nome: name,
@@ -175,11 +174,10 @@ async function loadManualContext(orderId: string, kind: "pending" | "paid" = "pe
     produto: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
     valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
     pix: expired || kind === "paid" ? "" : pay.copy_paste ?? "",
-    link_pagamento: `${site}/pix/${o.access_token}`,
     nome_loja: (store?.name as string) ?? "",
   };
   const tpl = templateFor(kind, expired && kind === "pending", pub, cfg?.message as string);
-  const text = fillTemplate(tpl, vars);
+  const text = fillTemplate(tpl, { ...vars, link_pagamento: "" }).replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   return { o, cfg, pub, vars, text, expired, phone: normalizeBrPhone((o.customer as { phone?: string })?.phone), supabaseAdmin };
 }
 
