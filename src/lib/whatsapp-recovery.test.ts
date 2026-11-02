@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fillTemplate, normalizeBrPhone, reminderDelays } from "./whatsapp-recovery.server";
+import { DEFAULT_RECOVERY_MESSAGE, fillTemplate, normalizeBrPhone, recoveryText, reminderDelays } from "./whatsapp-recovery.server";
 
 describe("recuperação PIX via WhatsApp", () => {
   it("normaliza telefone brasileiro para 55 + DDD + número", () => {
