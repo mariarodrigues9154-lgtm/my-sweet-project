@@ -27,4 +27,12 @@ describe("Pesquisa administrativa por loja", () => {
     expect(searchSettings(items, "zzzinexistente")).toEqual([]);
     expect(searchSettings(items, "")).toEqual([]);
   });
+  it("abre as credenciais Wappi sem depender do editor montado", () => {
+    expect(directSettingResult(searchSettings(items, "Wappi"), "Wappi")?.providerId).toBe("wappi");
+  });
+  it("preserva escolha entre produtos com avaliações", () => {
+    const results = searchSettings(settingsCatalog([{ id: "a", title: "Máquina" }, { id: "b", title: "Mop" }]), "Avaliações").filter((result) => result.section === "Avaliações");
+    expect(results.map((result) => result.productId).sort()).toEqual(["a", "b"]);
+    expect(directSettingResult(results, "Avaliações")).toBeUndefined();
+  });
 });

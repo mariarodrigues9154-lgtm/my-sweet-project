@@ -19,12 +19,15 @@ export function settingsCatalog(products: { id: string; title: string }[]): Sett
     "Identidade e botões": ["Selo de loja verificada"],
     "Proteção do cliente": Array.from({ length: 6 }, (_, i) => `Texto do benefício ${i + 1}`),
     "Cronômetro da oferta (toda a loja)": ["Horas", "Minutos"],
+    "Popup / Notificações flutuantes": ["Fonte das notificações", "Posição", "Ordem", "Primeira notificação após", "Tempo visível", "Intervalo entre notificações", "Animação", "Cor do selo", "Nome", "Localização", "Título", "Texto secundário"],
+    "Cupom / aviso promocional": ["Ativar chip de cupom", "Ativar barra inferior", "Exibir cronômetro", "Mostrar botão X", "Mostrar seta", "Cor de fundo", "Cor do texto", "Cor de destaque", "Cor da borda"],
+    "Descrição": ["Texto alternativo", "Legenda", "Link da imagem", "Link do vídeo", "Tamanho do espaçamento"],
     "Oferta de saída do checkout": ["Subtítulo/selo", "Título", "Texto do contador", "Texto do botão principal", "Texto de recusa", "Ícone/imagem", "Valor do desconto"],
     "Pop-up de saída da página do produto": ["Título", "Texto do contador", "Texto do botão principal", "Texto de recusa", "Valor do desconto"],
     "PIX pendente / Recuperação de pagamento": ["Mostrar aviso de pagamento pendente", "Permitir copiar PIX pelo aviso", "Permitir recuperar PIX pelo chat", "Mostrar indicador de mensagem"],
     "Preço e estoque": ["Texto manual da faixa Economize", "Negrito", "Pulsação"],
     "Variações do produto": ["Etiqueta de esgotado", "Nome do atributo", "Nome da opção", "Preço da combinação", "Estoque da combinação", "Selo promocional da combinação"],
-    "Recuperação de PIX pendente via WhatsApp": ["Token PlugSend", "Token de acesso", "Token da instância", "Client-Token", "API key", "Primeiro lembrete", "Enviar após minutos"],
+    "Recuperação de PIX pendente via WhatsApp": ["Token PlugSend", "Token de acesso", "Token da instância", "Client-Token", "API key", "Primeiro lembrete", "Enviar após minutos", "URL do servidor", "ENVIAR TESTE", "Testar conexão", "Salvar"],
   };
   const sections = catalog.flatMap((group) => {
     const labels = [...new Set([group.section, ...group.labels, ...(extras[group.section] ?? [])])].filter((label) => normalizeSettingsQuery(label).length > 1);

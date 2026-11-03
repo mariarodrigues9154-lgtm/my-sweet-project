@@ -10,12 +10,15 @@ function findDestination(root: ParentNode, result: SettingsDestination) {
   const section = Array.from(root.querySelectorAll<HTMLElement>("[data-settings-section]")).find((element) => normalizeSettingsQuery(element.dataset['settingsSection'] ?? "") === normalizeSettingsQuery(result.section));
   if (!section) return null;
   if (result.providerId) return section.querySelector<HTMLElement>("[data-settings-gateway-editor]");
+  if (result.label === result.section) return section.querySelector<HTMLElement>("h2, h3, legend") ?? section;
   const label = normalizeSettingsQuery(result.label);
   const target = Array.from(section.querySelectorAll<HTMLElement>("label, h3, h4, p, button, [aria-label], input[placeholder], textarea[placeholder]")).find((element) => {
     const text = normalizeSettingsQuery(element.getAttribute("aria-label") || element.getAttribute("placeholder") || element.textContent || "");
     return (text === label || text.startsWith(`${label} `)) && element.getClientRects().length > 0;
   });
-  return target ?? section;
+  if (target) return target;
+  // Conditional settings are reached through their existing mode selector, never by changing the mode.
+  return section.querySelector<HTMLElement>("select")?.closest<HTMLElement>("label") ?? section.querySelector<HTMLElement>("h2, h3, legend") ?? section;
 }
 
 export function StoreSettingsSearch({ products, onProductSaved }: { products: { id: string; title: string }[]; onProductSaved: () => Promise<unknown> }) {

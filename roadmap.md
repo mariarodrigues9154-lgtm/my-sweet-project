@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Pesquisa de configurações por loja (03/11/2026)
-- [ ] Adicionar pesquisa abaixo do nome da loja, com catálogo de seções/campos inclusive não montados e produtos da própria loja.
-- [ ] Navegar por Enter ou clique, abrir o editor necessário, destacar o destino e preservar configurações.
-- [ ] Validar busca sem acentos, resultados múltiplos, ausência de resultados e navegação no painel autorizado em computador/celular.
+- [x] Adicionar pesquisa abaixo do nome da loja, com catálogo de seções/campos inclusive não montados e produtos da própria loja.
+- [x] Navegar por Enter ou clique, abrir o editor de produto/gateway necessário, destacar o destino e preservar configurações. Campos condicionados a modos desligados levam ao seletor existente, sem ativar configurações.
+- [x] Validar busca sem acentos, resultados múltiplos, ausência de resultados, limpar, pagamentos, Magnus, avaliações e Wappi no painel autorizado; 390px e computador, sem salvar configurações ou enviar mensagens.
 
 ## Recuperação após reconexão (02/11/2026)
 - [x] Aplicar reserva global atômica de cinco minutos e encerrar rodada após uma tentativa, tanto para novos lembretes quanto reenvios.
