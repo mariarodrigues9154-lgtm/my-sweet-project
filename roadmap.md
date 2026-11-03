@@ -1,5 +1,10 @@
 # Roadmap
 
+## Pesquisa de configurações por loja (03/11/2026)
+- [ ] Adicionar pesquisa abaixo do nome da loja, com catálogo de seções/campos inclusive não montados e produtos da própria loja.
+- [ ] Navegar por Enter ou clique, abrir o editor necessário, destacar o destino e preservar configurações.
+- [ ] Validar busca sem acentos, resultados múltiplos, ausência de resultados e navegação no painel autorizado em computador/celular.
+
 ## Recuperação após reconexão (02/11/2026)
 - [x] Aplicar reserva global atômica de cinco minutos e encerrar rodada após uma tentativa, tanto para novos lembretes quanto reenvios.
 - [x] Validar 16 testes de recuperação/deduplicação, build OK e reserva inacessível a anon/authenticated.
