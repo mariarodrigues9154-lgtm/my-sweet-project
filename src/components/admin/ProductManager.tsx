@@ -598,6 +598,7 @@ export function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Prom
       <Group title="Informações">
         <Field numeric={false} label="Nome interno" value={d.name} onChange={(v) => set("name", v)} />
         <Field numeric={false} label="Título na página" value={d.title} onChange={(v) => set("title", v)} />
+        <Field numeric={false} label="Nome curto para WhatsApp (vazio = título na página)" value={d.sections.whatsapp_name ?? ""} onChange={(v) => set("sections", { ...d.sections, whatsapp_name: v })} />
         <Field numeric={false} label="Subtítulo" value={d.subtitle ?? ""} onChange={(v) => set("subtitle", v)} />
         <Field
           numeric={false}

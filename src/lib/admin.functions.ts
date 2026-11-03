@@ -520,6 +520,7 @@ const sectionsSchema = z
     reviews_page_size: z.number().int().min(1).max(20).nullish().transform((v) => v ?? undefined),
     description_title: optStr(120),
     qa_enabled: optBool,
+    whatsapp_name: optStr(80),
     qa_title: optStr(120),
     qa_subtitle: optStr(200),
     qa_placeholder: optStr(120),

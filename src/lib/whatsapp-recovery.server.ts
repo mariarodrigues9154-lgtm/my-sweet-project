@@ -1,3 +1,4 @@
+import { recoveryProductName } from "./recovery-product-name";
 /** Recuperação de PIX pendente via WhatsApp — somente servidor. */
 
 export type WaProvider = "meta" | "zapi" | "evolution" | "plugsend";
@@ -206,7 +207,7 @@ export async function runPixWhatsappRecovery(): Promise<{ checked: number; sent:
       const vars = {
         nome: name,
         pedido: String(o.order_number),
-        produto: snap.title ?? "",
+        produto: recoveryProductName(snap),
         valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
         pix: expired ? "" : pay.copy_paste ?? "",
         nome_loja: (store?.name as string) ?? "",
@@ -280,7 +281,7 @@ async function retryDisconnected(db: any, cfg: any, storeName: string, now: numb
   const vars = {
     nome: String((o.customer as { name?: string })?.name ?? "").trim().split(/\s+/)[0] || "cliente",
     pedido: String(o.order_number),
-    produto: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
+    produto: recoveryProductName(o.product_snapshot),
     valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
     pix: expired ? "" : pay.copy_paste ?? "",
     nome_loja: storeName,
