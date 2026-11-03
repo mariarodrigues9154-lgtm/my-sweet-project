@@ -7,8 +7,9 @@ import { ProductEditor } from "./ProductManager";
 import { directSettingResult, normalizeSettingsQuery, searchSettings, settingsCatalog, type SettingsDestination } from "@/lib/admin-settings-search";
 
 function findDestination(root: ParentNode, result: SettingsDestination) {
-  const section = Array.from(root.querySelectorAll<HTMLElement>("[data-settings-section]")).find((element) => normalizeSettingsQuery(element.dataset.settingsSection ?? "") === normalizeSettingsQuery(result.section));
+  const section = Array.from(root.querySelectorAll<HTMLElement>("[data-settings-section]")).find((element) => normalizeSettingsQuery(element.dataset['settingsSection'] ?? "") === normalizeSettingsQuery(result.section));
   if (!section) return null;
+  if (result.providerId) return section.querySelector<HTMLElement>("[data-settings-gateway-editor]");
   const label = normalizeSettingsQuery(result.label);
   const target = Array.from(section.querySelectorAll<HTMLElement>("label, h3, h4, p, button, [aria-label], input[placeholder], textarea[placeholder]")).find((element) => {
     const text = normalizeSettingsQuery(element.getAttribute("aria-label") || element.getAttribute("placeholder") || element.textContent || "");
@@ -63,7 +64,7 @@ export function StoreSettingsSearch({ products, onProductSaved }: { products: { 
 
   function navigate(result: SettingsDestination) {
     setOpen(false); setEditing(result.productId ?? null); setDestination({ ...result });
-    if (result.area === "payments") window.dispatchEvent(new CustomEvent("settings-search-payment", { detail: result.label }));
+    if (result.providerId) window.dispatchEvent(new CustomEvent("settings-search-payment", { detail: result.providerId }));
   }
 
   return <div ref={boxRef} className="relative mt-4">

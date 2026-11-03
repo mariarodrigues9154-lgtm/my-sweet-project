@@ -1,6 +1,7 @@
 import catalog from "./admin-settings-catalog.json";
+import { PAYMENT_PROVIDERS } from "./payments/catalog";
 
-export type SettingsDestination = { id: string; section: string; label: string; area?: string; productId?: string; productName?: string; aliases?: string[] };
+export type SettingsDestination = { id: string; section: string; label: string; area?: string | undefined; productId?: string | undefined; productName?: string | undefined; providerId?: string | undefined; aliases?: string[] | undefined };
 export const normalizeSettingsQuery = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 const aliases: Record<string, string[]> = {
@@ -13,8 +14,20 @@ const aliases: Record<string, string[]> = {
 };
 
 export function settingsCatalog(products: { id: string; title: string }[]): SettingsDestination[] {
-  return catalog.flatMap((group) => {
-    const labels = [group.section, ...group.labels.filter((label) => normalizeSettingsQuery(label).length > 1)];
+  const extras: Record<string, string[]> = {
+    "Endereço e status": ["Loja ativa", "Loja inativa"],
+    "Identidade e botões": ["Selo de loja verificada"],
+    "Proteção do cliente": Array.from({ length: 6 }, (_, i) => `Texto do benefício ${i + 1}`),
+    "Cronômetro da oferta (toda a loja)": ["Horas", "Minutos"],
+    "Oferta de saída do checkout": ["Subtítulo/selo", "Título", "Texto do contador", "Texto do botão principal", "Texto de recusa", "Ícone/imagem", "Valor do desconto"],
+    "Pop-up de saída da página do produto": ["Título", "Texto do contador", "Texto do botão principal", "Texto de recusa", "Valor do desconto"],
+    "PIX pendente / Recuperação de pagamento": ["Mostrar aviso de pagamento pendente", "Permitir copiar PIX pelo aviso", "Permitir recuperar PIX pelo chat", "Mostrar indicador de mensagem"],
+    "Preço e estoque": ["Texto manual da faixa Economize", "Negrito", "Pulsação"],
+    "Variações do produto": ["Etiqueta de esgotado", "Nome do atributo", "Nome da opção", "Preço da combinação", "Estoque da combinação", "Selo promocional da combinação"],
+    "Recuperação de PIX pendente via WhatsApp": ["Token PlugSend", "Token de acesso", "Token da instância", "Client-Token", "API key", "Primeiro lembrete", "Enviar após minutos"],
+  };
+  const sections = catalog.flatMap((group) => {
+    const labels = [...new Set([group.section, ...group.labels, ...(extras[group.section] ?? [])])].filter((label) => normalizeSettingsQuery(label).length > 1);
     const rows = (product?: { id: string; title: string }) => labels.map((label, index) => ({
       id: `${product?.id ?? "store"}:${group.section}:${index}`, section: group.section, label,
       area: "area" in group ? group.area : undefined, productId: product?.id, productName: product?.title,
@@ -22,6 +35,11 @@ export function settingsCatalog(products: { id: string; title: string }[]): Sett
     }));
     return group.scope === "product" ? products.flatMap(rows) : rows();
   });
+  const providers = PAYMENT_PROVIDERS.filter((provider) => provider.supportsPix).flatMap((provider) => [provider.name, ...provider.fields.map((field) => field.label)].map((label, index) => ({
+    id: `gateway:${provider.id}:${index}`, section: "Checkout e Pagamentos", area: "payments", providerId: provider.id,
+    label: index === 0 ? provider.name : `${provider.name} — ${label}`, aliases: [label, provider.id],
+  })));
+  return [...sections, ...providers];
 }
 
 export function searchSettings(items: SettingsDestination[], query: string): SettingsDestination[] {
@@ -38,7 +56,7 @@ export function searchSettings(items: SettingsDestination[], query: string): Set
   // Each section is one destination; its most specific matching field is shown.
   const seen = new Set<string>();
   return matches.filter(({ item }) => {
-    const key = `${item.productId ?? "store"}:${item.section}`;
+    const key = `${item.productId ?? "store"}:${item.section}:${item.providerId ?? ""}`;
     if (seen.has(key)) return false;
     seen.add(key); return true;
   }).map(({ item }) => item);

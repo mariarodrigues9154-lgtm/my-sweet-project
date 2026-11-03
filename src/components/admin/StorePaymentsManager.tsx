@@ -39,6 +39,17 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
     setProvider(id); setAdding(isNew); setEnvironment(row?.environment === "production" ? "production" : "sandbox");
     setPublicData(row?.public_data ?? {}); setSecrets({}); setEditing({}); setCopied(false);
   }
+  useEffect(() => {
+    const navigate = (event: Event) => {
+      if (!(event instanceof CustomEvent) || busy !== null) return;
+      const match = PAYMENT_PROVIDERS.find((item) => item.id === event.detail && item.supportsPix);
+      if (!match) return;
+      if (provider && (Object.keys(secrets).length || Object.keys(editing).length) && !window.confirm("Abrir outro gateway e descartar as alterações de credenciais ainda não salvas?")) return;
+      openEditor(match.id as GatewayId, !gateways.some((gateway) => gateway.provider === match.id));
+    };
+    window.addEventListener("settings-search-payment", navigate);
+    return () => window.removeEventListener("settings-search-payment", navigate);
+  }, [gateways, provider, busy, secrets, editing]);
   async function action(key: string, run: () => Promise<{ ok: boolean; error?: string }>, success: string) {
     setBusy(key);
     try {
@@ -91,7 +102,7 @@ export function StorePaymentsManager({ storeId }: { storeId: string }) {
             })}
           </div>
           {!provider && available.length > 0 && <Button variant="outline" size="sm" disabled={busy !== null} onClick={() => { const first = available[0]; if (first) openEditor(first.id as GatewayId, true); }}><Plus size={14} />Adicionar gateway</Button>}
-          {provider && <div className="space-y-3 border-t border-border pt-4">
+          {provider && <div data-settings-gateway-editor className="space-y-3 border-t border-border pt-4">
             <div className="flex items-center justify-between"><h3 className="text-[13px] font-extrabold">{adding ? "Adicionar gateway" : `Credenciais — ${spec.name}`}</h3><Button size="icon" variant="ghost" aria-label="Fechar edição do gateway" disabled={busy !== null} onClick={() => { setProvider(null); setSecrets({}); setAdding(false); }}><X size={16} /></Button></div>
             {adding && <label className="block text-xs font-bold">Gateway de pagamento<select aria-label="Gateway de pagamento" value={provider} onChange={(e) => openEditor(e.target.value as GatewayId, true)} className="mt-1 h-11 w-full rounded-lg border border-input bg-background px-3 text-[13px]">{available.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
             {spec.docs && <p className="text-[11px] text-muted-foreground">Onde encontrar: {spec.docs}</p>}
