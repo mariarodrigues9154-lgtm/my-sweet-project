@@ -68,6 +68,6 @@ export function searchSettings(items: SettingsDestination[], query: string): Set
 export function directSettingResult(items: SettingsDestination[], query: string): SettingsDestination | undefined {
   if (items.length === 1) return items[0];
   const q = normalizeSettingsQuery(query);
-  const exact = items.filter((item) => !item.productId && (normalizeSettingsQuery(item.label) === q || item.aliases?.some((alias) => normalizeSettingsQuery(alias) === q)));
+  const exact = items.filter((item) => !item.productId && (normalizeSettingsQuery(item.section) === q || item.aliases?.some((alias) => normalizeSettingsQuery(alias) === q)));
   return exact.length === 1 ? exact[0] : undefined;
 }
