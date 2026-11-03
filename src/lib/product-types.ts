@@ -132,6 +132,8 @@ export type ProductSections = {
   description_title?: string;
   /** Perguntas sobre o produto (IA). Padrão: ativado. */
   qa_enabled?: boolean;
+  /** Nome curto usado na variável {produto} das mensagens de WhatsApp. */
+  whatsapp_name?: string;
   qa_title?: string;
   qa_subtitle?: string;
   qa_placeholder?: string;

@@ -301,6 +301,7 @@ export const createOrder = createServerFn({ method: "POST" })
         store_id: product.store_id,
         product_snapshot: {
           title: product.title,
+          whatsapp_name: String((product.sections as { whatsapp_name?: string } | null)?.whatsapp_name ?? "").trim() || undefined,
           slug: product.slug,
           image: variantImage({ variants: groups, variant_combos: product.variant_combos ?? [], media } as never, data.variant) ?? null,
           variant_labels: Object.fromEntries(groups.filter((g) => data.variant[g.name]).map((g) => [g.label || g.name, g.options.find((o) => o.value === data.variant[g.name])?.label ?? data.variant[g.name]])),

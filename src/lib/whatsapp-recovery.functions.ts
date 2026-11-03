@@ -1,3 +1,4 @@
+import { recoveryProductName } from "./recovery-product-name";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -171,7 +172,7 @@ async function loadManualContext(orderId: string, kind: "pending" | "paid" = "pe
   const vars = {
     nome: name,
     pedido: String(o.order_number),
-    produto: ((o.product_snapshot ?? {}) as { title?: string }).title ?? "",
+    produto: recoveryProductName(o.product_snapshot),
     valor: Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
     pix: expired || kind === "paid" ? "" : pay.copy_paste ?? "",
     nome_loja: (store?.name as string) ?? "",
