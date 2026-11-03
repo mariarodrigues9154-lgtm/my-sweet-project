@@ -11,6 +11,7 @@ import { StorePaymentsManager } from "@/components/admin/StorePaymentsManager";
 import { StoreWhatsappRecovery } from "@/components/admin/StoreWhatsappRecovery";
 import { StoreUtmifyManager } from "@/components/admin/StoreUtmifyManager";
 import { StoreMagnusManager } from "@/components/admin/StoreMagnusManager";
+import { StoreSettingsSearch } from "@/components/admin/StoreSettingsSearch";
 
 export const Route = createFileRoute("/_authenticated/admin/lojas/$id")({
   head: () => ({
@@ -48,6 +49,7 @@ function EditStore() {
             key={id}
             store={data.store as unknown as StoreDraft}
             products={data.products}
+            search={<StoreSettingsSearch key={id} products={data.products} onProductSaved={async () => { await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ["admin-overview"] })]); }} />}
             onSave={async (draft) => {
               const { is_default: _d, ...rest } = draft as StoreDraft & { is_default?: boolean };
               const result = await save({ data: { ...(rest as never as object), id, checkout: { ...(draft.checkout ?? {}), checkout_model: draft.checkout?.checkout_model ?? "v1", logo_url: draft.checkout?.logo_url ?? null, primary_color: draft.checkout?.primary_color ?? "", title: draft.checkout?.title ?? "", note: draft.checkout?.note ?? "", verified_home: draft.checkout?.verified_home !== false, verified_product: draft.checkout?.verified_product !== false, verified_checkout: draft.checkout?.verified_checkout !== false, verified_footer: draft.checkout?.verified_footer !== false, display_name: draft.checkout?.display_name ?? "", show_name: draft.checkout?.show_name !== false, discount_title: draft.checkout?.discount_title ?? "", show_discount: draft.checkout?.show_discount !== false, legal_text: draft.checkout?.legal_text ?? "", show_legal: draft.checkout?.show_legal !== false } } as never });
@@ -59,11 +61,11 @@ function EditStore() {
               return true;
             }}
           />
-          <StoreMetaManager storeId={id} />
-          <StoreUtmifyManager storeId={id} />
-          <StoreMagnusManager storeId={id} />
-          <StorePaymentsManager storeId={id} />
-          <StoreWhatsappRecovery storeId={id} />
+          <div data-settings-section="Meta Pixel e Rastreamento"><StoreMetaManager storeId={id} /></div>
+          <div data-settings-section="Integração UTMify"><StoreUtmifyManager storeId={id} /></div>
+          <div data-settings-section="Rastreamento — Magnus Frete"><StoreMagnusManager storeId={id} /></div>
+          <div data-settings-section="Checkout e Pagamentos"><StorePaymentsManager storeId={id} /></div>
+          <div data-settings-section="Recuperação de PIX pendente via WhatsApp"><StoreWhatsappRecovery storeId={id} /></div>
         </>
       )}
     </main>

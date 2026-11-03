@@ -16,7 +16,7 @@ type ProductChoice = { id: string; title: string; active: boolean; protection?: 
 
 export type StoreDraft = StoreSettings & { active: boolean; is_default?: boolean };
 
-export function StorePageManager({ store, products, onSave }: { store: StoreDraft; products: ProductChoice[]; onSave: (value: StoreDraft) => Promise<boolean> }) {
+export function StorePageManager({ store, products, onSave, search }: { store: StoreDraft; products: ProductChoice[]; onSave: (value: StoreDraft) => Promise<boolean>; search?: React.ReactNode }) {
   const [draft, setDraft] = useState(store);
   const [saving, setSaving] = useState(false);
   const upload = useServerFn(uploadProductImage);
@@ -54,6 +54,7 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
   return <section className="rounded-xl bg-card p-4 shadow-card-soft">
     <h2 className="text-[15px] font-extrabold">{draft.name || "Loja"}</h2>
     <p className="mt-1 text-[11.5px] text-muted-foreground">Endereço público: {draft.is_default ? "/loja" : `/loja/${draft.slug}`}</p>
+    {search}
 
     <Group title="Endereço e status">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -297,7 +298,7 @@ export function StorePageManager({ store, products, onSave }: { store: StoreDraf
   </section>;
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) { return <div className="mt-5 border-t border-border pt-4"><h3 className="mb-3 text-[12px] font-extrabold uppercase text-muted-foreground">{title}</h3>{children}</div>; }
+function Group({ title, children }: { title: string; children: React.ReactNode }) { return <div data-settings-section={title} className="mt-5 border-t border-border pt-4"><h3 className="mb-3 text-[12px] font-extrabold uppercase text-muted-foreground">{title}</h3>{children}</div>; }
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) { return <label className="block min-w-0"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">{label}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-input bg-card px-3 py-2.5 text-[13px] outline-none focus:border-primary" /></label>; }
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="block"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">{label}</span><textarea value={value} onChange={(event) => onChange(event.target.value)} rows={5} className="w-full resize-y rounded-lg border border-input bg-card px-3 py-2 text-[12px] outline-none focus:border-primary" /></label>; }
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[11.5px] font-semibold"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />{label}</label>; }

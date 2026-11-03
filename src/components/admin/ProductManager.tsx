@@ -429,7 +429,7 @@ function fileToBase64(file: File) {
   });
 }
 
-function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unknown> }) {
+export function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unknown> }) {
   const load = useServerFn(getAdminProduct);
   const save = useServerFn(saveProductDetails);
   const upload = useServerFn(uploadProductImage);
@@ -524,6 +524,7 @@ function ProductEditor({ id, onSaved }: { id: string; onSaved: () => Promise<unk
   return (
     <form
       ref={formRef}
+      data-settings-product-editor
       className="space-y-5 px-1 pb-8 pt-4"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -1381,7 +1382,7 @@ function UploadBtn({ label, accept, onFile }: { label: string; accept: string; o
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="space-y-2.5">
+    <fieldset data-settings-section={title.replace(/\s*\(.*$/, "")} className="space-y-2.5">
       <legend className="mb-1 text-[13px] font-extrabold">{title}</legend>
       {children}
     </fieldset>

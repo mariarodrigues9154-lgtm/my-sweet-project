@@ -1,0 +1,859 @@
+[
+  {
+    "scope": "store",
+    "section": "Endereço e status",
+    "labels": [
+      "Endereço (ex.: minha-loja)"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Identidade e botões",
+    "labels": [
+      "Nome da loja",
+      "Descrição curta",
+      "Quantidade de vendidos",
+      "E-mail de suporte",
+      "Logo da Loja (círculo ao lado do nome)"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Ações da Loja",
+    "labels": [
+      "Visitar",
+      "Exibir",
+      "Clicável",
+      "Seguir",
+      "Mensagem"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Logos",
+    "labels": [
+      "Logo do Cabeçalho",
+      "Logo do Rodapé"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Cabeçalho das páginas de produto",
+    "labels": [
+      "Ativar cabeçalho estilo mobile"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Proteção do cliente",
+    "labels": [
+      "Ativar Proteção do cliente",
+      "Estilo de exibição",
+      "Layout 1 — Original",
+      "Layout 2 — Premium",
+      "Permitir expandir e recolher benefícios",
+      "Título principal",
+      "Subtítulo",
+      "Prévia da Proteção do cliente",
+      "Prévia",
+      "Componente desativado"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Personalização da Página Pix",
+    "labels": [
+      "Explicação “Como fazer pagamentos com PIX?”",
+      "Card com três informações",
+      "Exibir bloco de WhatsApp",
+      "Bloco “Enviar comprovante”",
+      "Botão “Ver pedido”",
+      "Aviso “Seus dados estão seguros e criptografados”",
+      "Título da explicação Pix",
+      "Texto de como realizar o pagamento",
+      "Informação 1 (e-mail)",
+      "Informação 2 (processamento)",
+      "Informação 3 (rastreio)",
+      "Título do WhatsApp (Dúvidas?)",
+      "Texto do WhatsApp",
+      "Texto do botão do WhatsApp",
+      "Número do WhatsApp do suporte (ex.: 5585999999999)",
+      "Título “Já pagou o Pix?”",
+      "Texto auxiliar do comprovante"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Favicon da Loja",
+    "labels": [
+      "Favicon",
+      "Remover favicon"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Imagens e banners",
+    "labels": [
+      "Capa da loja",
+      "Banner principal",
+      "URL de destino do banner"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Indicadores",
+    "labels": [
+      "Valor",
+      "Legenda"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Mais vendidos da loja",
+    "labels": [
+      "Subir produto",
+      "Descer produto"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Checkout",
+    "labels": [
+      "Modelo de Checkout",
+      "Checkout 1 — Atual",
+      "Checkout 2 — Novo",
+      "Logo do checkout",
+      "Cor principal (botões)",
+      "Usar padrão",
+      "Título da etapa (padrão: Pagamento)",
+      "Nome exibido no Checkout (vazio = nome da loja)",
+      "Exibir nome da loja",
+      "Título do bloco de desconto",
+      "Exibir bloco de desconto",
+      "Exibir texto legal",
+      "Exibir avaliação no topo",
+      "Usar a nota do produto",
+      "Texto antes da nota (padrão: Ótima avaliação!)",
+      "Nota exibida no checkout (ex.: 4,8)",
+      "Nota máxima exibida (padrão: 5,0)"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Termos exibidos na página do produto",
+    "labels": [
+      "Exibir bloco de termos",
+      "Título da seção",
+      "TERMOS",
+      "Texto (vazio = usa o texto já cadastrado em cada produto)"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Cronômetro da oferta (toda a loja)",
+    "labels": [
+      "Horas",
+      "Minutos"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Formas de pagamento",
+    "labels": [
+      "PIX",
+      "Ativar PIX",
+      "Ícone do Pix",
+      "PNG/SVG quadrado, de preferência 256×256 ou maior.",
+      "Remover",
+      "Texto do PIX",
+      "Desconto no PIX",
+      "Tipo",
+      "Percentual (%)",
+      "Valor fixo (R$)",
+      "Valor",
+      "Texto do desconto",
+      "Pague via PIX e economize 5%",
+      "Cartão de crédito",
+      "Ativar cartão de crédito",
+      "Gateway do cartão",
+      "Status:",
+      "Checkout e Pagamentos",
+      "Título",
+      "Texto",
+      "Destaque (chip rosa)",
+      "Máximo de parcelas",
+      "Parcelas sem juros",
+      "Mostrar bandeiras",
+      "Bandeiras do cartão",
+      "Adicionar bandeira",
+      "Nome",
+      "Exibir",
+      "Subir",
+      "Descer",
+      "Logos / Selos do pagamento",
+      "Adicionar imagem",
+      "Exibir logos de segurança",
+      "Ativa",
+      "Mostrar faixa promocional",
+      "Texto da faixa",
+      "Mensagem de cartão recusado",
+      "Mensagem",
+      "Botão cartão",
+      "Botão PIX",
+      "Texto do benefício PIX (só aparece se houver desconto)",
+      "Erro do provedor de cartão",
+      "Botão 1",
+      "Botão 2 (PIX)",
+      "Juros total por parcela (%) — exemplo com R$ 117,00",
+      "x"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Oferta de saída do checkout",
+    "labels": [
+      "Estilo visual",
+      "Estilo oferta agressiva",
+      "Padrão",
+      "Tipo de desconto",
+      "Percentual (%)",
+      "Valor fixo por unidade (R$)",
+      "Texto principal da oferta",
+      "Ativar contador:",
+      "Duração (minutos)",
+      "Mostrar preço antigo",
+      "Mostrar novo preço",
+      "Mostrar ícone",
+      "Cor do botão",
+      "Cor de destaque",
+      "Cor do fundo"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Pop-up de saída da página do produto",
+    "labels": [
+      "Estilo visual",
+      "Estilo oferta agressiva",
+      "Padrão",
+      "Tipo de desconto",
+      "Percentual (%)",
+      "Valor fixo por unidade (R$)",
+      "Texto principal da oferta",
+      "Ativar contador:",
+      "Duração (minutos)",
+      "Mostrar preço antigo",
+      "Mostrar novo preço",
+      "Mostrar ícone",
+      "Cor do botão",
+      "Cor de destaque",
+      "Cor do fundo",
+      "Ativar pop-up de saída na página do produto"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Popup / Notificações flutuantes",
+    "labels": [
+      "Ativar popup:",
+      "Manual",
+      "Avaliações do produto",
+      "Compras reais",
+      "Manual + Avaliações",
+      "Manual + Compras reais",
+      "Inferior esquerdo",
+      "Inferior direito",
+      "Superior esquerdo",
+      "Superior direito",
+      "Ordem cadastrada",
+      "Aleatória",
+      "Slide + fade",
+      "Somente fade",
+      "Slide",
+      "Mostrar botão X",
+      "Usar tempo real (compras e avaliações)",
+      "O que aparece no popup",
+      "Mostrar foto",
+      "Mostrar nome",
+      "Mostrar cidade/região",
+      "Mostrar ícone de localização",
+      "Mostrar produto / mensagem",
+      "Mostrar texto secundário",
+      "Mostrar selo",
+      "Mostrar tempo (\"há X minutos\")",
+      "Texto do selo",
+      "Verificado",
+      "Laranja (Oferta Relâmpago)",
+      "Cor principal da loja",
+      "Verde",
+      "Azul (selo verificado)",
+      "Preto",
+      "Título",
+      "Modelo para avaliações",
+      "Texto secundário",
+      "Máximo de caracteres",
+      "Mostrar localização",
+      "Usar localização do pedido quando disponível",
+      "Usar somente avaliações com Compra confirmada",
+      "Compras reais (só pedidos pagos desta loja; mostra primeiro nome e cidade)",
+      "Mensagem",
+      "comprou {produto}",
+      "Selo (vazio = sem selo)",
+      "Notificação",
+      "Sem foto",
+      "Remover",
+      "Produto relacionado (",
+      "Usar automaticamente o produto atual",
+      "Nome do produto escrito à mão (opcional)",
+      "a Escova Modeladora Profissional",
+      "Mostrar selo nesta notificação",
+      "Texto do selo (vazio = texto geral)",
+      "Tempo exibido (minutos) — monta \"há X minutos\"",
+      "Ou texto de tempo digitado (tem prioridade)",
+      "há 2 minutos",
+      "Exibir em",
+      "Todos os produtos",
+      "Produtos selecionados",
+      "Somente um produto",
+      "Adicionar notificação",
+      "Fechar prévia"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "PIX pendente / Recuperação de pagamento",
+    "labels": [
+      "Ativar recuperação de PIX pendente",
+      "Título do aviso",
+      "Texto do botão de copiar",
+      "Texto do botão do chat"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Rodapé e políticas",
+    "labels": [
+      "Texto do rodapé",
+      "Política de Privacidade",
+      "Política de Reembolso",
+      "Termos de Uso",
+      "Política de Entrega"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Atendimento por IA e suporte",
+    "labels": [
+      "Ativar Atendimento por IA e Suporte",
+      "Entregamos para todo o Brasil",
+      "Encaminhar para suporte humano",
+      "WhatsApp",
+      "Ligações",
+      "Número do suporte (+55 DDD número)",
+      "Mensagem padrão do WhatsApp ({produto} = nome)",
+      "Texto de garantia",
+      "Informações da loja",
+      "Informações adicionais para a IA"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Informações",
+    "labels": [
+      "Nome interno",
+      "Título na página",
+      "Subtítulo",
+      "Endereço (/produto/…)",
+      "Produto ativo (visível na loja)"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Cabeçalho da página do produto",
+    "labels": [
+      "Cabeçalho especial",
+      "Herdar configuração da loja",
+      "Ativar neste produto",
+      "Desativar neste produto",
+      "Texto da barra de pesquisa"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Preço e estoque",
+    "labels": [
+      "Preço atual",
+      "Preço anterior",
+      "Estoque",
+      "Desconto calculado:",
+      "Texto da faixa “Economize”",
+      "Modo do texto da faixa Economize",
+      "Automático (calculado pelos preços)",
+      "Manual (texto personalizado)",
+      "Texto personalizado da faixa",
+      "Negrito",
+      "Aplicar ou remover negrito",
+      "Economize R$ 38,00",
+      "Efeito pulsante",
+      "Ativar pulsação suave",
+      "Aplicar pulsação em:",
+      "Apenas trechos destacados em negrito",
+      "Texto completo da faixa",
+      "Prévia",
+      "Faixa oculta"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Textos e métricas exibidas",
+    "labels": [
+      "Automático",
+      "Nota de avaliação exibida (0 a 5)",
+      "Fonte da avaliação",
+      "Automática (média das avaliações)",
+      "Manual",
+      "Nº de avaliações",
+      "Texto de avaliações",
+      "avaliações",
+      "Fonte",
+      "Nº de vendidos",
+      "Texto de vendidos",
+      "vendidos"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Selos promocionais",
+    "labels": [
+      "Exibir selo promocional 1",
+      "OFERTA DE LANÇAMENTO",
+      "Exibir selo promocional 2",
+      "SOMENTE HOJE",
+      "Selos promocionais do pop-up",
+      "Origem dos textos",
+      "Herdar do template",
+      "Personalizar no pop-up",
+      "Texto do primeiro selo",
+      "SUPER OFERTA (vazio oculta)",
+      "Texto do segundo selo",
+      "POR TEMPO LIMITADO (vazio oculta)",
+      "Prévia:",
+      "nenhum selo",
+      "Exibir selo WhatsApp",
+      "Texto do selo",
+      "Atendimento via WhatsApp",
+      "Tornar selo clicável",
+      "Ativar efeito pulsante",
+      "Número do WhatsApp",
+      "Mensagem inicial (opcional)",
+      "Olá, gostaria de tirar uma dúvida sobre o produto."
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Seção de avaliações dos clientes",
+    "labels": [
+      "Título da seção de avaliações",
+      "Avaliações dos clientes",
+      "Automática (avaliações reais)",
+      "Manual",
+      "Nota média",
+      "Quantidade exibida",
+      "Nota máxima exibida"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Imagens",
+    "labels": [
+      "Capa",
+      "Vídeo",
+      "Mover para trás",
+      "Remover imagem",
+      "Mover para frente",
+      "Enviar fotos",
+      "Adicionar"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Cupom / aviso promocional",
+    "labels": [
+      "Padrão",
+      "Texto do chip",
+      "Texto destacado",
+      "Texto complementar",
+      "e",
+      "Percentual (%)",
+      "Valor máximo (R$)",
+      "Cronômetro: horas",
+      "Cronômetro: minutos",
+      "Duração do cronômetro deste produto (vale para a faixa, barra e checkout dele).",
+      "Prévia do chip",
+      "Prévia da barra"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Popup de notificações",
+    "labels": [
+      "Usar configuração da loja",
+      "Ativar neste produto",
+      "Desativar neste produto"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Oferta de saída do checkout",
+    "labels": [
+      "Usar configuração da loja",
+      "Ativar neste produto (configuração própria)",
+      "Desativar neste produto",
+      "Estilo visual",
+      "Estilo oferta agressiva",
+      "Padrão",
+      "Tipo de desconto",
+      "Percentual (%)",
+      "Valor fixo por unidade (R$)",
+      "Texto principal da oferta",
+      "Ativar contador:",
+      "Duração (minutos)",
+      "Mostrar preço antigo",
+      "Mostrar novo preço",
+      "Mostrar ícone",
+      "Cor do botão",
+      "Cor de destaque",
+      "Cor do fundo"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Pop-up de saída da página do produto",
+    "labels": [
+      "Usar configuração da loja",
+      "Ativar apenas neste produto (configuração própria)",
+      "Desativar neste produto",
+      "Estilo visual",
+      "Estilo oferta agressiva",
+      "Padrão",
+      "Tipo de desconto",
+      "Percentual (%)",
+      "Valor fixo por unidade (R$)",
+      "Texto principal da oferta",
+      "Ativar contador:",
+      "Duração (minutos)",
+      "Mostrar preço antigo",
+      "Mostrar novo preço",
+      "Mostrar ícone",
+      "Cor do botão",
+      "Cor de destaque",
+      "Cor do fundo"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Perguntas sobre o produto / IA",
+    "labels": [
+      "Título da seção",
+      "Subtítulo",
+      "Texto de exemplo do campo",
+      "Informações adicionais para a IA (só fatos verdadeiros)"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Sobre o produto",
+    "labels": [
+      "Título da seção",
+      "Título (ex.: Estrutura)",
+      "Valor",
+      "Adicionar linha",
+      "Garantia"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Proteção do cliente",
+    "labels": [
+      "Título",
+      "Subtítulo",
+      "Remover item",
+      "Adicionar item"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Variações do produto",
+    "labels": [
+      "Nome do atributo (ex.: Cor)",
+      "Remover atributo",
+      "Mostrar como cartões com imagem",
+      "Remover imagem da opção",
+      "Nome da opção (ex.: Preto)",
+      "Remover opção",
+      "Variante esgotada",
+      "Texto da etiqueta de esgotado",
+      "Texto da etiqueta",
+      "ESGOTADO",
+      "Adicionar opção",
+      "Nova variação (ex.: Numeração)",
+      "Adicionar",
+      "Combinações (",
+      "Ativa",
+      "Preço",
+      "Preço original",
+      "Estoque",
+      "Código (SKU)",
+      "Exibir selo promocional nesta variante",
+      "Texto do selo",
+      "Ativar efeito pulsante",
+      "Cor do selo",
+      "Cor do texto"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Vídeos de criadores",
+    "labels": [
+      "Configuração da seção de vídeos",
+      "Título superior (vazio = Vídeos de criadores)",
+      "Quantidade exibida (vazio = nº de vídeos; ex.: 14,9 mil)",
+      "Texto Ver mais",
+      "Subtítulo da seção",
+      "Texto de orientação (ex.: arraste)",
+      "Mostrar ícone no título",
+      "Ícone do título",
+      "Vídeo",
+      "Play",
+      "Câmera",
+      "Gravação",
+      "Filmadora",
+      "Posição do ícone",
+      "Depois do título",
+      "Antes do título",
+      "Depois da quantidade",
+      "Cor personalizada do ícone",
+      "Cor do ícone do título",
+      "Exibir quantidade",
+      "Exibir Ver mais",
+      "Exibir ícone de vídeo",
+      "Exibir orientação",
+      "\"Ver mais\" abre uma tela com todos os vídeos da seção.",
+      "Estilo dos cards",
+      "Modelo 1 — Informações sobre o vídeo",
+      "Modelo 2 — Informações abaixo do vídeo",
+      "ou cole o link do Panda Vídeo (HLS .m3u8)",
+      "Remover",
+      "@ do criador",
+      "Nome do criador",
+      "Título curto (ex.: Antes e depois)",
+      "Descrição curta (opcional)",
+      "Sem estrelas",
+      "estrela",
+      "Mostrar título",
+      "Mostrar @",
+      "Mostrar nome",
+      "Mostrar estrelas",
+      "Mostrar foto",
+      "Criador verificado",
+      "Mostrar nota",
+      "Mostrar descrição",
+      "Estilo do verificado",
+      "Estilo do verificado do vídeo",
+      "Verde atual",
+      "Selo azul",
+      "Adicionar vídeo"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Avaliações",
+    "labels": [
+      "Nota média",
+      "Quantidade exibida",
+      "Vendidos",
+      "Avaliações por carregamento (1 a 20)",
+      "Importar avaliações por CSV",
+      "Baixar modelo CSV",
+      "Selecionar arquivo CSV",
+      "Arquivos de imagens das avaliações",
+      "Limpar imagens",
+      "Prévia da importação",
+      "Cancelar",
+      "avaliações encontradas ·",
+      "válidas",
+      "com erro",
+      "Linha",
+      "Nome",
+      "Nota",
+      "Data",
+      "Fotos",
+      "Status",
+      "Importar mesmo assim",
+      "Cancelar e corrigir CSV",
+      "Importação concluída",
+      "avaliações importadas ·",
+      "Baixar CSV de erros",
+      "selecionada",
+      "Excluir selecionadas (",
+      "Fixada no topo (posição",
+      "Selecionar avaliação",
+      "Avatar",
+      "Data/tempo (ex.: Há 2 horas)",
+      "Texto da avaliação",
+      "Remover foto",
+      "Vídeos da avaliação",
+      "Substituir",
+      "Adicionar vídeo",
+      "Remover avatar",
+      "Compra confirmada",
+      "Adicionar avaliação"
+    ]
+  },
+  {
+    "scope": "product",
+    "section": "Descrição",
+    "labels": [
+      "Título da descrição",
+      "Título",
+      "Subtítulo",
+      "Texto",
+      "Lista",
+      "Imagem",
+      "Vídeo",
+      "Espaçamento"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Meta Pixel e Rastreamento",
+    "area": "meta",
+    "labels": [
+      "Meta Pixel",
+      "Pixel ID",
+      "Conversions API",
+      "Rastreamento de PIX pendente",
+      "Ativar Meta Pixel",
+      "Rastrear PIX não pago",
+      "Conversions API Access Token",
+      "Meta Test Event Code (opcional, expira em 24h)",
+      "TEST12345",
+      "Remover token da Conversions API ao salvar",
+      "Evento de compra",
+      "Enviar Purchase somente quando o pagamento for confirmado",
+      "PIX gerado e não pago nunca é contado como compra.",
+      "Modo de teste",
+      "Eventos de teste",
+      "Cole no campo \"Meta Test Event Code\" acima e clique em",
+      "Salvar",
+      "Enviar eventos de teste",
+      "Histórico de eventos enviados à Meta",
+      "Só falhas",
+      "Envios feitos pelo servidor (compras confirmadas e testes). Últimos 100.",
+      "Pedido",
+      "teste",
+      "Origem:",
+      "ID do evento:",
+      "Resposta HTTP:",
+      "Detalhe:"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Integração UTMify",
+    "area": "utmify",
+    "labels": [
+      "Envio de vendas",
+      "Credencial de API",
+      "Script de UTMs",
+      "Pixel UTMify",
+      "Enviar vendas para a UTMify",
+      "Credencial de API (x-api-token)",
+      "Instalar script de UTMs",
+      "Ativar Pixel da UTMify",
+      "Registros de sincronização",
+      "teste"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Rastreamento — Magnus Frete",
+    "area": "magnus",
+    "labels": [
+      "Enviar pedidos pagos automaticamente",
+      "Token da API Externa",
+      "Pedidos pagos (30 dias)",
+      "Pesquisar pedidos",
+      "Limpar pesquisa",
+      "Rastreio:",
+      "Reenviar (conferi no painel)",
+      "Status da entrega",
+      "Salvar código"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Checkout e Pagamentos",
+    "area": "payments",
+    "labels": [
+      "Tentar novamente",
+      "Pagamentos ativos nesta loja",
+      "Gateways de pagamento",
+      "Credenciais:",
+      "Testar conexão",
+      "Editar credenciais",
+      "Adicionar gateway",
+      "Fechar edição do gateway",
+      "Gateway de pagamento",
+      "Onde encontrar:",
+      "Ambiente",
+      "Teste (sandbox)",
+      "Produção (cobranças reais)",
+      "Alterar",
+      "Aviso de pagamento (webhook)",
+      "Salvar credenciais"
+    ]
+  },
+  {
+    "scope": "store",
+    "section": "Recuperação de PIX pendente via WhatsApp",
+    "area": "whatsapp",
+    "labels": [
+      "PIX pendentes hoje",
+      "Mensagens enviadas",
+      "Pagos após a mensagem",
+      "Ativar mensagens automáticas para PIX pendente",
+      "Quantidade máxima de lembretes",
+      "Integração WhatsApp",
+      "Provedor",
+      "WhatsApp Business (oficial Meta)",
+      "Z-API",
+      "Evolution API",
+      "PlugSend",
+      "Número/remetente (referência)",
+      "ID do número (Phone Number ID)",
+      "Nome do modelo aprovado",
+      "pix_pendente",
+      "Idioma do modelo",
+      "Variáveis do modelo, em ordem ({{1}}, {{2}}...)",
+      "Modelo tem botão \"PAGAR COM PIX\" (URL termina em /pix/",
+      "ID da instância",
+      "Nome da instância",
+      "TESTAR INTEGRAÇÃO PLUGSEND",
+      "Número que receberá o teste",
+      "Mensagem",
+      "Status do WhatsApp:",
+      "Mensagem automática",
+      "Mensagens do WhatsApp (envio manual)",
+      "Número para receber",
+      "Mensagem 1 — PIX pendente",
+      "Mensagem 2 — Pagamento confirmado",
+      "Testar envio para o número",
+      "PIX pendente",
+      "Pedido pago",
+      "Histórico de mensagens",
+      "Pedido #",
+      "º lembrete"
+    ]
+  }
+]
