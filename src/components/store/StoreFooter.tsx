@@ -38,7 +38,6 @@ export function StoreFooter({ store }: { store: StoreSettings }) {
         <DialogContent
           className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-[520px] flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 [&>button]:hidden"
           aria-describedby={undefined}
-          onCloseAutoFocus={(event) => event.preventDefault()}
         >
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <DialogTitle className="text-[16px] font-extrabold text-foreground">{policyTitle}</DialogTitle>
