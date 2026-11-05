@@ -1,5 +1,11 @@
 # Roadmap
 
+## Pop-ups das políticas do rodapé (05/11/2026)
+- [x] Reutilizar o diálogo da Privacidade para Reembolso, Termos e Entrega, com os textos cadastrados e sem alterar páginas diretas ou visibilidade.
+- [x] Testar as quatro políticas existentes em 1280px e 390px: conteúdo completo igual à página direta, X, URL e rolagem preservados; rodapé desativado intacto.
+- [x] Validar produto real com variante Rosa e duas unidades no carrinho, abrir/rolar/fechar as quatro políticas e reabrir seleção sem perda de dados; nenhum pedido gerado; build OK.
+- [ ] Publicar a alteração: depende da aprovação da usuária; não houve publicação automática.
+
 ## Pesquisa de configurações por loja (03/11/2026)
 - [x] Adicionar pesquisa abaixo do nome da loja, com catálogo de seções/campos inclusive não montados e produtos da própria loja.
 - [x] Navegar por Enter ou clique, abrir o editor de produto/gateway necessário, destacar o destino e preservar configurações. Campos condicionados a modos desligados levam ao seletor existente, sem ativar configurações.
