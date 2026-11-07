@@ -39,3 +39,4 @@
 - Magnus Frete: settings per store + order_shipments UNIQUE(order_id); sent only from sendPurchaseForOrder; network errors become "incerto", never auto-retried; why: API not idempotent.
 - PIX final-screen display toggles/texts live in store_settings.checkout.pix_page (resolvePixPage); optional payment proofs go to private storage payment-proofs/<order_id> and never change order status; why: per-store UI without touching payment logic.
 - Variant promos use variant_combos.promo_badge via optionPromoBadge, image cards only; sold_out/sold_out_text use variants.options, shared schema and variantPricing (UI/server); why: per-product isolation without overwriting prices/stock.
+- PIX creation uses shared pix-creation-policy for non-idempotent providers and pix-attempt for provider-aware checkout waits; why: crashes, save failures and stale requests must not create duplicate VenusPay charges.
