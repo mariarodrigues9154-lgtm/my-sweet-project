@@ -1,5 +1,10 @@
 # Roadmap
 
+## Auditoria e correção VenusPay (07/11/2026)
+- [ ] Conferir documentação oficial, respostas reais e seleção de gateway sem gerar cobranças.
+- [ ] Corrigir problemas confirmados na integração e nos avisos dos dois checkouts, preservando pedidos e travas contra duplicação.
+- [ ] Validar com testes e checkout sem cobrança; informar limitações externas e necessidade de publicação.
+
 ## Pop-ups das políticas do rodapé (05/11/2026)
 - [x] Reutilizar o diálogo da Privacidade para Reembolso, Termos e Entrega, com os textos cadastrados e sem alterar páginas diretas ou visibilidade.
 - [x] Testar as quatro políticas existentes em 1280px e 390px: conteúdo completo igual à página direta, X, URL e rolagem preservados; rodapé desativado intacto.
