@@ -1,5 +1,5 @@
 import { readTracking, useUtmifyScripts } from "@/lib/utm-tracking";
-import { logPixSubmit, pixRetryBlocked } from "@/lib/pix-attempt";
+import { logPixSubmit, pixRetryBlocked, pixAttemptProvider, pixWaitingMessage } from "@/lib/pix-attempt";
 import { ExitOfferPopup, useExitIntent } from "@/components/checkout/ExitOfferPopup";
 import { discountedUnit, hasProductOffer, resolveExitOffer, resolveProductExitOffer } from "@/lib/exit-offer";
 import { PixQr } from "@/components/checkout/PixQr";
@@ -109,6 +109,8 @@ function CheckoutRoute() {
   const [form, setForm] = useState<CheckoutDraft>(emptyDraft);
   const [placing, setPlacing] = useState(false);
   const [retryBlocked, setRetryBlocked] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<string | null>(null);
+  const [pixError, setPixError] = useState<string | null>(null);
   const [offerAccepted, setOfferAccepted] = useState(false);
   const [order, setOrder] = useState<{ number: string; total: number } | null>(null);
   const [pix, setPix] = useState<
@@ -181,7 +183,7 @@ function CheckoutRoute() {
         setOrder({ number: saved, total: (charge as { total?: number }).total ?? 0 });
         applyCharge(charge);
       } else {
-        if (pixRetryBlocked(charge)) { setRetryBlocked(true); toast.error((charge as { error?: string }).error); return; }
+        if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); toast.error((charge as { error?: string }).error); return; }
         window.localStorage.removeItem(PIX_KEY);
       }
     });
@@ -291,6 +293,7 @@ function CheckoutRoute() {
     if (placing || retryBlocked) return;
     const submitStarted = performance.now();
     setPlacing(true);
+    setPixError(null);
     void trackAddPaymentInfo(store.id, product, quantity, Number((unitPrice * quantity + selectedShipping.price).toFixed(2)));
     try {
       if (fromCardOrder) {
@@ -298,7 +301,7 @@ function CheckoutRoute() {
         if (sw.ok) {
           const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
           logPixSubmit(submitStarted, charge, store.id);
-          if (pixRetryBlocked(charge)) { setRetryBlocked(true); window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento", search: { pedido: sw.order_number }, replace: true }); }
+          if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento", search: { pedido: sw.order_number }, replace: true }); }
           if (isPixCharge(charge)) {
             const total = Number((charge as { total?: number }).total ?? 0);
             setOrder({ number: sw.order_number, total });
@@ -334,7 +337,7 @@ function CheckoutRoute() {
       setOrder({ number: result.order_number, total: result.total });
       const charge: unknown = await openPix({ data: { order_number: result.order_number } });
       logPixSubmit(submitStarted, charge, store.id);
-      if (pixRetryBlocked(charge)) { setRetryBlocked(true); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); }
+      if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); }
       if (isPixCharge(charge)) {
         applyCharge(charge);
         window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); rememberPixOrder(result.access_token, store.id);
@@ -343,11 +346,15 @@ function CheckoutRoute() {
         const c = (charge ?? {}) as { configured?: boolean; error?: string };
         if (c.configured && c.error) {
           toast.error(c.error);
+          setPixError(c.error);
           setPix({ configured: true });
         } else {
           setPix({ configured: false });
         }
       }
+    } catch {
+      const message = "Não foi possível receber a resposta do pagamento. Aguarde a confirmação antes de tentar novamente.";
+      setRetryBlocked(true); setPixError(message); toast.error(message);
     } finally {
       setPlacing(false);
     }
@@ -611,7 +618,7 @@ function CheckoutRoute() {
             <p className="border-b border-border pb-2 text-[14px] font-extrabold">Forma de pagamento</p>
             <PaymentMethodList cfg={payCfg} method={payMethod} showCard={showCard} totalCents={grossCents} onSelect={setPayMethod} onOpenCard={() => setCardSheet(true)} />
             {!payCfg.pix.enabled && !showCard && <p className="py-3 text-[12.5px] text-muted-foreground">Nenhuma forma de pagamento disponível no momento.</p>}
-            <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || retryBlocked || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : retryBlocked ? "Aguardando confirmação da WestPay" : "Efetuar pagamento"}</PrimaryButton></div>
+            <div className="pt-3"><PrimaryButton onClick={() => (payMethod === "card" ? setCardSheet(true) : void placeOrder())} disabled={placing || retryBlocked || (payMethod === "pix" && !payCfg.pix.enabled)}>{placing ? "Gerando seu Pix..." : retryBlocked ? pixWaitingMessage(pendingProvider) : "Efetuar pagamento"}</PrimaryButton></div>
             {cardSheet && <AddCardSheet cfg={payCfg} totalCents={grossCents} onClose={() => setCardSheet(false)} prepareOrder={prepareCardOrder} onPaid={(no) => void navigate({ to: "/pedido-confirmado", search: { pedido: no } })} customerName={form.customer.name} onPayPix={(no) => { setPayMethod("pix"); setCardSheet(false); void placeOrder(no); }} />}
           </section>
         )}
@@ -620,7 +627,9 @@ function CheckoutRoute() {
           <section className="space-y-4 rounded-2xl bg-card p-4 shadow-card-soft">
             <p className="flex items-center gap-2 border-b border-border pb-3 text-[13px] font-extrabold"><PixIcon size={18} /> Pagamento via Pix</p>
 
-            {pix && pix.configured ? (
+            {pixError ? (
+              <p role="alert" className="text-[13px] text-destructive">{pixError}</p>
+            ) : pix && pix.configured ? (
               <>
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground"><span>Expira em</span><strong className="rounded-md bg-primary-soft px-2 py-1 text-primary tnum">{mmss(pixLeft)}</strong></div>
                 <div className="flex items-baseline justify-between"><span className="text-[11px] text-muted-foreground">Valor total</span><strong className="text-[25px] font-extrabold tnum">{brl(order.total)}</strong></div>
