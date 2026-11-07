@@ -1,4 +1,4 @@
-/** Contract: https://app.venuspay.com.br/docs (reviewed 2026-10-29). Server only. */
+/** Contract: https://app.venuspay.com.br/docs (reviewed 2026-11-07). Server only. */
 import { z } from "zod";
 import { parseGatewayDate } from "../pix-time";
 import type { GatewayConfig, PaymentProvider, PixChargeInput, PixChargeResult } from "./providers.server";
@@ -38,6 +38,7 @@ export function venuspayErrorMessage(body: unknown): string | null {
 export function venuspayPayload(input: PixChargeInput) {
   const cents = input.amountCents ?? Math.round(input.amount * 100);
   if (!Number.isSafeInteger(cents) || cents < 500) throw new Error("A VenusPay aceita PIX a partir de R$ 5,00.");
+  if (cents > 100_000_000) throw new Error("A VenusPay aceita PIX de até R$ 1.000.000,00.");
   const name = input.customer.name.trim();
   const email = input.customer.email.trim();
   if (!name || !z.email().safeParse(email).success) throw new Error("Confira o nome e o e-mail informados.");
@@ -45,6 +46,7 @@ export function venuspayPayload(input: PixChargeInput) {
   const phone = (input.customer.phone ?? "").replace(/\D/g, "");
   return {
     amount: cents / 100,
+    payment_method: "pix",
     name, email,
     ...(document ? { document } : {}),
     ...(phone ? { phone } : {}),
@@ -111,7 +113,9 @@ export const venuspay: PaymentProvider = {
       const res = await fetch(`${VENUSPAY_BASE}/process-payment`, { method: "POST", headers: h, body: JSON.stringify(payload), signal: AbortSignal.timeout(VENUSPAY_CREATE_TIMEOUT_MS) });
       const body: unknown = await res.json().catch(() => null);
       const result: PixChargeResult = res.ok ? parseVenuspayPix(body) : { ok: false, error: friendly(res.status), uncertain: res.status >= 500 || ![400, 401, 403, 404, 422, 429].includes(res.status) };
-      console.info("[venuspay] create", JSON.stringify({ ...audit, http_status: res.status, category: result.ok ? "CREATED" : result.uncertain ? "UNCERTAIN" : "REJECTED_REQUEST", ...(result.ok ? { transaction_id: result.transaction_id } : { detail: venuspayErrorMessage(body) }), ms: Date.now() - start }));
+      // Correlate provider errors without recording customer data or response secrets.
+      const requestId = res.headers.get("x-request-id");
+      console.info("[venuspay] create", JSON.stringify({ ...audit, http_status: res.status, category: result.ok ? "CREATED" : result.uncertain ? "UNCERTAIN" : "REJECTED_REQUEST", ...(result.ok ? { transaction_id: result.transaction_id } : {}), ...(requestId && /^[a-zA-Z0-9-]{1,100}$/.test(requestId) ? { request_id: requestId } : {}), ms: Date.now() - start }));
       return result;
     } catch {
       console.error("[venuspay] create", JSON.stringify({ ...audit, category: "NETWORK_OR_TIMEOUT", ms: Date.now() - start }));

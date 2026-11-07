@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { Product, StoreSettings } from "./product-types";
 import { reviewsPageSize, sortReviewsPinnedFirst, variantImage } from "./product-types";
 import { parseGatewayDate } from "./pix-time";
+import { ambiguousPixAttempt, permanentPixLock, pixCreationFilter } from "./payments/pix-creation-policy";
 
 function publicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
@@ -390,13 +391,9 @@ export const createPixCharge = createServerFn({ method: "POST" })
     };
 
     if (!order.store_id) return notConfigured;
-    // WestPay has no documented lookup-by-reference or idempotency key. Never retry an ambiguous POST.
-    if (order.payment_provider === "westpay" && !order.transaction_id && ["creating", "westpay_uncertain"].includes(order.provider_status ?? "")) {
-      return { ...notConfigured, configured: true as const, provider: "westpay", retry_blocked: true, error: "A geração do seu PIX ainda precisa ser confirmada pela WestPay. Não faça outro pagamento antes dessa confirmação." };
-    }
-
-    if (order.payment_provider === "venuspay" && !order.transaction_id && order.provider_status === "venuspay_uncertain") {
-      return { ...notConfigured, configured: true as const, provider: "venuspay", retry_blocked: true, error: "A geração do seu PIX ainda precisa ser confirmada pela VenusPay. Não faça outro pagamento antes dessa confirmação." };
+    if (ambiguousPixAttempt(order)) {
+      const name = order.payment_provider === "venuspay" ? "VenusPay" : "WestPay";
+      return { ...notConfigured, configured: true as const, provider: order.payment_provider, retry_blocked: true, error: `A geração do seu PIX ainda precisa ser confirmada pela ${name}. Não faça outro pagamento antes dessa confirmação.` };
     }
 
     // Se a cobrança já existe, devolvemos a mesma — sem duplicar no provedor.
@@ -465,13 +462,13 @@ export const createPixCharge = createServerFn({ method: "POST" })
     const staleIso = new Date(Date.now() - 60000).toISOString();
     const { data: locked } = await supabaseAdmin
       .from("orders")
-      .update({ provider_status: "creating", updated_at: new Date().toISOString(), ...(row.provider === "westpay" ? { payment_provider: "westpay" } : {}) } as never)
+      .update({ provider_status: "creating", updated_at: new Date().toISOString(), ...(permanentPixLock(row.provider) ? { payment_provider: row.provider } : {}) } as never)
       .eq("id", order.id)
       .is("transaction_id", null)
-      .or(row.provider === "westpay" ? "provider_status.is.null,and(provider_status.neq.creating,provider_status.neq.westpay_uncertain)" : row.provider === "venuspay" ? `provider_status.is.null,and(provider_status.neq.venuspay_uncertain,or(provider_status.neq.creating,updated_at.lt.${staleIso}))` : `provider_status.is.null,provider_status.neq.creating,updated_at.lt.${staleIso}`)
+      .or(pixCreationFilter(row.provider, staleIso))
       .select("id");
     if (!locked || locked.length === 0) {
-      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay", error: "Seu PIX já está sendo gerado. Aguarde alguns segundos." };
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: permanentPixLock(row.provider), error: "Seu PIX já está sendo gerado. Aguarde alguns segundos." };
     }
     const release = () => supabaseAdmin.from("orders").update({ provider_status: null } as never).eq("id", order.id).eq("provider_status", "creating");
 
@@ -522,8 +519,10 @@ export const createPixCharge = createServerFn({ method: "POST" })
       });
     } catch (err) {
       console.error("[pix] erro ao gerar", err instanceof Error ? err.message : "desconhecido");
-      if (row.provider !== "westpay") await release();
-      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: row.provider === "westpay", error: "Não foi possível gerar o PIX agora. Tente novamente." };
+      if (permanentPixLock(row.provider)) {
+        await supabaseAdmin.from("orders").update({ provider_status: `${row.provider}_uncertain`, payment_provider: row.provider } as never).eq("id", order.id).eq("provider_status", "creating");
+      } else await release();
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: permanentPixLock(row.provider), error: permanentPixLock(row.provider) ? "Ainda não foi possível confirmar a geração do PIX. Não faça outro pagamento antes da confirmação." : "Não foi possível gerar o PIX agora. Tente novamente." };
     }
 
     const tSaved0 = Date.now();
@@ -577,9 +576,9 @@ export const createPixCharge = createServerFn({ method: "POST" })
       } as never)
       .eq("id", order.id);
 
-    if (row.provider === "westpay" && chargeSaveError) {
-      console.error("[westpay] persist_failed", { store_id: order.store_id, order_id: order.id, transaction_id: charge.transaction_id, at: new Date().toISOString() });
-      return { ...notConfigured, configured: true as const, provider: "westpay", retry_blocked: true, error: "Não foi possível salvar a confirmação do PIX. Aguarde antes de tentar novamente." };
+    if (permanentPixLock(row.provider) && chargeSaveError) {
+      console.error(`[${row.provider}] persist_failed`, { store_id: order.store_id, order_id: order.id, transaction_id: charge.transaction_id, at: new Date().toISOString() });
+      return { ...notConfigured, configured: true as const, provider: row.provider, retry_blocked: true, error: "Não foi possível salvar a confirmação do PIX. Aguarde antes de tentar novamente." };
     }
 
     const tSaved = tSaved0;
