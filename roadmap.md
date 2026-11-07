@@ -1,9 +1,10 @@
 # Roadmap
 
 ## Auditoria e correção VenusPay (07/11/2026)
-- [ ] Conferir documentação oficial, respostas reais e seleção de gateway sem gerar cobranças.
-- [ ] Corrigir problemas confirmados na integração e nos avisos dos dois checkouts, preservando pedidos e travas contra duplicação.
-- [ ] Validar com testes e checkout sem cobrança; informar limitações externas e necessidade de publicação.
+- [x] Conferir documentação oficial renderizada (PIX, status, webhooks e erros), respostas reais e seleção VenusPay nas três lojas, sem gerar cobranças. Em 10:48 UTC houve duas respostas HTTP 500 da VenusPay; em 10:49 UTC houve sucessos com 2,7–3,8 segundos no gateway e 4,1–5,1 segundos totais.
+- [x] Corrigir aviso WestPay nos dois checkouts, exibir falhas sem sugerir QR disponível, explicitar método PIX, registrar request ID e preservar permanentemente pedidos VenusPay em criação/resultado incerto/erro de persistência sem novas cobranças.
+- [x] Validar 28 testes, build OK e pedido real já incerto nos dois checkouts em 1280/390px: botão VenusPay bloqueado e sem criar cobrança. Contrato básico coincide com a documentação; falhas HTTP 500 do gateway não podem ser eliminadas pelo checkout.
+- [ ] Publicar correções: depende de publicação autorizada; nenhum teste com pagamento real nem alteração de credenciais/configurações.
 
 ## Pop-ups das políticas do rodapé (05/11/2026)
 - [x] Reutilizar o diálogo da Privacidade para Reembolso, Termos e Entrega, com os textos cadastrados e sem alterar páginas diretas ou visibilidade.
