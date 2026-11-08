@@ -170,10 +170,12 @@ function CheckoutTwo() {
     setPlacing(true);
     setPixError(null);
     void trackAddPaymentInfo(store.id, product, quantity, total);
+    let chargeRequested = false;
     try {
       if (fromCardOrder) {
         const sw = await toPix({ data: { order_number: fromCardOrder } });
         if (sw.ok) {
+          chargeRequested = true;
           const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
           logPixSubmit(submitStarted, charge, store.id);
           if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento-2", search: { pedido: sw.order_number }, replace: true }); }
@@ -192,12 +194,18 @@ function CheckoutTwo() {
       const result = await submitOrder({ data: { tracking: readTracking(), slug: product.slug, quantity, variant: form.variant, shipping_id: shipping.id, customer: form.customer, address: form.address, exit_offer: productOfferCfg ? "product" as const : offerAccepted } });
       if (!result.ok) { toast.error(result.error); return; }
       setOrder({ number: result.order_number, total: result.total });
-      const charge: unknown = await openPix({ data: { order_number: result.order_number } });
+      chargeRequested = true;
+          const charge: unknown = await openPix({ data: { order_number: result.order_number } });
       logPixSubmit(submitStarted, charge, store.id);
       if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento-2", search: { pedido: result.order_number }, replace: true }); }
       if (isPixCharge(charge)) { applyCharge(charge); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento-2", search: { pedido: result.order_number }, replace: true }); rememberPixOrder(result.access_token, store.id); void trackPaymentPending(store.id, result.order_number, result.total, product.id); }
       else { const failure = charge as { configured?: boolean; error?: string } | null; setPix({ configured: Boolean(failure?.configured) } as PixState); setPixError(failure?.error ?? "O PIX ainda não está disponível."); toast.error(failure?.error ?? "O PIX ainda não está disponível."); }
     } catch {
+      if (!chargeRequested) {
+        const message = "Falha de conexão. Verifique sua internet e tente novamente.";
+        setPixError(message); toast.error(message);
+        return;
+      }
       const message = "Não foi possível receber a resposta do pagamento. Aguarde a confirmação antes de tentar novamente.";
       setRetryBlocked(true); setPixError(message); toast.error(message);
     } finally { setPlacing(false); }
