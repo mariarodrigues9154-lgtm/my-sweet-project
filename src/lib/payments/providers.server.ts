@@ -333,6 +333,7 @@ export function wappiError(status: number, detail?: string | null): string {
       const field = wappiFieldError(detail);
       if (field) return field;
       // Recusa do adquirente (ex.: GETNET_HTTP_ERROR): não é campo inválido do checkout.
+      if (/excede o limite|limite m[aá]ximo/i.test(detail)) return "Pagamento com cartão indisponível no momento. Tente pagar com PIX.";
       if (detail.toLowerCase().includes("adquirente")) return "O provedor de pagamento recusou a transação. Tente novamente em alguns minutos.";
     }
     return "Alguns dados do pedido não foram aceitos. Confira CPF/CNPJ, telefone e endereço.";

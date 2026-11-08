@@ -295,10 +295,12 @@ function CheckoutRoute() {
     setPlacing(true);
     setPixError(null);
     void trackAddPaymentInfo(store.id, product, quantity, Number((unitPrice * quantity + selectedShipping.price).toFixed(2)));
+    let chargeRequested = false;
     try {
       if (fromCardOrder) {
         const sw = await toPix({ data: { order_number: fromCardOrder } });
         if (sw.ok) {
+          chargeRequested = true;
           const charge: unknown = await openPix({ data: { order_number: sw.order_number } });
           logPixSubmit(submitStarted, charge, store.id);
           if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); window.localStorage.setItem(PIX_KEY, sw.order_number); void navigate({ to: "/pagamento", search: { pedido: sw.order_number }, replace: true }); }
@@ -335,7 +337,8 @@ function CheckoutRoute() {
         return;
       }
       setOrder({ number: result.order_number, total: result.total });
-      const charge: unknown = await openPix({ data: { order_number: result.order_number } });
+      chargeRequested = true;
+          const charge: unknown = await openPix({ data: { order_number: result.order_number } });
       logPixSubmit(submitStarted, charge, store.id);
       if (pixRetryBlocked(charge)) { setRetryBlocked(true); setPendingProvider(pixAttemptProvider(charge)); window.localStorage.setItem(PIX_KEY, result.order_number); void navigate({ to: "/pagamento", search: { pedido: result.order_number }, replace: true }); }
       if (isPixCharge(charge)) {
@@ -353,6 +356,11 @@ function CheckoutRoute() {
         }
       }
     } catch {
+      if (!chargeRequested) {
+        const message = "Falha de conexão. Verifique sua internet e tente novamente.";
+        setPixError(message); toast.error(message);
+        return;
+      }
       const message = "Não foi possível receber a resposta do pagamento. Aguarde a confirmação antes de tentar novamente.";
       setRetryBlocked(true); setPixError(message); toast.error(message);
     } finally {
